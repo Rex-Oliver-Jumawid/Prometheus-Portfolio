@@ -1,0 +1,1 @@
+Safe local attachment used by the Playwright file workflow.
