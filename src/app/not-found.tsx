@@ -1,22 +1,14 @@
-import { SearchX } from "lucide-react";
 import Link from "next/link";
-
-import { EmptyState } from "@/components/shared/empty-state";
-import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-xl items-center px-6">
-      <EmptyState
-        icon={<SearchX />}
-        title="Page not found"
-        description="The page may have moved or the address may be incorrect."
-        action={
-          <Link href="/dashboard" className={buttonVariants()}>
-            Go to dashboard
-          </Link>
-        }
-      />
+    <main className="not-found">
+      <p className="eyebrow">404</p>
+      <h1>That page is not part of the system.</h1>
+      <p>The address may be old, incomplete, or no longer in use.</p>
+      <Link className="button button-primary" href="/">
+        Return home
+      </Link>
     </main>
   );
 }

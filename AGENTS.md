@@ -1,32 +1,14 @@
-# Application coding conventions
+# Portfolio coding conventions
 
-- Read `docs/business-context.md` and the relevant `docs/features/<feature>.md` before client feature work. Use `docs/feature-spec.md` for new specifications; resolve access and ownership decisions first.
+- Keep the public portfolio fast, accessible, and deployable without backend services unless a feature clearly requires them.
+- Keep the homepage and case studies server-rendered by default.
+- Add "use client" only for browser state, events, or animation that cannot be expressed accessibly with CSS.
+- Keep portfolio content close to the route that owns it until a real reuse or content-management need appears.
+- Prefer complete vertical slices over placeholder infrastructure.
+- Preserve reduced-motion behavior for non-essential animation.
+- Treat responsive behavior, keyboard navigation, semantic headings, and visible focus states as part of the feature.
+- Keep branding values centralized in `src/config/app.ts`.
+- Do not reintroduce the former business-template auth, RBAC, customer, storage, or Supabase layers unless the portfolio gains an explicit application requirement.
 
-- Put product capabilities under `src/features/<feature>`; keep routes focused on routing, data loading, and composition.
-- Keep business and authorization logic out of React components.
-- Prefer Server Components. Add `"use client"` only for browser state, events, or client-only libraries.
-- Reuse existing feature and shared primitives before creating another abstraction or component.
-- Keep the application a modular monolith; do not add service boundaries without a measured need.
-
-## Data and security
-
-- Represent every schema, function, trigger, grant, and RLS change in a checked-in Supabase migration.
-- Create migrations with `pnpm exec supabase migration new <name>` and regenerate `src/types/database.generated.ts` after schema changes.
-- Enable RLS on every exposed table and add indexes for policy filter columns.
-- Validate all user input, URL state, file data, and external data with Zod.
-- Authenticate and authorize protected operations on the server with the canonical `requirePermission()` pattern.
-- `PermissionGuard` controls UI visibility only; it never replaces server authorization or RLS.
-- Never expose secret/service-role keys or authorize from user-editable auth metadata.
-- Audit important creates, updates, deletes, role/permission changes, approvals, and sensitive exports; do not audit cosmetic UI events.
-
-## Canonical patterns
-
-- Copy `src/features/customers` for database-backed CRUD features.
-- Use `AppDataTable` for standard searchable, sortable, paginated tables.
-- Use React Hook Form plus `zodResolver`, while repeating validation inside the Server Action.
-- Return the shared `ActionResult` shape from Server Actions; expose safe messages and log no secrets.
-- Revalidate every affected route after a successful mutation.
-- Keep tenant scope explicit and optional. Use `organization_id`, organization context, scoped permission checks, and RLS only for tenant-owned data.
-- Add tests for permission matrices, validation, and important domain behavior. Add pgTAP coverage when changing RLS.
-
-Before completion, run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`. For database changes also run `pnpm db:reset`, `pnpm db:types`, `pnpm db:test`, and local database advisors.
+Before completion, run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
+Run `pnpm test:e2e` for routing, navigation, or other critical browser-level changes.

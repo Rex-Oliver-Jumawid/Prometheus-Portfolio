@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import "./globals.css";
-import { appConfig } from "@/config/app";
-import { Inter } from "next/font/google";
-import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+import { appConfig } from "@/config/app";
+
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
@@ -19,16 +17,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={cn(
-        "h-full font-sans antialiased",
-        "font-sans",
-        inter.variable,
-      )}
-      data-scroll-behavior="smooth"
-    >
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body>{children}</body>
     </html>
   );
 }

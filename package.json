@@ -1,28 +1,20 @@
 {
-  "name": "business-app-starter",
+  "name": "prometheus-portfolio",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "template:init": "node scripts/init-project.mjs",
-    "template:doctor": "node scripts/doctor.mjs",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run && node --test scripts/*.test.mjs",
+    "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "db:start": "supabase start",
-    "db:stop": "supabase stop",
-    "db:reset": "supabase db reset --local",
-    "db:types": "node scripts/db-types.mjs",
-    "db:advisors": "supabase db advisors --local --type all --level warn --fail-on error",
-    "db:test": "supabase test db --local"
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
