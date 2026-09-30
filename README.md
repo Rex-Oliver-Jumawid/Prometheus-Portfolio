@@ -1,17 +1,31 @@
 # Prometheus portfolio
 
-Public portfolio for Prometheus, built with Next.js, React, TypeScript, and Tailwind CSS.
+Public portfolio for Prometheus, built with Next.js, React, TypeScript, Tailwind CSS, and Three.js.
 
 This repository started from an internal business application template.
-The portfolio initialization removes the authentication, Supabase, RBAC, database, customer-management, and private-file runtime surface so the public site is the primary product.
+The portfolio baseline removes authentication, Supabase, RBAC, database, customer-management, and private-file runtime assumptions so the public site is the primary product.
+
+## Current design scope
+
+The active build is intentionally focused on two viewports before the rest of the portfolio is developed.
+
+- Hero: translate and polish the existing working hero artifact against Figma page `117:113`.
+- Project gallery: implement the Figma `2nd viewport` page `133:305` as a Three.js scene with classical pillars and three interactive project books.
+
+The three books represent portfolio projects.
+Selecting a book will eventually open the book and reveal the case study for that project.
+The exact case-study surface remains a deliberate UX decision between an in-place reader and a dedicated project route.
+
+See `docs/ARCHITECTURE.md` for the technical boundaries and GLB contract.
+See `docs/IMPLEMENTATION_PLAN.md` for the build sequence.
 
 ## Local development
 
 Requirements:
 
-- Node.js 24
-- Corepack
-- pnpm 11
+- Node.js 24.
+- Corepack.
+- pnpm 11.
 
 Run:
 
@@ -42,15 +56,20 @@ pnpm test:e2e
 
 ## Structure
 
-- `src/app/page.tsx` contains the public portfolio composition and project data.
-- `src/app/globals.css` contains the visual system, responsive behavior, and motion.
+- `src/app/page.tsx` currently contains the public portfolio composition and will remain the server-rendered route owner.
+- `src/app/globals.css` contains the current baseline visual system and responsive behavior.
 - `src/config/app.ts` is the canonical source for portfolio name and description.
 - `tests/e2e/home.spec.ts` covers the critical public homepage path.
+- `docs/ARCHITECTURE.md` defines the planned Hero and Three.js boundaries.
+- `docs/IMPLEMENTATION_PLAN.md` defines the implementation order.
 
-The remaining UI dependencies are intentionally left locked to the original template lockfile for a safe first initialization.
-They can be pruned later with pnpm when the final component direction is settled, without hand-editing the generated lockfile.
+Three.js is intentionally isolated to the project-gallery client boundary when implementation begins.
+The hero and case-study content should not depend on WebGL.
 
-## Current direction
+## Design source
 
-The baseline is intentionally public-first, static-friendly, and independent from backend infrastructure.
-It provides a Prometheus-branded hero, selected work, approach, capabilities, and contact handoff area without committing the site to a CMS or application backend.
+The working design file is `Promotheus-Design-Improvements` in Figma.
+The current implementation references are the `hero` page at node `117:113` and the `2nd viewport` page at node `133:305`.
+
+Figma is the visual source of truth.
+The repository documentation is the source of truth for runtime boundaries, asset contracts, accessibility, testing, and performance behavior.
