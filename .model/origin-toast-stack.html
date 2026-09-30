@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Origin Toast Stack</title>
+
+  <style>
+    :root {
+      --page-bg: #0f1011;
+      --card-bg: #f5f4ef;
+      --card-text: #101112;
+      --muted-text: #606267;
+      --caption-text: #6f7176;
+
+      --toast-width: 440px;
+      --toast-height: 248px;
+
+      --transition:
+        transform 850ms cubic-bezier(.22, 1, .36, 1),
+        opacity 650ms cubic-bezier(.22, 1, .36, 1),
+        filter 650ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      font-family: sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+
+      color: rgb(255, 255, 255);
+      background-color: rgb(15, 16, 17);
+
+      font-family: Suisseintltrial, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    .demo {
+      width: 100%;
+      min-height: 100vh;
+
+      display: grid;
+      place-items: center;
+
+      padding: 48px;
+    }
+
+    .hero_slider_wrap {
+      position: relative;
+
+      width: var(--toast-width);
+      height: var(--toast-height);
+
+      overflow: visible;
+      isolation: isolate;
+    }
+
+    /*
+      Values copied from the computed properties you supplied.
+    */
+    .toast_list {
+      position: relative;
+
+      display: block;
+
+      width: 440px;
+      height: 248px;
+
+      box-sizing: border-box;
+
+      color: rgb(255, 255, 255);
+
+      font-family: Suisseintltrial, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 24px;
+
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+
+      unicode-bidi: isolate;
+    }
+
+    .hero_slide_item {
+      position: absolute;
+      inset: 0;
+
+      width: 440px;
+      height: 248px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+
+      padding: 27px 30px 28px;
+
+      overflow: hidden;
+
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.62);
+
+      color: var(--card-text);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(250, 249, 246, 1) 0%,
+          rgba(240, 238, 233, 1) 100%
+        );
+
+      box-shadow:
+        0 28px 60px rgba(0, 0, 0, 0.31),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+      transform-origin: 50% 50%;
+
+      transition: var(--transition);
+
+      will-change: transform, opacity, filter;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .hero_slide_caption {
+      margin-bottom: 9px;
+
+      color: var(--caption-text);
+
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+    }
+
+    .hero_slide_title {
+      max-width: 350px;
+
+      margin: 0;
+
+      color: var(--card-text);
+
+      font-size: 34px;
+      line-height: 35px;
+      font-weight: 400;
+      letter-spacing: -0.045em;
+    }
+
+    .hero_slide_description {
+      max-width: 382px;
+
+      margin: 15px 0 0;
+
+      color: var(--muted-text);
+
+      font-size: 14px;
+      line-height: 19px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+
+    /*
+      These four states match the inline transforms from useorigin.com.
+    */
+
+    .state-active {
+      pointer-events: auto;
+
+      filter: blur(0rem);
+
+      transform:
+        translate(0px, 0px);
+
+      opacity: 1;
+      z-index: 3;
+    }
+
+    .state-next {
+      pointer-events: auto;
+
+      filter: blur(0rem);
+
+      transform:
+        translate(8px, 0px)
+        rotate(3deg);
+
+      opacity: 0.4;
+      z-index: 2;
+    }
+
+    .state-third {
+      pointer-events: auto;
+
+      filter: blur(0rem);
+
+      transform:
+        translate(3px, 0px)
+        rotate(-3deg);
+
+      opacity: 0.4;
+      z-index: 1;
+    }
+
+    .state-exit {
+      pointer-events: none;
+
+      filter: blur(0.3rem);
+
+      transform:
+        translate(0%, 180%)
+        translate(25px, 0px)
+        rotate(45deg)
+        scale(0.96, 0.96);
+
+      opacity: 1;
+      z-index: 0;
+    }
+
+    .hint {
+      position: fixed;
+      left: 50%;
+      bottom: 30px;
+      translate: -50% 0;
+
+      margin: 0;
+
+      color: rgba(255, 255, 255, 0.46);
+
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 18px;
+      letter-spacing: 0.02em;
+
+      pointer-events: none;
+    }
+
+    @media (max-width: 520px) {
+      .demo {
+        padding: 24px;
+      }
+
+      .hero_slider_wrap,
+      .toast_list,
+      .hero_slide_item {
+        width: min(440px, calc(100vw - 48px));
+      }
+
+      .hero_slide_item {
+        padding-inline: 24px;
+      }
+
+      .hero_slide_title {
+        font-size: 30px;
+        line-height: 31px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero_slide_item {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="demo">
+    <div class="hero_slider_wrap">
+      <div class="toast_list" id="toastList">
+
+        <div class="w-layout-vflex hero_slide_item">
+          <div class="hero_slide_caption">SAVINGS</div>
+
+          <h3 class="hero_slide_title m-b-0">
+            Your money is sitting still.
+          </h3>
+
+          <p class="hero_slide_description">
+            You have $23,400 in savings earning almost nothing (~0.01%).
+            Moving it to a high-yield account earns about $975/year.
+          </p>
+        </div>
+
+        <div class="w-layout-vflex hero_slide_item">
+          <div class="hero_slide_caption">CREDIT</div>
+
+          <h3 class="hero_slide_title m-b-0">
+            Improve your credit score.
+          </h3>
+
+          <p class="hero_slide_description">
+            Lower your utilization before your statement closes to help
+            improve your score—without paying any more.
+          </p>
+        </div>
+
+        <div class="w-layout-vflex hero_slide_item">
+          <div class="hero_slide_caption">RETIREMENT</div>
+
+          <h3 class="hero_slide_title m-b-0">
+            Grow your HSA to $180K.
+          </h3>
+
+          <p class="hero_slide_description">
+            Investing $4,400 a year in your HSA could grow to about
+            $180,000 tax-free in 20 years.
+          </p>
+        </div>
+
+        <div class="w-layout-vflex hero_slide_item">
+          <div class="hero_slide_caption">TAX STRATEGY</div>
+
+          <h3 class="hero_slide_title m-b-0">
+            Save $2,200 on childcare.
+          </h3>
+
+          <p class="hero_slide_description">
+            Put $7,500 of your childcare spending through a dependent
+            care FSA and keep about $2,200 more per year.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="hint">Click the front card to advance</p>
+  </main>
+
+  <script>
+    const cards = Array.from(
+      document.querySelectorAll(".hero_slide_item")
+    );
+
+    const stateClasses = [
+      "state-active",
+      "state-next",
+      "state-third",
+      "state-exit"
+    ];
+
+    let activeIndex = 3;
+
+    function applyState() {
+      cards.forEach((card) => {
+        card.classList.remove(...stateClasses);
+      });
+
+      const active = cards[activeIndex];
+      const next = cards[(activeIndex + 1) % cards.length];
+      const third = cards[(activeIndex + 2) % cards.length];
+      const exit = cards[(activeIndex + 3) % cards.length];
+
+      active.classList.add("state-active");
+      next.classList.add("state-next");
+      third.classList.add("state-third");
+      exit.classList.add("state-exit");
+    }
+
+    function advance() {
+      activeIndex = (activeIndex + 1) % cards.length;
+      applyState();
+    }
+
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        if (card.classList.contains("state-active")) {
+          advance();
+        }
+      });
+    });
+
+    applyState();
+  </script>
+</body>
+</html>

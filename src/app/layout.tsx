@@ -1,9 +1,27 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 
 import { appConfig } from "@/config/app";
 
 import "./globals.css";
+
+const instrumentSerif = localFont({
+  src: [
+    {
+      path: "./_fonts/instrument-serif-regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./_fonts/instrument-serif-italic.ttf",
+      weight: "400",
+      style: "italic",
+    },
+  ],
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -17,7 +35,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={instrumentSerif.variable}
+    >
       <body>{children}</body>
     </html>
   );

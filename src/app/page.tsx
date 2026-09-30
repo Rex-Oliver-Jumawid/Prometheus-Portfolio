@@ -1,3 +1,5 @@
+import { Hero } from "./_components/hero";
+
 const projects = [
   {
     number: "01",
@@ -37,56 +39,7 @@ const capabilities = [
 export default function Home() {
   return (
     <main>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Prometheus home">
-          <span className="brand-mark">P</span>
-          <span>Prometheus</span>
-        </a>
-        <nav className="site-nav" aria-label="Primary navigation">
-          <a href="#work">Work</a>
-          <a href="#approach">Approach</a>
-          <a href="#capabilities">Capabilities</a>
-          <a href="#contact">Contact</a>
-        </nav>
-      </header>
-
-      <section id="top" className="hero section-shell">
-        <div className="hero-copy">
-          <p className="eyebrow">
-            <span className="signal-dot" />
-            Digital systems studio
-          </p>
-          <h1>We build systems that make complicated work feel simple.</h1>
-          <p className="hero-lede">
-            Prometheus turns scattered tools, repetitive work, and disconnected
-            information into focused digital products built around how a
-            business actually operates.
-          </p>
-          <div className="hero-actions">
-            <a className="button button-primary" href="#work">
-              See selected work
-            </a>
-            <a className="button button-ghost" href="#contact">
-              Start a project
-            </a>
-          </div>
-        </div>
-
-        <div className="system-stage" aria-hidden="true">
-          <div className="stage-label">ONE CONNECTED SYSTEM</div>
-          <div className="stage-grid">
-            <span className="stage-cell cell-red" />
-            <span className="stage-cell cell-blue" />
-            <span className="stage-cell cell-ink" />
-            <span className="stage-cell cell-cream" />
-            <span className="stage-cell cell-outline" />
-          </div>
-          <div className="stage-note note-top">INPUT</div>
-          <div className="stage-note note-bottom">OUTPUT</div>
-          <div className="stage-axis axis-x" />
-          <div className="stage-axis axis-y" />
-        </div>
-      </section>
+      <Hero />
 
       <section id="work" className="work-section section-shell">
         <div className="section-intro">

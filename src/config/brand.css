@@ -1,0 +1,16 @@
+:root {
+  --cream: #f4ebde;
+  --paper: #fffaf3;
+  --ink: #172132;
+  --muted: #6d6a65;
+  --line: #d8cec0;
+  --red: #dc3d3c;
+  --blue: #173b67;
+  --white: #ffffff;
+  --brand-flame: #dc3d3c;
+  --brand-ember: #ffb45a;
+  --brand-teal: #486a72;
+  --brand-night: #1d1b19;
+  --brand-serif:
+    var(--font-instrument-serif, Georgia), "Times New Roman", serif;
+}
