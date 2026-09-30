@@ -1,12 +1,9 @@
 name: CI
 
 on:
-  pull_request:
   push:
     branches: [main]
-
-permissions:
-  contents: read
+  pull_request:
 
 jobs:
   quality:
@@ -24,19 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Lint
         run: pnpm lint
 
       - name: Typecheck
         run: pnpm typecheck
-
-      - name: Run unit tests
-        run: pnpm test
 
       - name: Build
         run: pnpm build

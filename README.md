@@ -1,9 +1,18 @@
 # Prometheus portfolio
 
-Public portfolio for Prometheus, built with Next.js, React, TypeScript, and Tailwind CSS.
+Prometheus V2 is a clean Next.js starter for the Prometheus portfolio.
 
-This repository started from an internal business application template.
-The portfolio initialization removes the authentication, Supabase, RBAC, database, customer-management, and private-file runtime surface so the public site is the primary product.
+The repository intentionally contains no designed screens, reusable UI library, backend integration, or application-specific feature code yet.
+It is a blank development baseline for building the portfolio from scratch.
+
+## Stack
+
+- Next.js
+- React
+- TypeScript
+- pnpm
+- ESLint
+- Prettier
 
 ## Local development
 
@@ -17,40 +26,36 @@ Run:
 
 ```bash
 corepack enable
-pnpm install --frozen-lockfile
+pnpm install
 pnpm dev
 ```
 
 Open `http://127.0.0.1:3000`.
 
-No environment variables or local database are required for the current portfolio baseline.
+The root route intentionally renders no interface yet.
 
 ## Quality checks
+
+Run:
 
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
 ```
 
-Run the browser-level homepage check with:
+Or run all three with:
 
 ```bash
-pnpm test:e2e
+pnpm verify
 ```
 
-## Structure
+## Current structure
 
-- `src/app/page.tsx` contains the public portfolio composition and project data.
-- `src/app/globals.css` contains the visual system, responsive behavior, and motion.
-- `src/config/app.ts` is the canonical source for portfolio name and description.
-- `tests/e2e/home.spec.ts` covers the critical public homepage path.
+- `src/app/layout.tsx` provides the required App Router root layout.
+- `src/app/page.tsx` is an intentionally blank root route.
+- `eslint.config.mjs` contains the Next.js lint configuration.
+- `tsconfig.json` contains the TypeScript configuration.
+- `.github/workflows/ci.yml` verifies linting, typechecking, and production builds.
 
-The remaining UI dependencies are intentionally left locked to the original template lockfile for a safe first initialization.
-They can be pruned later with pnpm when the final component direction is settled, without hand-editing the generated lockfile.
-
-## Current direction
-
-The baseline is intentionally public-first, static-friendly, and independent from backend infrastructure.
-It provides a Prometheus-branded hero, selected work, approach, capabilities, and contact handoff area without committing the site to a CMS or application backend.
+Documentation files are intentionally retained while implementation starts from a clean slate.
