@@ -4,6 +4,9 @@ import type { ReactNode } from "react";
 
 import { appConfig } from "@/config/app";
 
+import { SmoothScroll } from "./_components/smooth-scroll";
+
+import "lenis/dist/lenis.css";
 import "./globals.css";
 
 const instrumentSerif = localFont({
@@ -40,7 +43,10 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={instrumentSerif.variable}
     >
-      <body>{children}</body>
+      <body>
+        <SmoothScroll />
+        {children}
+      </body>
     </html>
   );
 }
