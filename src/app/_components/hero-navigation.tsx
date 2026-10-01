@@ -22,18 +22,24 @@ export function HeroNavigation() {
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <header className={styles.header} data-navigation-open={open}>
         <a
-          className={`${styles.ribbon}${open ? ` ${styles.navRibbon}` : ""}`}
+          className={styles.brand}
           href="#top"
           aria-label={`${appConfig.name} home`}
           onClick={() => setOpen(false)}
         >
-          <span className={styles.mark} aria-hidden="true" />
+          <span className={styles.ribbon} aria-hidden="true">
+            <span className={styles.mark} />
+          </span>
         </a>
         <Dialog.Trigger
           className={styles.menuToggle}
           aria-label="Open navigation"
         >
-          <span className={styles.menuBars} aria-hidden="true" />
+          <span className={styles.hamburger} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
         </Dialog.Trigger>
       </header>
       <Dialog.Portal>
@@ -43,10 +49,9 @@ export function HeroNavigation() {
             <Dialog.Title className={styles.srOnly}>
               {appConfig.name}
             </Dialog.Title>
-            <span className={styles.navLogoSpace} aria-hidden="true" />
             <Dialog.Close
               ref={closeRef}
-              className={`${styles.menuClose} ${styles.menuToggle}`}
+              className={styles.menuClose}
               aria-label="Close navigation"
             >
               <span className={styles.closeIcon} aria-hidden="true" />

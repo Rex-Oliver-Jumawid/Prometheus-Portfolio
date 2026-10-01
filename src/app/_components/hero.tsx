@@ -1,7 +1,6 @@
 import Image from "next/image";
 
 import { HeroNavigation } from "./hero-navigation";
-import { HeroQuote } from "./hero-quote";
 import styles from "./hero.module.css";
 
 export function Hero() {
@@ -26,7 +25,7 @@ export function Hero() {
             alt=""
             width={986}
             height={718}
-            sizes="(max-width: 640px) 140vw, (max-width: 1000px) 95vw, 62vw"
+            sizes="(max-width: 640px) 124vw, (max-width: 1000px) 95vw, 62vw"
             loading="eager"
             draggable={false}
           />
@@ -41,22 +40,15 @@ export function Hero() {
               </span>
             </h1>
             <p className={styles.subtitle}>
-              We carry the flame of innovation — transforming bold visions into
-              reality.
+              We turn ambitious ideas into systems built around the way your
+              business actually works.
             </p>
-            <p className={styles.eyebrow}>Creative atelier</p>
+            <p className={styles.eyebrow}>Creative systems studio</p>
             <div className={styles.actions}>
               <a className={styles.primary} href="#work">
-                See our work <span aria-hidden="true">↗</span>
-              </a>
-              <a className={styles.secondary} href="#approach">
-                Learn more <span aria-hidden="true">→</span>
+                Explore our work <span aria-hidden="true">→</span>
               </a>
             </div>
-          </div>
-
-          <div className={styles.bottomRow}>
-            <HeroQuote />
           </div>
         </div>
       </section>

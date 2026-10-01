@@ -128,7 +128,7 @@ for (const [width, height] of [
     }
     await page.getByRole("link", { name: "Back to top", exact: false }).click();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await page.getByRole("link", { name: "See our work" }).click();
+    await page.getByRole("link", { name: "Explore our work" }).click();
     await expect(page).toHaveURL(/#work$/);
     await expect(
       page.getByRole("heading", { level: 2, name: /Furniture Odyssey/ }),

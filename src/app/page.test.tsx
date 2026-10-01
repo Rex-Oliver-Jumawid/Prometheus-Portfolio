@@ -54,15 +54,10 @@ describe("portfolio homepage", () => {
     ).toBe(gallery);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 
-    expect(screen.getByRole("link", { name: "See our work" })).toHaveAttribute(
-      "href",
-      "#work",
-    );
+    expect(
+      screen.getByRole("link", { name: "Explore our work" }),
+    ).toHaveAttribute("href", "#work");
 
-    expect(screen.getByRole("link", { name: "Learn more" })).toHaveAttribute(
-      "href",
-      "#approach",
-    );
     expect(screen.queryByText("Scroll to explore")).not.toBeInTheDocument();
     expect(
       screen.queryByText("Design meets technology"),
@@ -109,16 +104,21 @@ describe("portfolio homepage", () => {
     );
   });
 
-  it("presents the toast stack without card controls", () => {
+  it("keeps the hero focused on the artwork and one primary action", () => {
     render(<Home />);
-    const stack = screen.getByRole("complementary", {
-      name: "From Prometheus",
-    });
-    expect(within(stack).queryByRole("button")).not.toBeInTheDocument();
+    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
+    expect(within(hero).queryByRole("complementary")).not.toBeInTheDocument();
+    expect(within(hero).queryByRole("article")).not.toBeInTheDocument();
     expect(
-      within(stack).getByRole("heading", {
-        name: "We want to bring ideas to life.",
-      }),
+      within(hero).getByText(
+        "We turn ambitious ideas into systems built around the way your business actually works.",
+      ),
     ).toBeInTheDocument();
+    expect(
+      within(hero).getByText("Creative systems studio"),
+    ).toBeInTheDocument();
+    expect(
+      within(hero).queryByRole("link", { name: "Learn more" }),
+    ).not.toBeInTheDocument();
   });
 });

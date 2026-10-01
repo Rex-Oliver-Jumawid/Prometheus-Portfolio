@@ -7,7 +7,7 @@
   z-index: 1;
   isolation: isolate;
   background: var(--brand-night);
-  color: var(--white);
+  color: var(--cream);
 }
 
 .scene {
@@ -33,12 +33,14 @@
   bottom: calc(-1 * var(--figure-offset));
   width: min(62vw, 110svh);
   /* Keep the full supporting hand over the next section; clip only the torso. */
-  clip-path: polygon(0 0,
-      100% 0,
-      100% 100%,
-      82% 100%,
-      82% calc(100% - var(--figure-offset)),
-      0 calc(100% - var(--figure-offset)));
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    82% 100%,
+    82% calc(100% - var(--figure-offset)),
+    0 calc(100% - var(--figure-offset))
+  );
 }
 
 .figure img {
@@ -53,12 +55,20 @@
   inset: 0;
   content: "";
   pointer-events: none;
-  background:
-    linear-gradient(90deg,
-      rgb(7 9 9 / 12%),
-      rgb(7 9 9 / 4%) 42%,
-      transparent 70%),
-    linear-gradient(0deg, rgb(10 9 12 / 16%), transparent 35%);
+  background: linear-gradient(
+    90deg,
+    rgb(20 18 16 / 46%) 0%,
+    rgb(20 18 16 / 20%) 35%,
+    transparent 60%
+  );
+}
+
+.header,
+.content,
+.navPanel {
+  --hero-gutter: clamp(20px, 4vw, 64px);
+  --navigation-height: 88px;
+  --banner-width: 52px;
 }
 
 .header {
@@ -66,10 +76,12 @@
   z-index: 80;
   inset: 0 0 auto;
   display: flex;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 0 5.8%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 0 var(--hero-gutter);
   pointer-events: none;
+  animation: navEnter 700ms ease both;
 }
 
 .header a,
@@ -85,12 +97,32 @@
   visibility: hidden;
 }
 
+.brand {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--cream);
+  text-decoration: none;
+  transition: color 300ms ease;
+}
+
+.mark {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 24px;
+  height: 42px;
+  flex-shrink: 0;
+  background: currentColor;
+  mask: url("/assets/hero/prometheus-mark.png") center / contain no-repeat;
+}
+
 .ribbon {
   position: relative;
   display: grid;
-  width: 52px;
-  height: 88px;
-  flex: 0 0 auto;
+  width: var(--banner-width);
+  height: var(--navigation-height);
+  flex-shrink: 0;
   place-items: start center;
   padding-top: 16px;
   background: var(--brand-flame);
@@ -101,7 +133,6 @@
 
 .ribbon::before {
   position: absolute;
-  z-index: 0;
   inset: 0;
   content: "";
   background: var(--white);
@@ -110,88 +141,72 @@
   transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.ribbon:is(:hover, :focus-visible)::before {
-  transform: scale(1);
-}
-
-.navLogoSpace {
-  width: 52px;
-  height: 88px;
-  flex: 0 0 auto;
-}
-
-.mark {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 24px;
-  height: 42px;
-  background: currentColor;
-  mask: url("/assets/hero/prometheus-mark.png") center / contain no-repeat;
-}
-
-.ribbon:hover {
+.brand:is(:hover, :focus-visible) .ribbon {
   color: var(--brand-flame);
 }
 
-.navRibbon,
-.navRibbon:hover,
-.navRibbon:focus-visible {
-  background: var(--cream);
+.brand:is(:hover, :focus-visible) .ribbon::before,
+.header[data-navigation-open="true"] .ribbon::before {
+  transform: scale(1);
+}
+
+.header[data-navigation-open="true"] .ribbon {
   color: var(--brand-flame);
 }
 
-.navRibbon::before {
+.header[data-navigation-open="true"] .ribbon::before {
   background: var(--cream);
-  transform: scale(1);
+}
+
+.header[data-navigation-open="true"] .brand {
+  color: var(--brand-flame);
+}
+
+.brand:hover {
+  color: var(--brand-ember);
 }
 
 .menuToggle,
 .menuClose {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: var(--white);
-  color: var(--brand-night);
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cream);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition:
-    transform 180ms ease,
-    background 180ms ease;
-}
-
-.menuToggle {
-  margin-top: 18px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  transition: color 300ms ease;
 }
 
 .menuToggle:hover,
 .menuClose:hover {
-  transform: rotate(-5deg);
-  background: var(--cream);
+  color: var(--brand-ember);
 }
 
-.menuBars,
-.menuBars::after {
-  display: block;
-  width: 24px;
-  height: 2px;
-  border-radius: 2px;
+.menuClose {
+  margin-top: calc((var(--navigation-height) - 44px) / 2);
+  margin-left: calc(var(--banner-width) + 16px);
+}
+
+.hamburger {
+  display: flex;
+  width: 22px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hamburger span {
+  width: 100%;
+  height: 1px;
   background: currentColor;
-}
-
-.menuBars {
-  position: relative;
-  transform: translateY(-4px);
-}
-
-.menuBars::after {
-  position: absolute;
-  top: 8px;
-  content: "";
 }
 
 .content {
@@ -200,38 +215,35 @@
   display: grid;
   width: 100%;
   min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: clamp(12px, 2svh, 24px);
-  padding: clamp(100px, 18.5svh, 220px) 7.35% clamp(24px, 6svh, 100px);
+  grid-template-rows: minmax(0, 1fr);
+  padding: clamp(112px, 16svh, 180px) var(--hero-gutter) clamp(32px, 5svh, 64px);
 }
 
 .copy {
   align-self: center;
-  max-width: 640px;
-  width: 48%;
-  text-shadow: 0 2px 20px rgb(0 0 0 / 40%);
+  width: 44%;
+  max-width: 620px;
 }
 
 .title {
   margin: 0;
   font-family: var(--brand-serif);
-  font-size: clamp(3.3rem, min(9.2vw, 15.5svh), 10.5rem);
+  font-size: clamp(3rem, min(7.4vw, 13svh), 8.25rem);
   font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.040em;
-  text-shadow:
-    0 3px 6px rgb(0 0 0 / 75%),
-    0 10px 24px rgb(0 0 0 / 65%),
-    0 20px 48px rgb(0 0 0 / 45%);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  text-shadow: 0 3px 18px rgb(0 0 0 / 20%);
+  animation: contentEnter 750ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
 }
 
-.title>span {
+.title > span {
   display: block;
   white-space: nowrap;
 }
 
 .titleLast {
-  font-style: normal;
+  font-size: 1.08em;
+  font-style: italic;
 }
 
 .period {
@@ -239,28 +251,32 @@
 }
 
 .subtitle {
-  max-width: 410px;
-  margin: clamp(16px, 3.3svh, 28px) 0 0;
-  color: rgb(255 255 255 / 85%);
-  font-size: clamp(0.75rem, 0.94vw, 1rem);
-  line-height: 1.6;
+  max-width: 380px;
+  margin: clamp(24px, 3svh, 32px) 0 0;
+  color: rgb(244 235 222 / 82%);
+  font-size: clamp(0.875rem, 1.05vw, 1rem);
+  line-height: 1.65;
   text-wrap: pretty;
+  animation: contentEnter 750ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both;
 }
 
 .eyebrow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: clamp(18px, 3.6svh, 30px) 0 0;
+  gap: 10px;
+  margin: clamp(16px, 2.2svh, 24px) 0 0;
   color: var(--brand-ember);
-  font-size: 0.5rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  opacity: 0.75;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  animation: contentEnter 750ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both;
 }
 
 .eyebrow::before {
-  width: 16px;
+  width: 20px;
   height: 1px;
   background: currentColor;
   content: "";
@@ -268,57 +284,44 @@
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 20px;
-  margin-top: clamp(18px, 3.2svh, 28px);
-  text-shadow: none;
-}
-
-.primary,
-.secondary {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 0.625rem;
-  font-weight: 550;
-  transition:
-    background 180ms ease,
-    transform 180ms ease;
+  margin-top: clamp(20px, 3svh, 28px);
+  animation: contentEnter 750ms cubic-bezier(0.16, 1, 0.3, 1) 360ms both;
 }
 
 .primary {
-  border: 1px solid var(--white);
-  border-radius: 4px;
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  border: 1px solid rgb(244 235 222 / 60%);
+  border-radius: 2px;
   padding: 0 20px;
-  background: var(--white);
-  color: var(--brand-night);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 15%);
+  background: rgb(244 235 222 / 6%);
+  color: var(--cream);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  transition:
+    background 450ms ease,
+    color 450ms ease,
+    border-color 450ms ease;
 }
 
-.primary:hover {
-  transform: translateY(-2px);
+.primary span {
+  font-size: 1rem;
+  transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.primary:is(:hover, :focus-visible) {
+  border-color: var(--cream);
   background: var(--cream);
+  color: var(--brand-night);
 }
 
-.secondary {
-  border-bottom: 1px solid transparent;
-}
-
-.secondary:hover {
-  border-color: var(--brand-ember);
-  color: var(--brand-ember);
-}
-
-.bottomRow {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 32px;
-  min-width: 0;
-  margin-left: -0.75vw;
+.primary:is(:hover, :focus-visible) span {
+  transform: translateX(5px);
 }
 
 .quoteStack {
@@ -447,7 +450,7 @@
   inset: 0;
   background: rgb(7 12 13 / 50%);
   backdrop-filter: blur(4px);
-  transition: opacity 300ms ease;
+  transition: opacity 500ms ease;
 }
 
 .scrim[data-starting-style],
@@ -465,13 +468,11 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: 0 5.8vw 36px;
-  background:
-    radial-gradient(circle at 0 0, rgb(255 255 255 / 6%), transparent 50%),
-    var(--brand-charcoal);
+  padding: 0 var(--hero-gutter) 36px;
+  background: var(--brand-charcoal);
   color: var(--cream);
   box-shadow: 28px 0 90px rgb(0 0 0 / 22%);
-  transition: transform 350ms cubic-bezier(0.16, 0.86, 0.2, 1);
+  transition: transform 650ms cubic-bezier(0.16, 0.86, 0.2, 1);
 }
 
 .navPanel::-webkit-scrollbar {
@@ -485,20 +486,17 @@
 
 .navHeader {
   display: flex;
-  min-height: 112px;
+  min-height: clamp(120px, 18svh, 168px);
   flex-shrink: 0;
   align-items: flex-start;
-  gap: 24px;
-}
-
-.menuClose {
-  padding: 0;
+  justify-content: flex-start;
+  padding-top: 0;
 }
 
 .closeIcon {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
 }
 
 .closeIcon::before,
@@ -506,9 +504,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 24px;
-  height: 2px;
-  border-radius: 2px;
+  width: 16px;
+  height: 1px;
   background: currentColor;
   content: "";
   transform: translate(-50%, -50%) rotate(45deg);
@@ -520,8 +517,8 @@
 
 .navDescription {
   max-width: 230px;
-  margin: 0 0 48px;
-  color: rgb(255 255 255 / 80%);
+  margin: 0 0 40px;
+  color: rgb(244 235 222 / 75%);
   font-size: 0.78rem;
   line-height: 1.7;
 }
@@ -535,20 +532,20 @@
   display: flex;
   align-items: baseline;
   gap: 16px;
-  border-bottom: 1px solid rgb(255 255 255 / 20%);
+  border-bottom: 1px solid rgb(244 235 222 / 20%);
   padding: 16px 0;
   font-family: var(--brand-serif);
   font-size: clamp(2rem, 4.6vw, 4rem);
-  letter-spacing: -0.055em;
-  transition: color 180ms ease;
+  letter-spacing: -0.025em;
+  transition: color 300ms ease;
 }
 
 .navLinks a:hover {
-  color: var(--brand-ember);
+  color: var(--brand-flame);
 }
 
 .navNumber {
-  color: rgb(255 255 255 / 65%);
+  color: rgb(244 235 222 / 60%);
   font-family: ui-monospace, monospace;
   font-size: 0.65rem;
   letter-spacing: 0;
@@ -562,13 +559,13 @@
 
 .navFooter {
   margin-top: auto;
-  padding-top: 48px;
+  padding-top: 40px;
   font-size: 0.82rem;
   line-height: 1.7;
 }
 
 .navFooter p {
-  color: rgb(255 255 255 / 75%);
+  color: rgb(244 235 222 / 70%);
 }
 
 .navFooter a {
@@ -576,19 +573,16 @@
   min-height: 44px;
   align-items: center;
   gap: 24px;
-  border-bottom: 1px solid rgb(255 255 255 / 45%);
+  border-bottom: 1px solid rgb(244 235 222 / 45%);
 }
 
 .hero a:focus-visible,
-.hero button:focus-visible,
+.header a:focus-visible,
+.header button:focus-visible,
 .navPanel a:focus-visible,
 .navPanel button:focus-visible {
-  outline: 3px solid var(--brand-ember);
-  outline-offset: 5px;
-}
-
-.ribbon:focus-visible {
-  color: var(--brand-flame);
+  outline: 2px solid var(--brand-ember);
+  outline-offset: 6px;
 }
 
 .srOnly {
@@ -600,19 +594,34 @@
   white-space: nowrap;
 }
 
-@media (min-width: 1800px) {
-  .copy {
-    max-width: 760px;
+@keyframes contentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes navEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
 @media (max-width: 1000px) {
   .copy {
-    width: 65%;
+    width: 48%;
+    align-self: start;
   }
 
   .title {
-    font-size: clamp(3.3rem, min(10vw, 15.5svh), 7.2rem);
+    font-size: clamp(2.75rem, min(8vw, 11svh), 5.5rem);
   }
 
   .figure {
@@ -620,101 +629,67 @@
     right: 1.5%;
     width: min(95vw, 115svh);
   }
-
-  .hero::after {
-    background:
-      linear-gradient(90deg, rgb(7 9 9 / 70%), rgb(7 9 9 / 20%) 70%),
-      linear-gradient(0deg, rgb(10 9 12 / 55%), transparent 60%);
-  }
 }
 
 @media (max-width: 640px) {
-  .header {
-    gap: 18px;
-    padding-inline: 24px;
+  .header,
+  .navPanel {
+    --navigation-height: 64px;
+    --banner-width: 38px;
   }
 
-  .ribbon,
-  .navLogoSpace {
-    width: 44px;
-    height: 80px;
-    padding-top: 12px;
+  .brand .mark {
+    width: 20px;
+    height: 34px;
   }
 
-  .ribbon .mark {
-    width: 23px;
-    height: 40px;
-  }
-
-  .menuToggle {
-    width: 48px;
-    height: 48px;
-    margin-top: 15px;
+  .ribbon {
+    padding-top: 10px;
   }
 
   .content {
-    padding: clamp(96px, 12svh, 130px) 24px clamp(16px, 2.5svh, 28px);
+    padding-top: 104px;
+    padding-bottom: 24px;
   }
 
   .copy {
     width: 100%;
-    align-self: center;
-  }
-
-  .bottomRow {
-    margin-left: 0;
+    max-width: 360px;
   }
 
   .title {
-    font-size: clamp(2.9rem, min(14vw, 13.2svh), 5.5rem);
+    font-size: clamp(2.5rem, min(12vw, 8svh), 4rem);
   }
 
   .subtitle {
-    max-width: 300px;
-    font-size: 0.875rem;
+    max-width: 320px;
+    margin-top: 20px;
+    line-height: 1.6;
   }
 
   .eyebrow {
-    margin-top: 12px;
-  }
-
-  .actions {
-    gap: 12px 24px;
-    margin-top: 14px;
-  }
-
-  .primary {
-    padding-inline: 18px;
+    margin-top: 16px;
   }
 
   .figure {
-    width: min(140vw, 105svh);
+    width: min(124vw, 74svh);
   }
 
   .sky {
     object-position: 60% center;
   }
 
-  .quoteContent {
-    padding: 14px;
-  }
-
-  .quoteText {
-    font-size: clamp(1.1rem, 5vw, 1.5rem);
-  }
-
   .navPanel {
     width: 100%;
-    padding: 0 24px 24px;
+    padding-bottom: 24px;
   }
 
   .navHeader {
     min-height: 104px;
-    gap: 18px;
   }
 
   .navDescription {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
 
   .navLinks a {
@@ -722,95 +697,46 @@
   }
 }
 
-@media (max-height: 700px) and (min-width: 641px) {
-  .content {
-    padding-top: 100px;
-    padding-bottom: 24px;
-  }
-
-  .title {
-    font-size: clamp(3rem, min(8.2vw, 12.2svh), 5.6rem);
-  }
-
-  .subtitle {
-    font-size: 0.875rem;
-  }
-
-  .eyebrow,
-  .actions {
-    margin-top: 12px;
-  }
-}
-
 @media (max-height: 500px) and (min-width: 560px) {
-  .header {
-    gap: 16px;
-  }
-
   .navHeader {
-    min-height: 88px;
-    gap: 16px;
+    min-height: 84px;
   }
 
-  .ribbon,
-  .navLogoSpace {
-    height: 64px;
-    padding-top: 8px;
-  }
-
-  .ribbon .mark {
-    width: 22px;
-    height: 38px;
-  }
-
-  .menuToggle {
-    width: 44px;
-    height: 44px;
-    margin-top: 10px;
+  .navDescription {
+    margin-bottom: 16px;
   }
 
   .content {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    align-items: center;
-    gap: 24px;
-    padding: 88px 5.8% 16px;
+    padding-top: 84px;
+    padding-bottom: 16px;
   }
 
   .copy {
-    width: 100%;
+    width: 45%;
+    align-self: center;
   }
 
   .title {
-    font-size: clamp(2.6rem, min(7.7vw, 17.6svh), 4.9rem);
+    font-size: clamp(2.3rem, min(6.2vw, 12svh), 4rem);
   }
 
   .subtitle {
-    margin-top: 10px;
-    font-size: 0.8rem;
-    line-height: 1.4;
+    margin-top: 16px;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .eyebrow {
+    margin-top: 12px;
   }
 
   .actions {
-    gap: 8px;
-  }
-
-  .primary,
-  .secondary {
-    gap: 10px;
-    font-size: 0.75rem;
+    margin-top: 16px;
   }
 
   .primary {
-    padding-inline: 12px;
-  }
-
-  .quoteText {
-    font-size: 1.1rem;
-  }
-
-  .quoteContent {
-    padding: 14px;
+    min-height: 44px;
+    padding-inline: 16px;
   }
 }
 
@@ -821,10 +747,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
-  .ribbon,
-  .ribbon::before,
+  .brand .ribbon,
+  .brand .ribbon::before,
+  .hero .primary span,
+  .header,
+  .brand,
+  .menuToggle,
+  .menuClose,
   .hero *,
+  .hero *::before,
   .hero *::after,
   .scrim,
   .navPanel,
