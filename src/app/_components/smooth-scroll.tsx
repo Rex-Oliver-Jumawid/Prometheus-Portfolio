@@ -32,6 +32,7 @@ export function SmoothScroll() {
       lenis = new Lenis({
         autoRaf: true,
         allowNestedScroll: true,
+        stopInertiaOnNavigate: true,
         // Keep modal contents native, even while background scrolling is stopped.
         prevent: (element) => element.matches('dialog, [role="dialog"]'),
       });

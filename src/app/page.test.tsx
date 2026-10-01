@@ -9,6 +9,17 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Home from "./page";
+import type { ReactNode } from "react";
+
+vi.mock("./_components/sticky-viewports", () => ({
+  StickyViewports: ({ children }: { children: ReactNode }) => (
+    <main>{children}</main>
+  ),
+}));
+
+vi.mock("@/components/portfolio/project-gallery/gallery-backdrop", () => ({
+  GalleryBackdrop: () => null,
+}));
 
 // Scene lifecycle and reading interactions are covered by the gallery client tests.
 vi.mock(

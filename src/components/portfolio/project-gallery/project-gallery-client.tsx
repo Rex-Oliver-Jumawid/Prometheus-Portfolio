@@ -103,6 +103,9 @@ export function ProjectGalleryClient({
     if (readerPhaseRef.current !== "closed") return;
     setSpread(0);
     dialogRef.current?.showModal();
+    dialogRef.current
+      ?.querySelector<HTMLElement>("article")
+      ?.focus({ preventScroll: true });
     positionReader();
     const phase = window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "open"
@@ -162,10 +165,13 @@ export function ProjectGalleryClient({
   }, [readerPhase, finishClose]);
   useEffect(() => {
     if (!readerActive) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Lock the viewport, not a section ancestor: body overflow breaks sticky panels
+    // when Lenis also clips the root while stopped.
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = previous;
+      root.style.overflow = previous;
     };
   }, [readerActive]);
   useEffect(() => {
@@ -319,7 +325,6 @@ export function ProjectGalleryClient({
           fetchPriority="low"
         />
       )}
-      <div className={styles.ambient} aria-hidden="true" />
       <div
         className={styles.fallback}
         data-hidden={status === "ready"}
@@ -386,6 +391,7 @@ export function ProjectGalleryClient({
           } as CSSProperties
         }
         aria-labelledby="reader-title"
+        aria-describedby="reader-close-hint"
         onCancel={(event) => {
           event.preventDefault();
           closeBook();
@@ -398,9 +404,16 @@ export function ProjectGalleryClient({
           }
         }}
         onClick={(event) => {
-          if (event.target === event.currentTarget) closeBook();
+          if (
+            event.target instanceof Node &&
+            !stageRef.current?.contains(event.target)
+          )
+            closeBook();
         }}
       >
+        <p id="reader-close-hint" className={styles.srOnly}>
+          Press Escape or click outside the book to close.
+        </p>
         <div className={styles.readerContent}>
           <div className={styles.readerHeader}>
             <div>
@@ -409,9 +422,6 @@ export function ProjectGalleryClient({
               </p>
               <h2 id="reader-title">{project.title}</h2>
             </div>
-            <button autoFocus onClick={closeBook} aria-label="Close book">
-              Close book <span aria-hidden="true">×</span>
-            </button>
           </div>
           <div className={styles.bookViewport}>
             <div

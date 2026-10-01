@@ -1,12 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("gallery uses the reference background and typography without motion controls", async ({
+test("gallery uses the static reference background and typography without motion controls", async ({
   page,
 }) => {
   const videoRequests: string[] = [];
   page.on("request", (request) => {
     if (request.url().endsWith(".webm")) videoRequests.push(request.url());
   });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/gallery");
   const gallery = page.locator("#work");
   await expect(gallery).toHaveCSS("background-color", "rgb(24, 26, 27)");
@@ -82,6 +83,10 @@ for (const [width, height] of [
 
     const reader = page.getByRole("dialog", { name: "Furniture Odyssey" });
     await expect(reader).toBeVisible();
+    await expect(
+      reader.getByRole("button", { name: "Close book" }),
+    ).toHaveCount(0);
+    await expect(reader.locator("article").first()).toBeFocused();
     await expect(reader.locator("img")).toHaveCount(0);
     await expect(reader.getByRole("link")).toHaveCount(0);
     await expect(reader.getByText(/^Pages /)).toHaveCount(0);
@@ -152,7 +157,18 @@ for (const [width, height] of [
     ).toBeVisible();
     await previous.click();
     await expect(previous).toBeDisabled();
-    await page.keyboard.press("Escape");
+    if (width === 1440) {
+      await papers.first().click();
+      await expect(reader).toBeVisible();
+      const emptySpace = await papers.first().evaluate((element) => {
+        const viewport =
+          element.parentElement!.parentElement!.parentElement!.getBoundingClientRect();
+        return { x: viewport.left + 2, y: viewport.top + viewport.height / 2 };
+      });
+      await page.mouse.click(emptySpace.x, emptySpace.y);
+    } else {
+      await page.keyboard.press("Escape");
+    }
     await expect(reader).toBeHidden();
     await expect(
       page.getByRole("button", { name: "Read Furniture Odyssey" }),

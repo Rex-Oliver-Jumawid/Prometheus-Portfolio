@@ -6,6 +6,7 @@ import "@fontsource/libre-caslon-display/latin-400.css";
 
 import { furnitureOdyssey } from "@/content/projects";
 
+import { GalleryBackdrop } from "./gallery-backdrop";
 import { ProjectGalleryClient } from "./project-gallery-client";
 import styles from "./project-gallery.module.css";
 
@@ -21,6 +22,7 @@ export function ProjectGallerySection({
       className={styles.gallery}
       aria-labelledby="gallery-title"
     >
+      <GalleryBackdrop />
       <header className={styles.header}>
         {standalone && (
           <Link

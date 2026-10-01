@@ -174,7 +174,7 @@ describe("isolated project gallery", () => {
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
     finishPageTurn(screen.getByRole("dialog"));
     expect(screen.getByRole("button", { name: /Next/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Close book" }));
+    fireEvent.click(screen.getByRole("dialog"));
     finishBookAnimation(screen.getByRole("dialog"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -241,7 +241,8 @@ describe("isolated project gallery", () => {
     expect(dialog.querySelectorAll("article")).toHaveLength(2);
     expect(scene.setVisible).toHaveBeenLastCalledWith(false);
     expect(book).toHaveAttribute("data-reading", "true");
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    expect(document.body.style.overflow).toBe("");
     expect(screen.getByRole("button", { name: /Next/ })).toBeDisabled();
     fireEvent.animationEnd(dialog.querySelector("article")!);
     expect(dialog).toHaveAttribute("data-phase", "opening");
@@ -250,7 +251,10 @@ describe("isolated project gallery", () => {
     expect(dialog.querySelector("img")).toBeNull();
     expect(screen.getByRole("button", { name: /Next/ })).toBeEnabled();
 
-    screen.getByRole("button", { name: "Close book" }).focus();
+    expect(dialog.querySelector<HTMLElement>("article")).toHaveFocus();
+    expect(
+      within(dialog).queryByRole("button", { name: "Close book" }),
+    ).toBeNull();
     const cancel = new Event("cancel", { cancelable: true });
     fireEvent(dialog, cancel);
     expect(cancel.defaultPrevented).toBe(true);
@@ -266,7 +270,7 @@ describe("isolated project gallery", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(book).toHaveFocus();
     expect(book).toHaveAttribute("data-reading", "false");
-    expect(document.body.style.overflow).toBe("");
+    expect(document.documentElement.style.overflow).toBe("");
     expect(scene.setVisible).toHaveBeenLastCalledWith(true);
     expect(scene.setPaused).toHaveBeenLastCalledWith(false);
   });
@@ -377,11 +381,11 @@ describe("isolated project gallery", () => {
       }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Close book" }));
+    fireEvent.click(screen.getByRole("dialog"));
     expect(dialog.querySelector(`.${styles.turningLeaf}`)).toBeNull();
     act(() => vi.advanceTimersByTime(750));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(document.body.style.overflow).toBe("");
+    expect(document.documentElement.style.overflow).toBe("");
   });
 
   it("scrubs book growth in both scroll directions and removes its listeners", async () => {
@@ -443,7 +447,10 @@ describe("isolated project gallery", () => {
       }),
     ).toBeInTheDocument();
     expect(document.querySelector(`.${styles.turningLeaf}`)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Close book" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(dialog.querySelector("article")!);
+    expect(dialog).toBeInTheDocument();
+    fireEvent.click(dialog.querySelector(`.${styles.bookViewport}`)!);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

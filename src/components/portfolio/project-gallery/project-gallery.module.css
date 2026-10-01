@@ -9,6 +9,17 @@
   font-family: var(--edition-sans);
 }
 
+:global(.viewport-stack[data-sticky-ready="true"]) > .gallery {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgb(0 0 0 / 8%) calc(var(--gallery-seam, 0px) * 0.2),
+    rgb(0 0 0 / 45%) calc(var(--gallery-seam, 0px) * 0.55),
+    rgb(0 0 0 / 88%) calc(var(--gallery-seam, 0px) * 0.85),
+    #000 var(--gallery-seam, 0px)
+  );
+}
+
 .header {
   position: absolute;
   z-index: 3;
@@ -231,14 +242,6 @@
   font-size: 30px;
   font-weight: 400;
   margin: 8px 0 0;
-}
-.readerHeader button {
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--paper) 30%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand-night) 40%, transparent);
-  color: var(--paper);
-  font-size: 12px;
 }
 .bookViewport {
   display: grid;
