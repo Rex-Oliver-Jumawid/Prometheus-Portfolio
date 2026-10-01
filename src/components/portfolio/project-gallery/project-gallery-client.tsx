@@ -1,0 +1,507 @@
+"use client";
+
+import Image from "next/image";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+
+import type { BookPage, PortfolioProject } from "@/content/projects";
+import type { GalleryScene } from "@/lib/three/create-gallery-scene";
+
+import styles from "./project-gallery.module.css";
+
+type PageTurn = {
+  from: number;
+  to: number;
+  direction: -1 | 1;
+  scrollTop: number;
+};
+
+function BookPageContent({ page }: { page?: BookPage }) {
+  return page ? (
+    <>
+      <p className={styles.eyebrow}>{page.label}</p>
+      <h3>{page.title}</h3>
+      {page.paragraphs.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+    </>
+  ) : null;
+}
+
+export function ProjectGalleryClient({
+  project,
+}: {
+  project: PortfolioProject;
+}) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const posterRef = useRef<HTMLImageElement>(null);
+  const restoreFocusRef = useRef(false);
+  const controllerRef = useRef<GalleryScene | null>(null);
+  const readerPhaseRef = useRef<"closed" | "opening" | "open" | "closing">(
+    "closed",
+  );
+  const [readerPhase, setReaderPhase] = useState<
+    "closed" | "opening" | "open" | "closing"
+  >("closed");
+  const [status, setStatus] = useState<"loading" | "ready" | "fallback">(
+    "loading",
+  );
+  const [spread, setSpread] = useState(0);
+  const [turn, setTurn] = useState<PageTurn | null>(null);
+  const turnRef = useRef<PageTurn | null>(null);
+  const finishTurn = useCallback(() => {
+    const pending = turnRef.current;
+    if (!pending) return;
+    turnRef.current = null;
+    setSpread(pending.to);
+    setTurn(null);
+  }, []);
+  const positionReader = useCallback(() => {
+    const source =
+      controllerRef.current?.getBookBounds() ??
+      posterRef.current?.getBoundingClientRect();
+    const stage = stageRef.current;
+    const viewport = stage?.parentElement?.getBoundingClientRect();
+    const dialog = dialogRef.current;
+    if (
+      !source?.width ||
+      !source.height ||
+      !stage?.offsetWidth ||
+      !stage.offsetHeight ||
+      !viewport ||
+      !dialog
+    )
+      return;
+    const pose = controllerRef.current?.getCoverPose() ?? {
+      topLeft: { x: source.left, y: source.top },
+      topRight: { x: source.left + source.width, y: source.top },
+      bottomLeft: { x: source.left, y: source.top + source.height },
+    };
+    const width = stage.offsetWidth;
+    const height = stage.offsetHeight;
+    const left = viewport.left + (viewport.width - width) / 2;
+    const top = viewport.top + (viewport.height - height) / 2;
+    const a = (pose.topRight.x - pose.topLeft.x) / (width / 2);
+    const b = (pose.topRight.y - pose.topLeft.y) / (width / 2);
+    const c = (pose.bottomLeft.x - pose.topLeft.x) / height;
+    const d = (pose.bottomLeft.y - pose.topLeft.y) / height;
+    const x = pose.topLeft.x - left - (a * width) / 2;
+    const y = pose.topLeft.y - top - (b * width) / 2;
+    dialog.style.setProperty(
+      "--book-rest-transform",
+      `matrix(${a}, ${b}, ${c}, ${d}, ${x}, ${y})`,
+    );
+  }, []);
+  const openBook = useCallback(() => {
+    if (readerPhaseRef.current !== "closed") return;
+    setSpread(0);
+    dialogRef.current?.showModal();
+    positionReader();
+    const phase = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "open"
+      : "opening";
+    readerPhaseRef.current = phase;
+    setReaderPhase(phase);
+    controllerRef.current?.setPaused(true);
+    controllerRef.current?.setVisible(false);
+  }, [positionReader]);
+  const finishClose = useCallback(() => {
+    if (readerPhaseRef.current === "closed") return;
+    finishTurn();
+    readerPhaseRef.current = "closed";
+    setReaderPhase("closed");
+    restoreFocusRef.current = true;
+    if (dialogRef.current?.open) dialogRef.current.close();
+    controllerRef.current?.setPaused(false);
+    hostRef.current?.dispatchEvent(new Event("gallery-motion-change"));
+  }, [finishTurn]);
+  const closeBook = useCallback(() => {
+    if (
+      readerPhaseRef.current === "closed" ||
+      readerPhaseRef.current === "closing"
+    )
+      return;
+    finishTurn();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishClose();
+      return;
+    }
+    positionReader();
+    readerPhaseRef.current = "closing";
+    setReaderPhase("closing");
+    hostRef.current?.dispatchEvent(new Event("gallery-motion-change"));
+  }, [finishClose, finishTurn, positionReader]);
+
+  useEffect(() => {
+    if (!turn) return;
+    const timer = window.setTimeout(finishTurn, 700);
+    return () => window.clearTimeout(timer);
+  }, [turn, finishTurn]);
+
+  const readerActive = readerPhase !== "closed";
+  useEffect(() => {
+    if (readerPhase !== "opening" && readerPhase !== "closing") return;
+    const timer = window.setTimeout(
+      () => {
+        if (readerPhase === "closing") finishClose();
+        else {
+          readerPhaseRef.current = "open";
+          setReaderPhase("open");
+        }
+      },
+      readerPhase === "opening" ? 1200 : 750,
+    );
+    return () => window.clearTimeout(timer);
+  }, [readerPhase, finishClose]);
+  useEffect(() => {
+    if (!readerActive) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [readerActive]);
+  useEffect(() => {
+    if (readerPhase === "closed" && restoreFocusRef.current) {
+      restoreFocusRef.current = false;
+      hostRef.current?.focus({ preventScroll: true });
+    }
+  }, [readerPhase]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const abort = new AbortController();
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let active = false;
+    let started = false;
+    let alive = true;
+
+    function syncScroll() {
+      const section = host!.closest("section") ?? host!;
+      const top = section.getBoundingClientRect().top;
+      const progress = Math.min(1, Math.max(0, 1 - top / window.innerHeight));
+      controllerRef.current?.setScrollProgress(progress);
+    }
+    function syncVisibility() {
+      const visible =
+        active &&
+        !document.hidden &&
+        (readerPhaseRef.current === "closed" ||
+          readerPhaseRef.current === "closing");
+      controllerRef.current?.setVisible(visible);
+    }
+    async function loadScene() {
+      if (started) return;
+      started = true;
+      try {
+        const { createGalleryScene } =
+          await import("@/lib/three/create-gallery-scene");
+        if (!alive) return;
+        const controller = await createGalleryScene({
+          host: host!,
+          bookUrl: project.modelUrl,
+          signal: abort.signal,
+          reducedMotion: preference.matches,
+          onOpen: openBook,
+          onContextLost: () => {
+            if (alive) setStatus("fallback");
+          },
+        });
+        if (!alive) {
+          controller.dispose();
+          return;
+        }
+        controllerRef.current = controller;
+        controller.setPaused(readerPhaseRef.current !== "closed");
+        controller.setReducedMotion(preference.matches);
+        syncScroll();
+        syncVisibility();
+        setStatus("ready");
+      } catch {
+        if (alive && !abort.signal.aborted) setStatus("fallback");
+      }
+    }
+    function motionChanged() {
+      controllerRef.current?.setReducedMotion(preference.matches);
+      if (preference.matches) {
+        finishTurn();
+        if (readerPhaseRef.current === "closing") finishClose();
+        else if (readerPhaseRef.current === "opening") {
+          readerPhaseRef.current = "open";
+          setReaderPhase("open");
+        }
+      }
+      syncVisibility();
+    }
+    motionChanged();
+    const nearObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadScene();
+          nearObserver.disconnect();
+        }
+      },
+      { rootMargin: "250px" },
+    );
+    const visibilityObserver = new IntersectionObserver((entries) => {
+      active = entries[0].isIntersecting;
+      syncVisibility();
+    });
+    nearObserver.observe(host);
+    visibilityObserver.observe(host);
+    preference.addEventListener("change", motionChanged);
+    document.addEventListener("visibilitychange", syncVisibility);
+    host.addEventListener("gallery-motion-change", syncVisibility);
+    window.addEventListener("scroll", syncScroll, { passive: true });
+    window.addEventListener("resize", syncScroll);
+    return () => {
+      alive = false;
+      abort.abort();
+      nearObserver.disconnect();
+      visibilityObserver.disconnect();
+      preference.removeEventListener("change", motionChanged);
+      document.removeEventListener("visibilitychange", syncVisibility);
+      host.removeEventListener("gallery-motion-change", syncVisibility);
+      window.removeEventListener("scroll", syncScroll);
+      window.removeEventListener("resize", syncScroll);
+      controllerRef.current?.dispose();
+      controllerRef.current = null;
+    };
+  }, [project.modelUrl, openBook, finishClose, finishTurn]);
+
+  const lastSpread = Math.ceil(project.pages.length / 2) - 1;
+  function turnPage(direction: -1 | 1) {
+    const to = spread + direction;
+    if (
+      readerPhaseRef.current !== "open" ||
+      turnRef.current ||
+      to < 0 ||
+      to > lastSpread
+    )
+      return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setSpread(to);
+      return;
+    }
+    const side = direction === 1 ? "right" : "left";
+    const page = stageRef.current?.querySelector<HTMLElement>(
+      `.${styles.spread} > article[data-side="${side}"]`,
+    );
+    const pending: PageTurn = {
+      from: spread,
+      to,
+      direction,
+      scrollTop: page?.scrollTop ?? 0,
+    };
+    turnRef.current = pending;
+    setTurn(pending);
+  }
+  const leftIndex = turn?.direction === -1 ? turn.to * 2 : spread * 2;
+  const rightIndex = turn?.direction === 1 ? turn.to * 2 + 1 : spread * 2 + 1;
+  const frontIndex = turn ? turn.from * 2 + (turn.direction === 1 ? 1 : 0) : 0;
+  const backIndex = turn ? turn.to * 2 + (turn.direction === 1 ? 0 : 1) : 0;
+
+  return (
+    <>
+      {(status !== "loading" || readerActive) && (
+        <link
+          rel="preload"
+          as="image"
+          href={project.readerCover.url}
+          fetchPriority="low"
+        />
+      )}
+      <div className={styles.ambient} aria-hidden="true" />
+      <div
+        className={styles.fallback}
+        data-hidden={status === "ready"}
+        data-reading={readerActive}
+        aria-hidden="true"
+      >
+        <Image
+          ref={posterRef}
+          className={styles.bookPoster}
+          src={project.coverUrl}
+          alt=""
+          width={1120}
+          height={1440}
+          unoptimized
+        />
+      </div>
+      <div
+        ref={hostRef}
+        className={styles.canvas}
+        data-visible={status === "ready"}
+        data-reading={readerActive}
+        role="button"
+        tabIndex={0}
+        aria-label={`Read ${project.title}`}
+        aria-describedby="book-keyboard-hint"
+        aria-haspopup="dialog"
+        onClick={() => {
+          if (status !== "ready") openBook();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openBook();
+          } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            controllerRef.current?.rotate(event.key === "ArrowLeft" ? -1 : 1);
+          } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+            event.preventDefault();
+            controllerRef.current?.tilt(event.key === "ArrowUp" ? -1 : 1);
+          }
+        }}
+      />
+      <p className={styles.srOnly} role="status">
+        {status === "ready"
+          ? "Interactive book ready."
+          : status === "fallback"
+            ? "3D view unavailable. You can still open and read the book."
+            : "Loading 3D book."}
+      </p>
+      <p id="book-keyboard-hint" className={styles.srOnly}>
+        Focus the book and press Enter to read, or use the left and right arrow
+        keys to turn it and the up and down keys to tilt it. Scroll down to
+        enlarge the floating book; scroll up to shrink it.
+      </p>
+      <dialog
+        ref={dialogRef}
+        className={styles.reader}
+        data-phase={readerPhase}
+        data-turning={!!turn}
+        style={
+          {
+            "--book-spread-aspect":
+              (2 * project.readerCover.width) / project.readerCover.height,
+          } as CSSProperties
+        }
+        aria-labelledby="reader-title"
+        onCancel={(event) => {
+          event.preventDefault();
+          closeBook();
+        }}
+        onClose={finishClose}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            turnPage(event.key === "ArrowLeft" ? -1 : 1);
+          }
+        }}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) closeBook();
+        }}
+      >
+        <div className={styles.readerContent}>
+          <div className={styles.readerHeader}>
+            <div>
+              <p className={styles.eyebrow}>
+                Prometheus · sample reading pages
+              </p>
+              <h2 id="reader-title">{project.title}</h2>
+            </div>
+            <button autoFocus onClick={closeBook} aria-label="Close book">
+              Close book <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div className={styles.bookViewport}>
+            <div
+              ref={stageRef}
+              className={styles.bookStage}
+              onAnimationEnd={(event) => {
+                if (event.target !== event.currentTarget) return;
+                if (readerPhaseRef.current === "closing") finishClose();
+                else if (readerPhaseRef.current === "opening") {
+                  readerPhaseRef.current = "open";
+                  setReaderPhase("open");
+                }
+              }}
+            >
+              <div className={styles.spread} aria-busy={!!turn} inert={!!turn}>
+                {[leftIndex, rightIndex].map((pageIndex, index) => (
+                  <article
+                    className={styles.paper}
+                    key={pageIndex}
+                    data-side={index === 0 ? "left" : "right"}
+                    tabIndex={0}
+                  >
+                    <BookPageContent page={project.pages[pageIndex]} />
+                  </article>
+                ))}
+              </div>
+              {turn && (
+                <div
+                  className={styles.turningLeaf}
+                  data-direction={turn.direction === 1 ? "forward" : "backward"}
+                  aria-hidden="true"
+                  inert
+                  onAnimationEnd={(event) => {
+                    if (event.target === event.currentTarget) finishTurn();
+                  }}
+                >
+                  <div
+                    className={`${styles.paper} ${styles.turnFace}`}
+                    data-face="front"
+                    data-side={turn.direction === 1 ? "right" : "left"}
+                    ref={(element) => {
+                      if (element) element.scrollTop = turn.scrollTop;
+                    }}
+                  >
+                    <BookPageContent page={project.pages[frontIndex]} />
+                  </div>
+                  <div
+                    className={`${styles.paper} ${styles.turnFace}`}
+                    data-face="back"
+                    data-side={turn.direction === 1 ? "left" : "right"}
+                  >
+                    <BookPageContent page={project.pages[backIndex]} />
+                  </div>
+                </div>
+              )}
+              {(readerPhase === "opening" || readerPhase === "closing") && (
+                <div className={styles.openingCover} aria-hidden="true">
+                  <Image
+                    className={styles.coverFront}
+                    src={project.readerCover.url}
+                    alt=""
+                    width={project.readerCover.width}
+                    height={project.readerCover.height}
+                    loading="eager"
+                    unoptimized
+                  />
+                </div>
+              )}
+              <button
+                className={`${styles.pageArrow} ${styles.previousArrow}`}
+                aria-label="Previous pages"
+                disabled={spread === 0 || readerPhase !== "open" || !!turn}
+                onClick={() => turnPage(-1)}
+              >
+                <span aria-hidden="true">&#8592;</span>
+              </button>
+              <button
+                className={`${styles.pageArrow} ${styles.nextArrow}`}
+                aria-label="Next pages"
+                disabled={
+                  spread === lastSpread || readerPhase !== "open" || !!turn
+                }
+                onClick={() => turnPage(1)}
+              >
+                <span aria-hidden="true">&#8594;</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </dialog>
+    </>
+  );
+}

@@ -1,31 +1,6 @@
-import { Hero } from "./_components/hero";
+import { ProjectGallerySection } from "@/components/portfolio/project-gallery/project-gallery-section";
 
-const projects = [
-  {
-    number: "01",
-    category: "Commerce operations",
-    title: "Furniture operations system",
-    description:
-      "A connected workspace for products, quotations, orders, records, and day-to-day coordination.",
-    tags: ["Orders", "Quotations", "Records"],
-  },
-  {
-    number: "02",
-    category: "Retail systems",
-    title: "Hardware store platform",
-    description:
-      "A practical digital system designed around the real flow of inventory, customers, and operations.",
-    tags: ["Inventory", "Customers", "Workflow"],
-  },
-  {
-    number: "03",
-    category: "Service experience",
-    title: "Nail studio platform",
-    description:
-      "A customer-facing experience and operating system shaped around bookings, services, and repeat visits.",
-    tags: ["Bookings", "Services", "Experience"],
-  },
-] as const;
+import { Hero } from "./_components/hero";
 
 const capabilities = [
   "Product design",
@@ -41,32 +16,7 @@ export default function Home() {
     <main>
       <Hero />
 
-      <section id="work" className="work-section section-shell">
-        <div className="section-intro">
-          <p className="eyebrow">Selected work</p>
-          <h2>Systems shaped around the work, not the other way around.</h2>
-        </div>
-
-        <div className="project-grid">
-          {projects.map((project) => (
-            <article className="project-card" key={project.number}>
-              <div className="project-card-top">
-                <span className="project-number">{project.number}</span>
-                <span className="project-category">{project.category}</span>
-              </div>
-              <div className="project-card-copy">
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-              </div>
-              <ul className="tag-list" aria-label={project.title + " topics"}>
-                {project.tags.map((tag) => (
-                  <li key={tag}>{tag}</li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      </section>
+      <ProjectGallerySection />
 
       <section id="approach" className="approach-section">
         <div className="section-shell approach-grid">

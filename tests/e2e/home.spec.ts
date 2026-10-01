@@ -22,7 +22,7 @@ test("shows the public portfolio homepage", async ({ page }) => {
   ).toBeFocused();
 
   await expect(
-    page.getByRole("heading", { name: "Furniture operations system" }),
+    page.getByRole("heading", { level: 2, name: /Furniture Odyssey/ }),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Open navigation" }).click();
@@ -93,9 +93,47 @@ for (const [width, height] of [
       "0s",
     );
 
+    const ribbon = page.locator('a[aria-label="Prometheus home"]');
+    const originalRibbon = await ribbon.elementHandle();
+    const ribbonBounds = await ribbon.boundingBox();
+    const straightCards = await hero.locator("article").evaluateAll((cards) =>
+      cards.every((card) => {
+        const transform = new DOMMatrix(getComputedStyle(card).transform);
+        return transform.b === 0 && transform.c === 0;
+      }),
+    );
+    expect(straightCards).toBe(true);
     await page.getByRole("button", { name: "Open navigation" }).click();
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
+    await expect(dialog).toHaveCSS("transform", "none");
+    await expect(dialog).toHaveCSS("background-color", "rgb(40, 35, 33)");
+    await expect(dialog).toHaveCSS("border-right-width", "0px");
+    await expect(dialog).toHaveCSS("scrollbar-width", "none");
+    const menuRibbon = ribbon;
+    await expect(ribbon).toHaveCount(1);
+    expect(
+      await originalRibbon!.evaluate((element) => element.isConnected),
+    ).toBe(true);
+    await expect(
+      dialog.getByRole("link", { name: "Prometheus home" }),
+    ).toHaveCount(0);
+    await expect(menuRibbon).toBeInViewport({ ratio: 1 });
+    await expect(menuRibbon).toHaveCSS(
+      "background-color",
+      "rgb(244, 235, 222)",
+    );
+    expect((await menuRibbon.boundingBox())!.x).toBeCloseTo(ribbonBounds!.x, 0);
     const close = dialog.getByRole("button", { name: "Close navigation" });
+    const closeBounds = await close.boundingBox();
+    const iconBounds = await close.locator("span").boundingBox();
+    expect(iconBounds!.x + iconBounds!.width / 2).toBeCloseTo(
+      closeBounds!.x + closeBounds!.width / 2,
+      0,
+    );
+    expect(iconBounds!.y + iconBounds!.height / 2).toBeCloseTo(
+      closeBounds!.y + closeBounds!.height / 2,
+      0,
+    );
     await expect(close).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(
@@ -113,7 +151,8 @@ for (const [width, height] of [
     await expect(page).toHaveURL(/#work$/);
     await expect(
       page.getByRole("heading", {
-        name: "Systems shaped around the work, not the other way around.",
+        level: 2,
+        name: /Furniture Odyssey/,
       }),
     ).toBeInViewport();
   });

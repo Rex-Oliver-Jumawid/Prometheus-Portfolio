@@ -6,9 +6,17 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Home from "./page";
+
+// Scene lifecycle and reading interactions are covered by the gallery client tests.
+vi.mock(
+  "@/components/portfolio/project-gallery/project-gallery-client",
+  () => ({
+    ProjectGalleryClient: () => null,
+  }),
+);
 
 afterEach(cleanup);
 
@@ -23,9 +31,17 @@ describe("portfolio homepage", () => {
       }),
     ).toBeInTheDocument();
 
+    const galleryHeading = screen.getByRole("heading", {
+      level: 2,
+      name: /Furniture Odyssey/,
+    });
+    const gallery = galleryHeading.closest("section");
+    expect(gallery).toHaveAttribute("id", "work");
     expect(
-      screen.getByRole("heading", { name: "Furniture operations system" }),
-    ).toBeInTheDocument();
+      screen.getByRole("heading", { level: 1 }).closest("section")
+        ?.nextElementSibling,
+    ).toBe(gallery);
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 
     expect(screen.getByRole("link", { name: "See our work" })).toHaveAttribute(
       "href",
@@ -36,6 +52,10 @@ describe("portfolio homepage", () => {
       "href",
       "#approach",
     );
+    expect(screen.queryByText("Scroll to explore")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Design meets technology"),
+    ).not.toBeInTheDocument();
   });
 
   it("opens accessible navigation, closes on Escape, and restores focus", async () => {
@@ -46,6 +66,12 @@ describe("portfolio homepage", () => {
 
     const dialog = await screen.findByRole("dialog", { name: "Prometheus" });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(
+      document.querySelectorAll('a[aria-label="Prometheus home"]'),
+    ).toHaveLength(1);
+    expect(
+      within(dialog).queryByRole("link", { name: "Prometheus home" }),
+    ).not.toBeInTheDocument();
     expect(
       within(dialog).getByRole("navigation", { name: "Primary navigation" }),
     ).toBeInTheDocument();
