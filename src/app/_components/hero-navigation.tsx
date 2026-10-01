@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { appConfig } from "@/config/app";
 
@@ -16,27 +16,40 @@ const links = [
 
 export function HeroNavigation() {
   const [open, setOpen] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger
-        className={styles.menuToggle}
-        aria-label="Open navigation"
-      >
-        <span className={styles.menuBars} aria-hidden="true" />
-      </Dialog.Trigger>
+      <header className={styles.header} data-navigation-open={open}>
+        <a
+          className={`${styles.ribbon}${open ? ` ${styles.navRibbon}` : ""}`}
+          href="#top"
+          aria-label={`${appConfig.name} home`}
+          onClick={() => setOpen(false)}
+        >
+          <span className={styles.mark} aria-hidden="true" />
+        </a>
+        <Dialog.Trigger
+          className={styles.menuToggle}
+          aria-label="Open navigation"
+        >
+          <span className={styles.menuBars} aria-hidden="true" />
+        </Dialog.Trigger>
+      </header>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.scrim} />
-        <Dialog.Popup className={styles.navPanel}>
+        <Dialog.Popup className={styles.navPanel} initialFocus={closeRef}>
           <div className={styles.navHeader}>
-            <Dialog.Title className={styles.navTitle}>
+            <Dialog.Title className={styles.srOnly}>
               {appConfig.name}
             </Dialog.Title>
+            <span className={styles.navLogoSpace} aria-hidden="true" />
             <Dialog.Close
-              className={styles.menuClose}
+              ref={closeRef}
+              className={`${styles.menuClose} ${styles.menuToggle}`}
               aria-label="Close navigation"
             >
-              <span aria-hidden="true">×</span>
+              <span className={styles.closeIcon} aria-hidden="true" />
             </Dialog.Close>
           </div>
           <Dialog.Description className={styles.navDescription}>

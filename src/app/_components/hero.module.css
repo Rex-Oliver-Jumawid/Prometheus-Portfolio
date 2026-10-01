@@ -25,22 +25,20 @@
 
 .figure {
   --hand-overlap: 25px;
+  --figure-offset: 4.5svh;
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  /* Let the supporting hand rest over the surface of the next section. */
-  right: 1.5%;
-  bottom: calc(-1 * var(--hand-overlap));
-  width: min(70vw, 115svh);
-  /* Keep the torso behind the block while the fingers sit on its surface. */
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% 100%,
-    82% 100%,
-    82% calc(100% - var(--hand-overlap)),
-    0 calc(100% - var(--hand-overlap))
-  );
+  right: 4%;
+  bottom: calc(-1 * var(--figure-offset));
+  width: min(62vw, 110svh);
+  /* Keep the full supporting hand over the next section; clip only the torso. */
+  clip-path: polygon(0 0,
+      100% 0,
+      100% 100%,
+      82% 100%,
+      82% calc(100% - var(--figure-offset)),
+      0 calc(100% - var(--figure-offset)));
 }
 
 .figure img {
@@ -56,23 +54,35 @@
   content: "";
   pointer-events: none;
   background:
-    linear-gradient(
-      90deg,
-      rgb(7 9 9 / 65%),
-      rgb(7 9 9 / 24%) 42%,
-      transparent 70%
-    ),
-    linear-gradient(0deg, rgb(10 9 12 / 42%), transparent 35%);
+    linear-gradient(90deg,
+      rgb(7 9 9 / 12%),
+      rgb(7 9 9 / 4%) 42%,
+      transparent 70%),
+    linear-gradient(0deg, rgb(10 9 12 / 16%), transparent 35%);
 }
 
 .header {
   position: absolute;
-  z-index: 2;
+  z-index: 80;
   inset: 0 0 auto;
   display: flex;
   align-items: flex-start;
   gap: 24px;
   padding: 0 5.8%;
+  pointer-events: none;
+}
+
+.header a,
+.header button {
+  pointer-events: auto;
+}
+
+.header[data-navigation-open="true"] {
+  position: fixed;
+}
+
+.header[data-navigation-open="true"] .menuToggle {
+  visibility: hidden;
 }
 
 .ribbon {
@@ -90,6 +100,12 @@
     color 180ms ease;
 }
 
+.navLogoSpace {
+  width: 52px;
+  height: 114px;
+  flex: 0 0 auto;
+}
+
 .mark {
   display: block;
   width: 26px;
@@ -100,6 +116,13 @@
 
 .ribbon:hover {
   background: var(--white);
+  color: var(--brand-flame);
+}
+
+.navRibbon,
+.navRibbon:hover,
+.navRibbon:focus-visible {
+  background: var(--cream);
   color: var(--brand-flame);
 }
 
@@ -151,23 +174,6 @@
   content: "";
 }
 
-.headerNote {
-  margin: 33px 0 0 auto;
-  font-size: 0.82rem;
-  font-weight: 650;
-  line-height: 1.7;
-  letter-spacing: 0.01em;
-  text-align: right;
-  text-shadow: 0 2px 12px rgb(0 0 0 / 50%);
-}
-
-.headerNote span {
-  display: block;
-  color: rgb(255 255 255 / 75%);
-  font-size: 0.68rem;
-  font-weight: 400;
-}
-
 .content {
   position: relative;
   z-index: 1;
@@ -176,11 +182,11 @@
   min-height: 0;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(12px, 2svh, 24px);
-  padding: clamp(100px, 14svh, 180px) 5.8% clamp(16px, 3svh, 40px);
+  padding: clamp(100px, 18.5svh, 220px) 7.35% clamp(24px, 6svh, 100px);
 }
 
 .copy {
-  align-self: center;
+  align-self: start;
   max-width: 640px;
   width: 48%;
   text-shadow: 0 2px 20px rgb(0 0 0 / 40%);
@@ -191,17 +197,17 @@
   font-family: var(--brand-serif);
   font-size: clamp(3rem, min(7.3vw, 14svh), 9.375rem);
   font-weight: 400;
-  line-height: 0.98;
-  letter-spacing: -0.065em;
+  line-height: 1;
+  letter-spacing: -0.025em;
 }
 
-.title > span {
+.title>span {
   display: block;
   white-space: nowrap;
 }
 
 .titleLast {
-  font-style: italic;
+  font-style: normal;
 }
 
 .period {
@@ -210,9 +216,9 @@
 
 .subtitle {
   max-width: 410px;
-  margin: clamp(12px, 2.2svh, 24px) 0 0;
+  margin: clamp(16px, 3.3svh, 28px) 0 0;
   color: rgb(255 255 255 / 85%);
-  font-size: clamp(0.95rem, 1vw, 1.125rem);
+  font-size: clamp(0.75rem, 0.94vw, 1rem);
   line-height: 1.6;
   text-wrap: pretty;
 }
@@ -220,17 +226,17 @@
 .eyebrow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: clamp(12px, 2.2svh, 24px) 0 0;
+  gap: 8px;
+  margin: clamp(18px, 3.6svh, 30px) 0 0;
   color: var(--brand-ember);
-  font-size: 0.65rem;
+  font-size: 0.5rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .eyebrow::before {
-  width: 28px;
+  width: 16px;
   height: 1px;
   background: currentColor;
   content: "";
@@ -240,8 +246,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px 28px;
-  margin-top: clamp(14px, 2.4svh, 26px);
+  gap: 14px 20px;
+  margin-top: clamp(18px, 3.2svh, 28px);
   text-shadow: none;
 }
 
@@ -251,8 +257,8 @@
   min-height: 44px;
   align-items: center;
   justify-content: center;
-  gap: 22px;
-  font-size: 0.82rem;
+  gap: 10px;
+  font-size: 0.625rem;
   font-weight: 550;
   transition:
     background 180ms ease,
@@ -262,7 +268,7 @@
 .primary {
   border: 1px solid var(--white);
   border-radius: 4px;
-  padding: 0 25px;
+  padding: 0 20px;
   background: var(--white);
   color: var(--brand-night);
   box-shadow: 0 10px 30px rgb(0 0 0 / 15%);
@@ -274,7 +280,7 @@
 }
 
 .secondary {
-  border-bottom: 1px solid rgb(255 255 255 / 35%);
+  border-bottom: 1px solid transparent;
 }
 
 .secondary:hover {
@@ -288,14 +294,14 @@
   justify-content: space-between;
   gap: 32px;
   min-width: 0;
+  margin-left: -0.75vw;
 }
 
 .quoteStack {
-  width: min(100%, 440px);
+  width: min(100%, 392px);
   min-width: 0;
   isolation: isolate;
-  clip-path: inset(-24px -24px -8px);
-  border-radius: 18px;
+  border-radius: 12px;
 }
 
 .quoteStack:focus-visible {
@@ -305,24 +311,13 @@
 
 .toastList {
   position: relative;
-  height: clamp(148px, 22svh, 248px);
+  height: clamp(140px, 19.4svh, 180px);
 }
 
 .quoteCard {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  border: 1px solid rgb(255 255 255 / 20%);
-  border-radius: 18px;
-  padding: clamp(14px, 2.5svh, 28px) 30px;
-  background: linear-gradient(145deg, rgb(28 28 28 / 84%), rgb(22 22 22 / 76%));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 8%),
-    0 20px 55px rgb(0 0 0 / 16%);
-  backdrop-filter: blur(20px) saturate(1.15);
+  margin: 0;
   transform-origin: 50% 50%;
   transition:
     transform 1600ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -330,25 +325,48 @@
     filter 1600ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.quoteCard .quoteMaterial {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.quoteContent {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 16px 14px;
+  opacity: 0;
+  transition: opacity 1400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .quoteCard[data-state="active"] {
   z-index: 3;
   opacity: 1;
-  filter: blur(0);
+  filter: none;
   transform: translate(0, 0);
+}
+
+/* Fade the incoming message while the outgoing card carries its text away. */
+.quoteCard[data-state="active"] .quoteContent,
+.quoteCard[data-state="exit"] .quoteContent {
+  opacity: 1;
 }
 
 .quoteCard[data-state="next"] {
   z-index: 2;
-  opacity: 0.4;
-  filter: blur(0);
-  transform: translateX(8px) rotate(3deg);
+  opacity: 0;
+  filter: none;
+  transform: translate(0, 0);
 }
 
 .quoteCard[data-state="third"] {
   z-index: 1;
-  opacity: 0.4;
-  filter: blur(0);
-  transform: translateX(3px) rotate(-3deg);
+  opacity: 0;
+  filter: none;
+  transform: translate(0, 0);
 }
 
 .quoteCard[data-state="exit"] {
@@ -356,63 +374,47 @@
   pointer-events: none;
   opacity: 0;
   filter: blur(0.3rem);
-  transform: translate(18px, 120%) rotate(20deg) scale(0.98);
+  transform: translateY(120%) scale(0.98);
 }
 
-.quoteCaption {
-  margin: 0 0 8px;
-  color: var(--brand-ember);
-  font-size: 0.625rem;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.13em;
+.quoteAvatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand-flame);
+  color: var(--white);
 }
 
-.quoteDescription {
-  margin: clamp(8px, 1.5svh, 15px) 0 0;
-  color: rgb(255 255 255 / 70%);
-  font-size: clamp(0.75rem, 1vw, 0.875rem);
-  line-height: 1.4;
-  letter-spacing: -0.01em;
+.quoteAvatar .mark {
+  width: 20px;
+  height: 32px;
+}
+
+.quoteIdentity {
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.quoteAuthor,
+.quoteUsername {
+  margin: 0;
+}
+
+.quoteAuthor {
+  font-weight: 600;
 }
 
 .quoteText {
+  grid-column: 2;
   margin: 0;
-  font-size: clamp(1.125rem, min(2.1vw, 3.3svh), 2.125rem);
+  font-size: clamp(1.125rem, 1.8vw, 1.375rem);
   font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.045em;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   text-wrap: pretty;
-}
-
-.scrollCue {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  padding: 12px;
-  font-size: 0.6rem;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  text-shadow: 0 2px 12px rgb(0 0 0 / 70%);
-}
-
-.scrollCue > span:first-child {
-  color: var(--brand-ember);
-}
-
-.scrollArrow {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 1px solid rgb(255 255 255 / 50%);
-  border-radius: 50%;
-  font-size: 1rem;
-  transition: transform 180ms ease;
-}
-
-.scrollCue:hover .scrollArrow {
-  transform: translateY(4px);
 }
 
 .scrim {
@@ -438,14 +440,18 @@
   height: 100dvh;
   flex-direction: column;
   overflow-y: auto;
-  border-right: 5px solid var(--brand-flame);
-  padding: 36px clamp(24px, 4.5vw, 80px);
+  scrollbar-width: none;
+  padding: 0 5.8vw 36px;
   background:
-    radial-gradient(circle at 0 0, rgb(255 255 255 / 12%), transparent 50%),
-    var(--brand-teal);
-  color: var(--white);
+    radial-gradient(circle at 0 0, rgb(255 255 255 / 6%), transparent 50%),
+    var(--brand-charcoal);
+  color: var(--cream);
   box-shadow: 28px 0 90px rgb(0 0 0 / 22%);
   transition: transform 350ms cubic-bezier(0.16, 0.86, 0.2, 1);
+}
+
+.navPanel::-webkit-scrollbar {
+  display: none;
 }
 
 .navPanel[data-starting-style],
@@ -455,26 +461,42 @@
 
 .navHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  min-height: 138px;
+  flex-shrink: 0;
+  align-items: flex-start;
   gap: 24px;
 }
 
-.navTitle {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+.menuClose {
+  padding: 0;
 }
 
-.menuClose {
-  font-size: 2rem;
-  font-weight: 300;
+.closeIcon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.closeIcon::before,
+.closeIcon::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  content: "";
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.closeIcon::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .navDescription {
   max-width: 230px;
-  margin: 16px 0 48px;
+  margin: 0 0 48px;
   color: rgb(255 255 255 / 80%);
   font-size: 0.78rem;
   line-height: 1.7;
@@ -571,6 +593,8 @@
   }
 
   .figure {
+    --figure-offset: var(--hand-overlap);
+    right: 1.5%;
     width: min(95vw, 115svh);
   }
 
@@ -587,7 +611,8 @@
     padding-inline: 24px;
   }
 
-  .ribbon {
+  .ribbon,
+  .navLogoSpace {
     width: 44px;
     height: 98px;
     padding-top: 18px;
@@ -604,21 +629,17 @@
     margin-top: 23px;
   }
 
-  .headerNote {
-    margin-top: 27px;
-    font-size: 0.72rem;
-  }
-
-  .headerNote span {
-    display: none;
-  }
-
   .content {
     padding: clamp(96px, 12svh, 130px) 24px clamp(16px, 2.5svh, 28px);
   }
 
   .copy {
     width: 100%;
+    align-self: center;
+  }
+
+  .bottomRow {
+    margin-left: 0;
   }
 
   .title {
@@ -651,21 +672,22 @@
     object-position: 60% center;
   }
 
-  .quoteCard {
-    padding: 14px 20px;
+  .quoteContent {
+    padding: 14px;
   }
 
   .quoteText {
     font-size: clamp(1.1rem, 5vw, 1.5rem);
   }
 
-  .scrollCue {
-    display: none;
-  }
-
   .navPanel {
     width: 100%;
-    padding: 24px;
+    padding: 0 24px 24px;
+  }
+
+  .navHeader {
+    min-height: 122px;
+    gap: 18px;
   }
 
   .navDescription {
@@ -680,6 +702,7 @@
 @media (max-height: 700px) and (min-width: 641px) {
   .content {
     padding-top: 100px;
+    padding-bottom: 24px;
   }
 
   .title {
@@ -701,7 +724,13 @@
     gap: 16px;
   }
 
-  .ribbon {
+  .navHeader {
+    min-height: 100px;
+    gap: 16px;
+  }
+
+  .ribbon,
+  .navLogoSpace {
     height: 76px;
     padding-top: 12px;
   }
@@ -709,10 +738,6 @@
   .menuToggle {
     width: 44px;
     height: 44px;
-    margin-top: 16px;
-  }
-
-  .headerNote {
     margin-top: 16px;
   }
 
@@ -756,12 +781,8 @@
     font-size: 1.1rem;
   }
 
-  .quoteCard {
-    padding: 14px 20px;
-  }
-
-  .scrollCue {
-    display: none;
+  .quoteContent {
+    padding: 14px;
   }
 }
 
@@ -772,6 +793,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .hero *,
   .hero *::after,
   .scrim,

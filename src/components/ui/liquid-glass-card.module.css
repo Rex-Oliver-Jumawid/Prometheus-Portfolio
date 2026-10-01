@@ -1,0 +1,70 @@
+.card {
+  position: relative;
+  width: min(627px, 100%);
+  height: 200px;
+  border-radius: 20px;
+  overflow: hidden;
+  isolation: isolate;
+  /* Paint the outer shadow here so the rounded overflow does not cut it off. */
+  box-shadow: 0 8px 48px rgb(0 0 0 / 45%);
+}
+
+.fill,
+.glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fill {
+  background: rgb(51 51 51 / 10%);
+  /* CSS box shadows cannot individually use Figma's Linear Burn blend mode. */
+  box-shadow:
+    0 8px 48px rgb(0 0 0 / 45%),
+    0 0 0 0.5px #a6a6a6,
+    -1.25px 0 0 -0.75px #a6a6a6,
+    1.25px 0 0 -0.75px #a6a6a6;
+}
+
+.fill::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(51 51 51 / 30%);
+  mix-blend-mode: luminosity;
+  content: "";
+}
+
+.glass {
+  /* Figma's 100% white Multiply fill contributes no color. A transparent
+     CSS fill preserves that neutrality inside the isolated backdrop layer;
+     painting opaque white here would mask the scene before blending. */
+  background: transparent;
+  mix-blend-mode: multiply;
+  -webkit-backdrop-filter: blur(25px) saturate(1.1) contrast(1.02);
+  backdrop-filter: blur(25px) saturate(1.1) contrast(1.02);
+}
+
+/* Separate additive lighting from the Multiply layer. CSS has no native
+   equivalent for Figma refraction .70, depth 30, dispersion .20 or splay .20. */
+.card::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 -40px 5px -40px #1a1a1a,
+    inset 0 40px 5px -40px #1a1a1a;
+  mix-blend-mode: plus-lighter;
+  pointer-events: none;
+  content: "";
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}

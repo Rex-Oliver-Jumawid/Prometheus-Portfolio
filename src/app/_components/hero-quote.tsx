@@ -2,28 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
+import { appConfig } from "@/config/app";
+
 import styles from "./hero.module.css";
 
 const cards = [
   {
-    caption: "THE FIRST SPARK",
     title: "We want to bring ideas to life.",
-    description: "Thoughtful design and technology, from vision to reality.",
   },
   {
-    caption: "CONNECTED SYSTEMS",
     title: "Your business. One connected system.",
-    description: "A focused workspace that puts the pieces together.",
   },
   {
-    caption: "LESS FRICTION",
     title: "Bring tools together. Simplify repetitive work.",
-    description: "Make room for the work that matters most.",
   },
   {
-    caption: "BUILT AROUND YOU",
     title: "Build around the way your team actually works.",
-    description: "Digital products shaped around real people and workflows.",
   },
 ] as const;
 
@@ -95,15 +90,25 @@ export function HeroQuote() {
 
           return (
             <article
-              key={card.caption}
+              key={card.title}
               className={styles.quoteCard}
               data-state={state}
               aria-hidden={!active}
               inert={!active}
             >
-              <p className={styles.quoteCaption}>{card.caption}</p>
-              <h2 className={styles.quoteText}>{card.title}</h2>
-              <p className={styles.quoteDescription}>{card.description}</p>
+              <LiquidGlassCard
+                className={styles.quoteMaterial}
+                contentClassName={styles.quoteContent}
+              >
+                <span className={styles.quoteAvatar} aria-hidden="true">
+                  <span className={styles.mark} />
+                </span>
+                <div className={styles.quoteIdentity}>
+                  <p className={styles.quoteAuthor}>{appConfig.name}</p>
+                  <p className={styles.quoteUsername}>@prometheus.team</p>
+                </div>
+                <h2 className={styles.quoteText}>{card.title}</h2>
+              </LiquidGlassCard>
             </article>
           );
         })}

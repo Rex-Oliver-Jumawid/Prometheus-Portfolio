@@ -11,6 +11,7 @@
   --brand-ember: #ffb45a;
   --brand-teal: #486a72;
   --brand-night: #1d1b19;
+  --brand-charcoal: #282321;
   --brand-serif:
     var(--font-instrument-serif, Georgia), "Times New Roman", serif;
 }
