@@ -54,11 +54,7 @@ export function HeroNavigation() {
               className={styles.menuClose}
               aria-label="Close navigation"
             >
-              <span className={styles.hamburger} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
+              <span className={styles.closeIcon} aria-hidden="true" />
             </Dialog.Close>
           </div>
           <Dialog.Description className={styles.navDescription}>
