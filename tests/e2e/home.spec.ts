@@ -145,7 +145,7 @@ for (const [width, height] of [
     const glass = page.locator("[data-navigation-glass]");
     await expect(glass).toHaveCSS(
       "background-color",
-      "rgba(105, 47, 45, 0.67)",
+      "rgba(105, 47, 45, 0.62)",
     );
     await expect(dialog).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     if (width > 640) {
@@ -157,7 +157,7 @@ for (const [width, height] of [
     }
     expect(
       await glass.evaluate((element) =>
-        getComputedStyle(element).backdropFilter.includes("blur(48px)"),
+        getComputedStyle(element).backdropFilter.includes("blur(64px)"),
       ),
     ).toBe(true);
     await expect(
