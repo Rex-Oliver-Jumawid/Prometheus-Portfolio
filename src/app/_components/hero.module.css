@@ -1,10 +1,48 @@
+.hero,
+.navGlass {
+  --hero-scene-speed: 0.3;
+  --hero-copy-speed: 0.25;
+  --figure-width: min(62vw, 110svh);
+  --figure-offset: 4.5svh;
+  /* Retain the original 718px crop's top while displaying the full 1595px asset. */
+  --figure-start-y: calc(
+    100svh + var(--figure-offset) - var(--figure-width) * 718 / 986
+  );
+  /* The lower knee is at 1120px in the original character artwork. */
+  --hero-reveal-distance: calc(
+    var(--figure-width) * 402 / 986 + var(--figure-offset)
+  );
+}
+
+/* Keep section boundaries on whole CSS pixels for the live book handoff. */
+@supports (height: round(up, 1px, 1px)) {
+  .hero,
+  .navGlass {
+    --hero-reveal-distance: round(
+      up,
+      calc(var(--figure-width) * 402 / 986 + var(--figure-offset)),
+      1px
+    );
+  }
+}
+
 .hero {
+  position: relative;
+  height: 100svh;
+  z-index: 1;
+  background: var(--brand-night);
+  color: var(--cream);
+}
+
+.hero[data-parallax-ready="true"] {
+  height: calc(100svh + var(--hero-reveal-distance));
+}
+
+.stage {
   position: relative;
   display: flex;
   height: 100svh;
-  overflow-x: clip;
-  overflow-y: visible;
-  z-index: 1;
+  overflow: clip;
   isolation: isolate;
   background: var(--brand-night);
   color: var(--cream);
@@ -13,38 +51,31 @@
 .scene {
   position: absolute;
   z-index: -2;
-  inset: -3%;
+  inset: 0 0 calc(-1 * var(--hero-reveal-distance) * var(--hero-scene-speed));
   overflow: hidden;
   pointer-events: none;
-  transform: translate3d(0, var(--hero-scene-y, 0px), 0) scale(1.035);
+  transform: translate3d(
+    0,
+    calc(-1 * var(--hero-travel, 0px) * var(--hero-scene-speed)),
+    0
+  );
   transform-origin: center;
   will-change: transform;
 }
 
 .sky {
   object-fit: cover;
-  object-position: center;
+  object-position: center top;
 }
 
 .figure {
-  --hand-overlap: 25px;
-  --figure-offset: 4.5svh;
   position: absolute;
   z-index: 0;
   pointer-events: none;
   right: 4%;
-  bottom: calc(-1 * var(--figure-offset));
-  width: min(62vw, 110svh);
-  /* Keep the full supporting hand over the next section; clip only the torso. */
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% 100%,
-    82% 100%,
-    82% calc(100% - var(--figure-offset)),
-    0 calc(100% - var(--figure-offset))
-  );
-  transform: translate3d(0, var(--hero-figure-y, 0px), 0);
+  top: var(--figure-start-y);
+  width: var(--figure-width);
+  transform: translate3d(0, calc(-1 * var(--hero-travel, 0px)), 0);
   will-change: transform;
 }
 
@@ -54,7 +85,7 @@
   height: auto;
 }
 
-.hero::after {
+.stage::after {
   position: absolute;
   z-index: -1;
   inset: 0;
@@ -160,9 +191,7 @@
   color: var(--brand-flame);
 }
 
-.header[data-navigation-open="true"]
-  .brand:is(:hover, :focus-visible)
-  .ribbon {
+.header[data-navigation-open="true"] .brand:is(:hover, :focus-visible) .ribbon {
   color: var(--white);
 }
 
@@ -286,7 +315,11 @@
   min-height: 0;
   grid-template-rows: minmax(0, 1fr);
   padding: clamp(112px, 16svh, 180px) var(--hero-gutter) clamp(32px, 5svh, 64px);
-  transform: translate3d(0, var(--hero-copy-y, 0px), 0);
+  transform: translate3d(
+    0,
+    calc(-1 * var(--hero-travel, 0px) * var(--hero-copy-speed)),
+    0
+  );
   will-change: transform;
 }
 
@@ -555,31 +588,27 @@
 .navGlassSky {
   position: absolute;
   inset: -7%;
-  background: url("/assets/hero/sky.webp") center / cover no-repeat;
+  background: url("/assets/hero/sky-scroll.webp") center top / cover no-repeat;
   filter: blur(46px) saturate(56%) brightness(0.76) contrast(0.84);
-  transform: translate3d(0, var(--hero-scene-y, 0px), 0) scale(1.08);
+  transform: translate3d(
+      0,
+      calc(-1 * var(--hero-travel, 0px) * var(--hero-scene-speed)),
+      0
+    )
+    scale(1.08);
   transform-origin: center;
   will-change: transform;
 }
 
 .navGlassFigure {
-  --glass-figure-offset: 4.5svh;
   position: absolute;
   right: 4%;
-  bottom: calc(-1 * var(--glass-figure-offset));
-  width: min(62vw, 110svh);
-  aspect-ratio: 986 / 718;
-  background: url("/assets/hero/figure.webp") center / contain no-repeat;
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% 100%,
-    82% 100%,
-    82% calc(100% - var(--glass-figure-offset)),
-    0 calc(100% - var(--glass-figure-offset))
-  );
+  top: var(--figure-start-y);
+  width: var(--figure-width);
+  aspect-ratio: 986 / 1595;
+  background: url("/assets/hero/figure-full.webp") center / contain no-repeat;
   filter: blur(42px) saturate(54%) brightness(0.74) contrast(0.84);
-  transform: translate3d(0, var(--hero-figure-y, 0px), 0) scale(1.035);
+  transform: translate3d(0, calc(-1 * var(--hero-travel, 0px)), 0) scale(1.035);
   transform-origin: center;
   will-change: transform;
 }
@@ -587,13 +616,12 @@
 .navGlassTint {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(
-      90deg,
-      rgb(77 31 30 / 42%) 0%,
-      rgb(105 47 45 / 54%) 46%,
-      rgb(105 47 45 / 62%) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(77 31 30 / 42%) 0%,
+    rgb(105 47 45 / 54%) 46%,
+    rgb(105 47 45 / 62%) 100%
+  );
   box-shadow:
     28px 0 90px rgb(0 0 0 / 14%),
     inset -1px 0 rgb(244 235 222 / 8%);
@@ -704,9 +732,7 @@
   text-wrap: balance;
   transition-property: transform, opacity;
   transition-duration: 1s, 500ms;
-  transition-timing-function:
-    cubic-bezier(0.165, 0.84, 0.44, 1),
-    ease;
+  transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1), ease;
 }
 
 .navLinks a:nth-child(1) {
@@ -805,10 +831,14 @@
 }
 
 @media (max-width: 1000px) {
+  .hero,
+  .navGlass {
+    --figure-offset: 25px;
+    --figure-width: min(95vw, 115svh);
+  }
+
   .navGlassFigure {
-    --glass-figure-offset: 25px;
     right: 1.5%;
-    width: min(95vw, 115svh);
   }
 
   .copy {
@@ -821,13 +851,17 @@
   }
 
   .figure {
-    --figure-offset: var(--hand-overlap);
     right: 1.5%;
-    width: min(95vw, 115svh);
   }
 }
 
 @media (max-width: 640px) {
+  .hero,
+  .navGlass {
+    --figure-width: min(124vw, 74svh);
+    /* Clear the copy before the figure reaches the upper half of a phone. */
+    --hero-copy-speed: 1.8;
+  }
   .header,
   .navPanel {
     --navigation-height: 64px;
@@ -867,12 +901,8 @@
     margin-top: 16px;
   }
 
-  .figure {
-    width: min(124vw, 74svh);
-  }
-
   .sky {
-    object-position: 60% center;
+    object-position: 60% top;
   }
 
   .navGlass,
@@ -881,13 +911,11 @@
   }
 
   .navGlassSky {
-    background-position: 60% center;
+    background-position: 60% top;
   }
 
   .navGlassFigure {
-    --glass-figure-offset: 25px;
     right: 1.5%;
-    width: min(124vw, 74svh);
   }
 
   .navLayout {

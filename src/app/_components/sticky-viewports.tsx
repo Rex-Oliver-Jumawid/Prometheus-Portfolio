@@ -25,7 +25,7 @@ export function StickyViewports({ children }: { children: ReactNode }) {
         // Let taller panels scroll through their content before pinning their bottom edge.
         section.style.setProperty(
           "--viewport-top",
-          `${Math.min(0, window.innerHeight - height)}px`,
+          `${section.dataset.viewportPin === "top" ? 0 : Math.min(0, window.innerHeight - height)}px`,
         );
         section.style.setProperty("--viewport-order", String(index + 1));
         positions.set(section.id, { section, start, height });

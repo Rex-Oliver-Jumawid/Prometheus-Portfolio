@@ -86,6 +86,20 @@ The hero should be split by responsibility:
 The hero must remain usable before JavaScript hydration finishes.
 Navigation links must remain semantic links rather than canvas hit targets.
 
+### Homepage hero scroll sequence
+
+`hero.tsx` renders a viewport-height stage inside the hero section.
+`hero.module.css` owns the character's responsive width, original top anchor, and reveal distance to the knees.
+`hero-parallax.tsx` progressively pans the full-body character upward as the user scrolls down, with the sky travelling more slowly.
+The copy travels slowly on desktop and clears the character on phones before his knees are revealed.
+The hero's extra document height equals the reveal distance, so the second section begins entering only after the knees have been revealed.
+The stage clips the artwork to the viewport and the sky includes enough vertical overscan to cover the entire pan.
+The `data-viewport-pin="top"` contract keeps this scroll sequence pinned at the top while other tall sections retain their existing bottom-edge pinning.
+The gallery and book handoff continue deriving their positions from section flow heights.
+The navigation glass shares the artwork anchors and scroll transforms without changing the drawer controls, layout, or banner hover behavior.
+Reduced motion and the pre-hydration fallback use the original static, viewport-height composition without the additional hold.
+Resize observers update the measured travel distance, and the component releases its observers, listeners, animation frame, and style properties on unmount.
+
 ## Second viewport and Three.js boundary
 
 The second viewport is the only planned Three.js scene in the current scope.
