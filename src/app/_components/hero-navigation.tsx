@@ -53,7 +53,16 @@ export function HeroNavigation() {
         data-open={open}
         data-navigation-glass
         aria-hidden="true"
-      />
+      >
+        <div
+          className={styles.navGlassBackdrop}
+          data-navigation-glass-backdrop
+        >
+          <span className={styles.navGlassSky} />
+          <span className={styles.navGlassFigure} />
+        </div>
+        <span className={styles.navGlassTint} />
+      </div>
 
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.scrim} />

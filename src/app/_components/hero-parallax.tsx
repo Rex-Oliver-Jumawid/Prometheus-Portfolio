@@ -10,10 +10,17 @@ export function HeroParallax() {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame: number | undefined;
 
+    const glass = document.querySelector<HTMLElement>(
+      "[data-navigation-glass]",
+    );
+    const motionTargets = glass ? [hero, glass] : [hero];
+
     const clearMotion = () => {
-      hero.style.removeProperty("--hero-scene-y");
-      hero.style.removeProperty("--hero-figure-y");
-      hero.style.removeProperty("--hero-copy-y");
+      motionTargets.forEach((target) => {
+        target.style.removeProperty("--hero-scene-y");
+        target.style.removeProperty("--hero-figure-y");
+        target.style.removeProperty("--hero-copy-y");
+      });
     };
 
     const sync = () => {
@@ -27,9 +34,11 @@ export function HeroParallax() {
         Math.max(window.scrollY, 0),
         window.innerHeight * 1.2,
       );
-      hero.style.setProperty("--hero-scene-y", `${distance * 0.12}px`);
-      hero.style.setProperty("--hero-figure-y", `${distance * 0.065}px`);
-      hero.style.setProperty("--hero-copy-y", `${distance * 0.035}px`);
+      motionTargets.forEach((target) => {
+        target.style.setProperty("--hero-scene-y", `${distance * 0.12}px`);
+        target.style.setProperty("--hero-figure-y", `${distance * 0.065}px`);
+        target.style.setProperty("--hero-copy-y", `${distance * 0.035}px`);
+      });
     };
 
     function schedule() {

@@ -144,8 +144,8 @@ for (const [width, height] of [
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
     const glass = page.locator("[data-navigation-glass]");
     await expect(glass).toHaveCSS(
-      "background-color",
-      "rgba(105, 47, 45, 0.62)",
+      "overflow",
+      "hidden",
     );
     await expect(dialog).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     if (width > 640) {
@@ -155,10 +155,17 @@ for (const [width, height] of [
       expect((await dialog.boundingBox())!.width).toBeCloseTo(width, 0);
       expect((await glass.boundingBox())!.width).toBeCloseTo(width, 0);
     }
+    const glassBackdrop = page.locator(
+      "[data-navigation-glass-backdrop]",
+    );
+    await expect(glassBackdrop).toHaveCount(1);
     expect(
-      await glass.evaluate((element) =>
-        getComputedStyle(element).backdropFilter.includes("blur(64px)"),
-      ),
+      await glassBackdrop
+        .locator("span")
+        .first()
+        .evaluate((element) =>
+          getComputedStyle(element).filter.includes("blur(46px)"),
+        ),
     ).toBe(true);
     await expect(
       dialog.getByRole("navigation", { name: "Primary navigation" }).getByRole("link"),
