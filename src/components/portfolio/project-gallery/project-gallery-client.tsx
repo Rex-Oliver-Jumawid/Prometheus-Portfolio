@@ -278,7 +278,7 @@ export function ProjectGalleryClient({
         return;
       }
 
-      if (progress >= 0.995) {
+      if (progress >= 0.998) {
         canvas.removeAttribute("data-prometheus-handoff");
         resetHandoffCanvas();
         handoffSourceRef.current = null;
@@ -341,7 +341,7 @@ export function ProjectGalleryClient({
       );
       const sizeProgress = Math.min(
         1,
-        Math.max(0, (progress - 0.05) / 0.93),
+        Math.max(0, (progress - 0.12) / 0.86),
       );
       const easedSize = sizeProgress * sizeProgress * (3 - 2 * sizeProgress);
       const scale = 1 + (targetScale - 1) * easedSize;
@@ -367,9 +367,7 @@ export function ProjectGalleryClient({
       canvas.style.transformOrigin = "0 0";
       canvas.style.transform =
         `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
-      canvas.style.opacity = String(
-        1 - Math.max(0, Math.min(1, (progress - 0.975) / 0.02)),
-      );
+      canvas.style.opacity = "1";
       canvas.style.filter =
         "drop-shadow(0 14px 28px rgb(0 0 0 / 34%)) drop-shadow(0 0 18px rgb(232 179 72 / 20%))";
     }

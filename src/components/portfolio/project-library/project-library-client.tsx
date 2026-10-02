@@ -38,12 +38,35 @@ export function ProjectLibraryClient() {
     }
 
     function publishBookBounds() {
-      const bounds = controllerRef.current?.getBookBounds(book.id);
-      if (!bounds?.width || !bounds.height) return;
+      const hostRect = host.getBoundingClientRect();
+      const canonical = book.handoffViewportBounds;
+      if (
+        !canonical ||
+        !hostRect.width ||
+        !hostRect.height
+      ) {
+        return;
+      }
+
+      const presentationAspect = 16 / 9;
+      let viewWidth = hostRect.width;
+      let viewHeight = viewWidth / presentationAspect;
+      if (viewHeight > hostRect.height) {
+        viewHeight = hostRect.height;
+        viewWidth = viewHeight * presentationAspect;
+      }
+
+      const viewportLeft = hostRect.left + (hostRect.width - viewWidth) / 2;
+      const viewportTop = hostRect.top + (hostRect.height - viewHeight) / 2;
 
       document.dispatchEvent(
         new CustomEvent("prometheus:book-target-bounds", {
-          detail: bounds,
+          detail: {
+            left: viewportLeft + canonical.left * viewWidth,
+            top: viewportTop + canonical.top * viewHeight,
+            width: canonical.width * viewWidth,
+            height: canonical.height * viewHeight,
+          },
         }),
       );
     }
@@ -53,7 +76,7 @@ export function ProjectLibraryClient() {
         ?.progress;
       if (typeof progress !== "number") return;
       controllerRef.current?.setDockProgress(progress);
-      setDocked(progress >= 0.995);
+      setDocked(progress >= 0.998);
       window.requestAnimationFrame(publishBookBounds);
     }
 

@@ -29,6 +29,8 @@ export function StickyViewports({ children }: { children: ReactNode }) {
         );
         section.style.setProperty("--viewport-order", String(index + 1));
         positions.set(section.id, { section, start, height });
+        section.dataset.viewportStart = String(start);
+        section.dataset.viewportHeight = String(height);
         start += height;
       });
       root!.dataset.stickyReady = "true";
@@ -120,6 +122,8 @@ export function StickyViewports({ children }: { children: ReactNode }) {
       sections.forEach((section) => {
         section.style.removeProperty("--viewport-top");
         section.style.removeProperty("--viewport-order");
+        delete section.dataset.viewportStart;
+        delete section.dataset.viewportHeight;
       });
     };
   }, []);

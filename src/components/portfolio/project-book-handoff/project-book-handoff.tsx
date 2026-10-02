@@ -11,16 +11,21 @@ function smooth(value: number) {
   return t * t * (3 - 2 * t);
 }
 
-function documentFlowTop(element: HTMLElement) {
-  let top = 0;
-  let current: HTMLElement | null = element;
+function sectionStart(section: HTMLElement) {
+  const measured = Number(section.dataset.viewportStart);
+  if (Number.isFinite(measured)) return measured;
 
-  while (current) {
-    top += current.offsetTop;
-    current = current.offsetParent as HTMLElement | null;
+  // Fallback before StickyViewports has measured the stack.
+  const root = section.parentElement;
+  if (!root) return section.getBoundingClientRect().top + window.scrollY;
+
+  let start = root.getBoundingClientRect().top + window.scrollY;
+  for (const child of Array.from(root.children)) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (child === section) return start;
+    if (child.tagName === "SECTION") start += child.getBoundingClientRect().height;
   }
-
-  return top;
+  return start;
 }
 
 export function ProjectBookHandoff() {
@@ -43,29 +48,36 @@ export function ProjectBookHandoff() {
     function update() {
       frame = undefined;
 
-      const workTop = documentFlowTop(work);
-      const libraryTop = documentFlowTop(library);
-      const workHeight = work.offsetHeight;
-      const libraryHeight = library.offsetHeight;
+      const workStart = sectionStart(work);
+      const libraryStart = sectionStart(library);
+      const workHeight =
+        Number(work.dataset.viewportHeight) || work.getBoundingClientRect().height;
 
-      // The handoff belongs only to the lower part of the floating-book panel
-      // and the opening part of the library panel. Using normal-flow offsets
-      // keeps this stable even though both panels become position: sticky.
-      const start = workTop + workHeight * 0.38;
-      const end = Math.max(
-        start + window.innerHeight * 0.36,
-        libraryTop + libraryHeight * 0.08,
-      );
+      // Only animate in the actual work -> library corridor.
+      // The book is fully owned by the work section before this point, and fully
+      // owned by the library after it. This prevents it from leaking into hero/footer.
+      const start =
+        libraryStart - Math.min(workHeight * 0.62, window.innerHeight * 0.52);
+      const end = libraryStart + window.innerHeight * 0.12;
 
       const rawProgress = clamp01(
         (window.scrollY - start) / Math.max(1, end - start),
       );
 
+      // Hard ownership guards are intentional. Sticky siblings can remain
+      // visually pinned outside their normal-flow range.
+      const guardedProgress =
+        window.scrollY < workStart
+          ? 0
+          : window.scrollY > end
+            ? 1
+            : rawProgress;
+
       const progress = reducedMotion.matches
-        ? rawProgress >= 0.5
+        ? guardedProgress >= 0.5
           ? 1
           : 0
-        : smooth(rawProgress);
+        : smooth(guardedProgress);
 
       publishProgress(progress);
     }
@@ -77,7 +89,12 @@ export function ProjectBookHandoff() {
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
     reducedMotion.addEventListener("change", schedule);
-    schedule();
+
+    // StickyViewports measures in an effect too. Queue twice so its canonical
+    // starts are available even on the initial load.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(schedule);
+    });
 
     return () => {
       window.cancelAnimationFrame(frame ?? 0);

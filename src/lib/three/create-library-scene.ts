@@ -345,13 +345,13 @@ export async function createLibraryScene(
 
   function syncDockVisibility() {
     runtimeBooks.forEach((book) => {
-      book.wrapper.visible = reducedMotion || dockProgress >= 0.995;
+      book.wrapper.visible = reducedMotion || dockProgress >= 0.998;
     });
     renderDirty = true;
   }
 
   function pickBook() {
-    if (!camera || disposed || dockProgress < 0.995) return null;
+    if (!camera || disposed || dockProgress < 0.998) return null;
 
     scene.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);
@@ -774,7 +774,7 @@ export async function createLibraryScene(
       }
 
       anchor.add(wrapper);
-      wrapper.visible = reducedMotion || dockProgress >= 0.995;
+      wrapper.visible = reducedMotion || dockProgress >= 0.998;
       ownedRoots.push(gltf.scene);
       wrapper.updateWorldMatrix(true, true);
 

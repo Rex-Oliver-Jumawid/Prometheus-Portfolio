@@ -9,6 +9,12 @@ export type LibraryBook = {
     targetHeight: number;
     yawDegrees: number;
   };
+  handoffViewportBounds?: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
 };
 
 const SOURCE_REVISION = "80ab4f3f46c25957eb3a439158d9d5468b717f67";
@@ -33,6 +39,14 @@ export const prometheusLibrary = {
       fit: {
         targetHeight: 1.346,
         yawDegrees: -90,
+      },
+      // Projected bounds of the original Furniture slot from the canonical
+      // 16:9 Prometheus Library camera/anchor manifest.
+      handoffViewportBounds: {
+        left: 0.267014904,
+        top: 0.135932987,
+        width: 0.127925948,
+        height: 0.355844995,
       },
     },
   ] satisfies readonly LibraryBook[],
