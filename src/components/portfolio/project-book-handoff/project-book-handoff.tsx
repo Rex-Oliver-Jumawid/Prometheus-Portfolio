@@ -38,6 +38,7 @@ export function ProjectBookHandoff() {
     let frame: number | undefined;
 
     function publishProgress(progress: number) {
+      document.documentElement.dataset.bookHandoffProgress = String(progress);
       document.dispatchEvent(
         new CustomEvent("prometheus:book-handoff-progress", {
           detail: { progress },
@@ -102,6 +103,7 @@ export function ProjectBookHandoff() {
       window.removeEventListener("resize", schedule);
       reducedMotion.removeEventListener("change", schedule);
       publishProgress(0);
+      delete document.documentElement.dataset.bookHandoffProgress;
     };
   }, []);
 

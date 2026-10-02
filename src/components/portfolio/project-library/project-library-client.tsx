@@ -121,6 +121,15 @@ export function ProjectLibraryClient() {
 
         controllerRef.current = controller;
         controller.setVisible(active && !document.hidden);
+
+        const currentHandoff = Number(
+          document.documentElement.dataset.bookHandoffProgress,
+        );
+        if (Number.isFinite(currentHandoff)) {
+          controller.setDockProgress(currentHandoff);
+          setDocked(currentHandoff >= 0.998);
+        }
+
         window.requestAnimationFrame(publishBookBounds);
         document.dispatchEvent(new Event("prometheus:book-bounds-request"));
         setProgress(100);

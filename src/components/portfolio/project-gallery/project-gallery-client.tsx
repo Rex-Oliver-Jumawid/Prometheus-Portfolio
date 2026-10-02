@@ -257,6 +257,17 @@ export function ProjectGalleryClient({
           height: number;
         }>
       ).detail;
+
+      const current = Number(
+        document.documentElement.dataset.bookHandoffProgress,
+      );
+      if (Number.isFinite(current)) {
+        handoffChanged(
+          new CustomEvent("prometheus:book-handoff-progress", {
+            detail: { progress: current },
+          }),
+        );
+      }
     }
 
     function handoffChanged(event: Event) {
@@ -414,6 +425,18 @@ export function ProjectGalleryClient({
         syncScroll();
         syncVisibility();
         queueBookBounds();
+
+        const currentHandoff = Number(
+          document.documentElement.dataset.bookHandoffProgress,
+        );
+        if (Number.isFinite(currentHandoff)) {
+          handoffChanged(
+            new CustomEvent("prometheus:book-handoff-progress", {
+              detail: { progress: currentHandoff },
+            }),
+          );
+        }
+
         setStatus("ready");
       } catch {
         if (alive && !abort.signal.aborted) setStatus("fallback");
