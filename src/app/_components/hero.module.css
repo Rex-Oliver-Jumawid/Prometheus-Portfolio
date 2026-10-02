@@ -215,10 +215,6 @@
   }
 }
 
-.header[data-navigation-open="true"] .menuToggle::before {
-  border-color: var(--cream);
-}
-
 .hamburger {
   position: relative;
   display: block;
