@@ -144,8 +144,13 @@ for (const [width, height] of [
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
     await expect(dialog).toHaveCSS(
       "background-color",
-      "rgba(194, 75, 68, 0.76)",
+      "rgba(126, 52, 50, 0.82)",
     );
+    if (width > 640) {
+      expect((await dialog.boundingBox())!.width).toBeCloseTo(width * 0.6, 0);
+    } else {
+      expect((await dialog.boundingBox())!.width).toBeCloseTo(width, 0);
+    }
     expect(
       await dialog.evaluate((element) =>
         getComputedStyle(element).backdropFilter.includes("blur"),

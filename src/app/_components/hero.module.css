@@ -510,8 +510,7 @@
   position: fixed;
   z-index: 60;
   inset: 0;
-  background: rgb(7 12 13 / 42%);
-  backdrop-filter: blur(5px);
+  background: rgb(7 12 13 / 24%);
   transition: opacity 500ms ease;
 }
 
@@ -524,16 +523,16 @@
   position: fixed;
   z-index: 70;
   inset: 0 auto 0 0;
-  width: min(680px, 65vw);
+  width: 60vw;
   height: 100dvh;
   overflow: hidden;
-  background: rgb(194 75 68 / 76%);
+  background: rgb(126 52 50 / 82%);
   color: var(--cream);
-  box-shadow: 28px 0 90px rgb(0 0 0 / 18%);
-  backdrop-filter: blur(28px) saturate(118%);
-  -webkit-backdrop-filter: blur(28px) saturate(118%);
+  box-shadow: 28px 0 90px rgb(0 0 0 / 16%);
+  backdrop-filter: blur(20px) saturate(72%) brightness(0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(72%) brightness(0.82);
   transition:
-    transform 650ms cubic-bezier(0.16, 0.86, 0.2, 1),
+    transform 750ms cubic-bezier(0.165, 0.84, 0.44, 1),
     background-color 450ms ease;
 }
 
@@ -543,10 +542,24 @@
 }
 
 .navLayout {
+  --nav-divider: 36%;
+  position: relative;
   display: grid;
   width: 100%;
   height: 100%;
-  grid-template-columns: minmax(180px, 43%) minmax(0, 57%);
+  grid-template-columns: var(--nav-divider) minmax(0, 1fr);
+}
+
+.navLayout::before {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: var(--nav-divider);
+  width: 1px;
+  background: rgb(244 235 222 / 24%);
+  content: "";
+  pointer-events: none;
 }
 
 .navBlank {
@@ -561,7 +574,6 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
-  border-left: 1px solid rgb(244 235 222 / 24%);
   padding: clamp(26px, 4svh, 42px) clamp(24px, 3vw, 38px)
     clamp(24px, 4svh, 36px);
 }
@@ -586,17 +598,42 @@
   font-weight: 400;
   line-height: 0.92;
   letter-spacing: -0.045em;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
   text-wrap: balance;
-  transition:
-    opacity 320ms ease,
-    transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition-property: transform, opacity;
+  transition-duration: 1s, 500ms;
+  transition-timing-function:
+    cubic-bezier(0.165, 0.84, 0.44, 1),
+    ease;
+}
+
+.navLinks a:nth-child(1) {
+  transition-delay: 0s;
+}
+
+.navLinks a:nth-child(2) {
+  transition-delay: 50ms;
+}
+
+.navLinks a:nth-child(3) {
+  transition-delay: 100ms;
+}
+
+.navLinks a:nth-child(4) {
+  transition-delay: 150ms;
+}
+
+.navPanel[data-starting-style] .navLinks a {
+  opacity: 0;
+  transform: translate3d(-100%, 0, 0);
 }
 
 .navLinks a::before {
   position: absolute;
   top: 0.04em;
   bottom: 0.04em;
-  left: calc(-1 * clamp(24px, 3vw, 38px) - 1px);
+  left: calc(-1 * clamp(24px, 3vw, 38px));
   width: 1px;
   background: var(--cream);
   content: "";
@@ -613,7 +650,7 @@
 }
 
 .navLinks a:is(:hover, :focus-visible) {
-  transform: translateX(5px);
+  transform: translate3d(5px, 0, 0);
 }
 
 .navLinks a:is(:hover, :focus-visible)::before {
@@ -757,7 +794,7 @@
   }
 
   .navLayout {
-    grid-template-columns: minmax(96px, 32%) minmax(0, 68%);
+    --nav-divider: 32%;
   }
 
   .navContent {
