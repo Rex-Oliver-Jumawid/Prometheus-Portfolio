@@ -2,6 +2,10 @@ export type BookPage = {
   label: string;
   title: string;
   paragraphs: readonly string[];
+  demo?: {
+    previewPath: string;
+    ctaLabel: string;
+  };
 };
 
 export type PortfolioProject = {
@@ -73,12 +77,15 @@ export const furnitureOdyssey: PortfolioProject = {
       ],
     },
     {
-      label: "One dashboard",
-      title: "Return to the whole.",
+      label: "The live system",
+      title: "Step inside Furniture Odyssey.",
       paragraphs: [
-        "Furniture Odyssey presents a simple theme: connected operations, brought into one view.",
-        "This is a prototype reading experience. The final case-study text can replace these sample pages.",
+        "Preview the working sales operations dashboard, then continue into the live system.",
       ],
+      demo: {
+        previewPath: "/dashboard",
+        ctaLabel: "Cast this book",
+      },
     },
   ],
 };
