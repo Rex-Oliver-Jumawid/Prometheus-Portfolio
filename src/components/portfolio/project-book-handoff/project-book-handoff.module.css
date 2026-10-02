@@ -30,22 +30,24 @@
   border-radius: 38%;
   background: radial-gradient(
     ellipse at center,
-    rgb(255 231 157 / calc(0.58 * var(--handoff-glow, 0))) 0%,
-    rgb(236 181 69 / calc(0.34 * var(--handoff-glow, 0))) 36%,
+    rgb(255 231 157 / 58%) 0%,
+    rgb(236 181 69 / 34%) 36%,
     transparent 72%
   );
   filter: blur(22px);
+  opacity: var(--handoff-glow, 0);
   transform: scale(calc(0.92 + var(--handoff-glow, 0) * 0.18));
 }
 
 .handoff::after {
   z-index: -1;
   inset: -6%;
-  border: 1px solid rgb(255 222 135 / calc(0.5 * var(--handoff-glow, 0)));
+  border: 1px solid rgb(255 222 135 / 50%);
   border-radius: 5%;
   box-shadow:
-    0 0 28px rgb(244 188 66 / calc(0.34 * var(--handoff-glow, 0))),
-    0 0 70px rgb(205 131 34 / calc(0.2 * var(--handoff-glow, 0)));
+    0 0 28px rgb(244 188 66 / 34%),
+    0 0 70px rgb(205 131 34 / 20%);
+  opacity: var(--handoff-glow, 0);
 }
 
 .handoff[data-visible="true"] {
@@ -56,7 +58,7 @@
   object-fit: contain;
   filter:
     drop-shadow(0 10px 22px rgb(0 0 0 / 34%))
-    drop-shadow(0 0 18px rgb(246 202 99 / calc(0.22 * var(--handoff-glow, 0))));
+    drop-shadow(0 0 12px rgb(246 202 99 / 18%));
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -73,9 +73,7 @@ export function ProjectBookHandoff() {
         ? progress < 0.5
           ? 1
           : 0
-        : progress <= 0.006
-          ? 1
-          : 0;
+        : 1 - smooth(progress / 0.018);
       work.style.setProperty(
         "--book-handoff-source-opacity",
         String(sourceOpacity),
@@ -131,7 +129,7 @@ export function ProjectBookHandoff() {
       const rotation = mix(-4, 0, smooth(progress));
       const tilt = Math.sin(Math.PI * travel) * -7;
       const fadeOut = 1 - smooth((progress - 0.968) / 0.032);
-      const fadeIn = smooth(progress / 0.012);
+      const fadeIn = smooth(progress / 0.018);
       const glow = Math.sin(Math.PI * travel);
 
       overlay.style.setProperty("--handoff-x", `${left}px`);
