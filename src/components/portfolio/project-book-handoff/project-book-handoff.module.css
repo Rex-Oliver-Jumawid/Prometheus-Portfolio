@@ -1,6 +1,6 @@
 .handoff {
   position: fixed;
-  z-index: 20;
+  z-index: 90;
   top: 0;
   left: 0;
   width: var(--handoff-width, 0px);
@@ -8,11 +8,44 @@
   opacity: var(--handoff-opacity, 0);
   transform:
     translate3d(var(--handoff-x, 0px), var(--handoff-y, 0px), 0)
-    rotate(var(--handoff-rotation, 0deg));
+    perspective(1200px)
+    rotateY(var(--handoff-tilt, 0deg))
+    rotateZ(var(--handoff-rotation, 0deg));
   transform-origin: center;
   pointer-events: none;
   visibility: hidden;
   will-change: transform, width, height, opacity;
+}
+
+.handoff::before,
+.handoff::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.handoff::before {
+  z-index: -2;
+  inset: -18%;
+  border-radius: 38%;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(255 231 157 / calc(0.58 * var(--handoff-glow, 0))) 0%,
+    rgb(236 181 69 / calc(0.34 * var(--handoff-glow, 0))) 36%,
+    transparent 72%
+  );
+  filter: blur(22px);
+  transform: scale(calc(0.92 + var(--handoff-glow, 0) * 0.18));
+}
+
+.handoff::after {
+  z-index: -1;
+  inset: -6%;
+  border: 1px solid rgb(255 222 135 / calc(0.5 * var(--handoff-glow, 0)));
+  border-radius: 5%;
+  box-shadow:
+    0 0 28px rgb(244 188 66 / calc(0.34 * var(--handoff-glow, 0))),
+    0 0 70px rgb(205 131 34 / calc(0.2 * var(--handoff-glow, 0)));
 }
 
 .handoff[data-visible="true"] {
@@ -21,6 +54,9 @@
 
 .handoff img {
   object-fit: contain;
+  filter:
+    drop-shadow(0 10px 22px rgb(0 0 0 / 34%))
+    drop-shadow(0 0 18px rgb(246 202 99 / calc(0.22 * var(--handoff-glow, 0))));
 }
 
 @media (prefers-reduced-motion: reduce) {

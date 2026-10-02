@@ -30,6 +30,7 @@ function mix(from: number, to: number, amount: number) {
 export function ProjectBookHandoff() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const sourceRef = useRef<Bounds | null>(null);
+  const sourceSnapshotRef = useRef<Bounds | null>(null);
   const targetRef = useRef<Bounds | null>(null);
 
   useEffect(() => {
@@ -62,17 +63,25 @@ export function ProjectBookHandoff() {
 
       publishProgress(progress);
 
+      if (progress <= 0.001) {
+        sourceSnapshotRef.current = null;
+      } else if (!sourceSnapshotRef.current && sourceRef.current) {
+        sourceSnapshotRef.current = { ...sourceRef.current };
+      }
+
       const sourceOpacity = reducedMotion.matches
         ? progress < 0.5
           ? 1
           : 0
-        : 1 - smooth(progress / 0.14);
+        : progress <= 0.006
+          ? 1
+          : 0;
       work.style.setProperty(
         "--book-handoff-source-opacity",
         String(sourceOpacity),
       );
 
-      const source = sourceRef.current;
+      const source = sourceSnapshotRef.current ?? sourceRef.current;
       const target = targetRef.current;
       if (
         reducedMotion.matches ||
@@ -86,20 +95,52 @@ export function ProjectBookHandoff() {
       }
 
       const travel = smooth(progress);
-      const arc = -Math.sin(Math.PI * travel) * window.innerHeight * 0.045;
-      const left = mix(source.left, target.left, travel);
-      const top = mix(source.top, target.top, travel) + arc;
-      const width = mix(source.width, target.width, travel);
-      const height = mix(source.height, target.height, travel);
-      const rotation = mix(-4, 0, travel);
-      const fadeOut = 1 - smooth((progress - 0.88) / 0.12);
-      const fadeIn = smooth(progress / 0.06);
+      const sourceCenter = {
+        x: source.left + source.width / 2,
+        y: source.top + source.height / 2,
+      };
+      const targetCenter = {
+        x: target.left + target.width / 2,
+        y: target.top + target.height / 2,
+      };
+      const controlOne = {
+        x: mix(sourceCenter.x, targetCenter.x, 0.24),
+        y: sourceCenter.y - window.innerHeight * 0.085,
+      };
+      const controlTwo = {
+        x: mix(sourceCenter.x, targetCenter.x, 0.78),
+        y: targetCenter.y - window.innerHeight * 0.12,
+      };
+      const inverse = 1 - travel;
+      const centerX =
+        inverse ** 3 * sourceCenter.x +
+        3 * inverse ** 2 * travel * controlOne.x +
+        3 * inverse * travel ** 2 * controlTwo.x +
+        travel ** 3 * targetCenter.x;
+      const centerY =
+        inverse ** 3 * sourceCenter.y +
+        3 * inverse ** 2 * travel * controlOne.y +
+        3 * inverse * travel ** 2 * controlTwo.y +
+        travel ** 3 * targetCenter.y;
+
+      const sizeTravel = smooth(clamp01((progress - 0.08) / 0.88));
+      const width = mix(source.width, target.width, sizeTravel);
+      const height = mix(source.height, target.height, sizeTravel);
+      const left = centerX - width / 2;
+      const top = centerY - height / 2;
+      const rotation = mix(-4, 0, smooth(progress));
+      const tilt = Math.sin(Math.PI * travel) * -7;
+      const fadeOut = 1 - smooth((progress - 0.968) / 0.032);
+      const fadeIn = smooth(progress / 0.012);
+      const glow = Math.sin(Math.PI * travel);
 
       overlay.style.setProperty("--handoff-x", `${left}px`);
       overlay.style.setProperty("--handoff-y", `${top}px`);
       overlay.style.setProperty("--handoff-width", `${width}px`);
       overlay.style.setProperty("--handoff-height", `${height}px`);
       overlay.style.setProperty("--handoff-rotation", `${rotation}deg`);
+      overlay.style.setProperty("--handoff-tilt", `${tilt}deg`);
+      overlay.style.setProperty("--handoff-glow", String(glow));
       overlay.style.setProperty(
         "--handoff-opacity",
         String(fadeIn * fadeOut),

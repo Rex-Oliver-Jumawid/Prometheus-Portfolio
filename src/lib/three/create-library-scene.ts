@@ -345,13 +345,13 @@ export async function createLibraryScene(
 
   function syncDockVisibility() {
     runtimeBooks.forEach((book) => {
-      book.wrapper.visible = reducedMotion || dockProgress >= 0.88;
+      book.wrapper.visible = reducedMotion || dockProgress >= 0.968;
     });
     renderDirty = true;
   }
 
   function pickBook() {
-    if (!camera || disposed || dockProgress < 0.88) return null;
+    if (!camera || disposed || dockProgress < 0.968) return null;
 
     scene.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);

@@ -53,7 +53,7 @@ export function ProjectLibraryClient() {
         ?.progress;
       if (typeof progress !== "number") return;
       controllerRef.current?.setDockProgress(progress);
-      setDocked(progress >= 0.88);
+      setDocked(progress >= 0.968);
       window.requestAnimationFrame(publishBookBounds);
     }
 
