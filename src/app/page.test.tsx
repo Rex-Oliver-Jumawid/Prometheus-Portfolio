@@ -21,9 +21,12 @@ vi.mock("./_components/hero-parallax", () => ({
   HeroParallax: () => null,
 }));
 
-vi.mock("@/components/portfolio/project-book-handoff/project-book-handoff", () => ({
-  ProjectBookHandoff: () => null,
-}));
+vi.mock(
+  "@/components/portfolio/project-book-handoff/project-book-handoff",
+  () => ({
+    ProjectBookHandoff: () => null,
+  }),
+);
 
 vi.mock("@/components/portfolio/project-gallery/gallery-backdrop", () => ({
   GalleryBackdrop: () => null,
@@ -123,7 +126,7 @@ describe("portfolio homepage", () => {
 
   it("keeps the homepage gallery visually book-only", () => {
     render(<Home />);
-    const gallery = document.querySelector("#work")!;
+    const gallery = document.querySelector<HTMLElement>("#work")!;
     expect(
       within(gallery).queryByText("A Prometheus case study"),
     ).not.toBeInTheDocument();

@@ -11,7 +11,10 @@ test("the static gallery background blends into the hero and becomes solid when 
     "data-sticky-ready",
     "true",
   );
-  await expect(gallery).toHaveCSS("background-color", "rgb(24, 26, 27)");
+  await expect(gallery).toHaveCSS(
+    "background-image",
+    /rgba\(247, 211, 126, 0.42\)/,
+  );
   await expect(gallery.locator("video")).toHaveCount(0);
   await page.evaluate(() => window.scrollTo({ top: 810, behavior: "instant" }));
   await expect
@@ -113,9 +116,14 @@ for (const [width, height] of [
         (scroll) => window.scrollTo({ top: scroll, behavior: "instant" }),
         panel.start - panel.top + 1,
       );
+      const maximumScroll = await page.evaluate(
+        () => document.documentElement.scrollHeight - innerHeight,
+      );
+      // The short footer reaches the document end before its top can pin.
+      const expectedTop = Math.max(panel.top, panel.start - maximumScroll);
       await expect
         .poll(async () => (await page.locator(`#${panel.id}`).boundingBox())!.y)
-        .toBeCloseTo(panel.top, 0);
+        .toBeCloseTo(expectedTop, 0);
       expect(
         await page.evaluate(
           () =>

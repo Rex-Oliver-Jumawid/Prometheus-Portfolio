@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
 import type { LibraryBook } from "@/content/library";
+import { HANDOFF, registerBookEndpoint } from "./book-handoff";
 
 type LibrarySceneOptions = {
   host: HTMLElement;
@@ -15,6 +16,7 @@ type LibrarySceneOptions = {
   onSelectionChange?: (bookId: LibraryBook["id"] | null) => void;
   onHoverChange?: (bookId: LibraryBook["id"] | null) => void;
   onContextLost?: () => void;
+  onDockedChange?: (owned: boolean) => void;
 };
 
 export type LibraryScene = {
@@ -26,7 +28,6 @@ export type LibraryScene = {
     width: number;
     height: number;
   } | null;
-  setDockProgress: (progress: number) => void;
   setVisible: (visible: boolean) => void;
   setReducedMotion: (reduced: boolean) => void;
   setCoarsePointer: (coarse: boolean) => void;
@@ -34,7 +35,7 @@ export type LibraryScene = {
   dispose: () => void;
 };
 
-type RuntimeBook = LibraryBook & {
+type RuntimeBook = Omit<LibraryBook, "anchor"> & {
   wrapper: THREE.Group;
   scene: THREE.Group;
   rootObject: THREE.Object3D;
@@ -89,11 +90,7 @@ function disposeRoot(root: THREE.Object3D) {
   root.removeFromParent();
 }
 
-async function loadGltf(
-  loader: GLTFLoader,
-  url: string,
-  signal: AbortSignal,
-) {
+async function loadGltf(loader: GLTFLoader, url: string, signal: AbortSignal) {
   const resolvedUrl = new URL(url, window.location.href).href;
   const response = await fetch(resolvedUrl, { signal });
   if (!response.ok) {
@@ -120,7 +117,7 @@ export async function createLibraryScene(
   renderer.toneMapping = THREE.AgXToneMapping;
   renderer.toneMappingExposure = 2 ** 0.14;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.autoClear = false;
   renderer.info.autoReset = false;
   renderer.domElement.setAttribute("aria-hidden", "true");
@@ -147,7 +144,8 @@ export async function createLibraryScene(
   let pointerDirty = false;
   let lastRaycastTime = 0;
   let environmentEmphasis = 1;
-  let dockProgress = reducedMotion ? 1 : 0;
+  let docked = false;
+  let shadowLight: THREE.DirectionalLight | undefined;
   let viewport = {
     x: 0,
     y: 0,
@@ -243,6 +241,10 @@ export async function createLibraryScene(
   function renderScene() {
     if (!camera || disposed) return;
 
+    // This scene renders on demand between draws from the other WebGL canvases.
+    // Rebind GPU state for each draw: cached bindings otherwise produce alternating
+    // bright/dark baked textures even with an unchanged camera and no shadows.
+    renderer.resetState();
     renderer.info.reset();
     renderer.setScissorTest(false);
     renderer.setViewport(0, 0, viewport.canvasWidth, viewport.canvasHeight);
@@ -268,23 +270,14 @@ export async function createLibraryScene(
   function eventToPointer(event: PointerEvent | MouseEvent) {
     const rect = renderer.domElement.getBoundingClientRect();
     const x = event.clientX - rect.left - viewport.x;
-    const topOffset =
-      viewport.canvasHeight - viewport.y - viewport.height;
+    const topOffset = viewport.canvasHeight - viewport.y - viewport.height;
     const y = event.clientY - rect.top - topOffset;
 
-    if (
-      x < 0 ||
-      y < 0 ||
-      x > viewport.width ||
-      y > viewport.height
-    ) {
+    if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
       return false;
     }
 
-    pointer.set(
-      (x / viewport.width) * 2 - 1,
-      -((y / viewport.height) * 2 - 1),
-    );
+    pointer.set((x / viewport.width) * 2 - 1, -((y / viewport.height) * 2 - 1));
     return true;
   }
 
@@ -301,8 +294,7 @@ export async function createLibraryScene(
     if (bounds.isEmpty()) return null;
 
     const canvasRect = renderer.domElement.getBoundingClientRect();
-    const topOffset =
-      viewport.canvasHeight - viewport.y - viewport.height;
+    const topOffset = viewport.canvasHeight - viewport.y - viewport.height;
     const corners = [
       new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.min.z),
       new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.max.z),
@@ -322,13 +314,9 @@ export async function createLibraryScene(
     corners.forEach((corner) => {
       const projected = corner.project(camera!);
       const x =
-        canvasRect.left +
-        viewport.x +
-        ((projected.x + 1) / 2) * viewport.width;
+        canvasRect.left + viewport.x + ((projected.x + 1) / 2) * viewport.width;
       const y =
-        canvasRect.top +
-        topOffset +
-        ((1 - projected.y) / 2) * viewport.height;
+        canvasRect.top + topOffset + ((1 - projected.y) / 2) * viewport.height;
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
       maxX = Math.max(maxX, x);
@@ -345,13 +333,24 @@ export async function createLibraryScene(
 
   function syncDockVisibility() {
     runtimeBooks.forEach((book) => {
-      book.wrapper.visible = reducedMotion || dockProgress >= 0.998;
+      // A shadow-only caster keeps the landing grounded without drawing a
+      // second book or writing invisible depth over the traveling object.
+      book.wrapper.visible = true;
+      book.meshes.forEach((mesh) => {
+        const materials = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material];
+        materials.forEach((material) => {
+          material.colorWrite = docked;
+          material.depthWrite = docked;
+        });
+      });
     });
     renderDirty = true;
   }
 
   function pickBook() {
-    if (!camera || disposed || dockProgress < 0.998) return null;
+    if (!camera || disposed || !docked) return null;
 
     scene.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);
@@ -360,18 +359,18 @@ export async function createLibraryScene(
       ...[...runtimeBooks.values()].flatMap((book) => book.meshes),
     ];
     const first = raycaster.intersectObjects(meshes, false)[0];
-    return (first?.object.userData.libraryBookId ??
-      null) as LibraryBook["id"] | null;
+    return (first?.object.userData.libraryBookId ?? null) as
+      LibraryBook["id"] | null;
   }
 
   function animateBooks(dt: number) {
+    if (!docked) return false;
     let changing = false;
     const amount = reducedMotion ? 1 : 1 - Math.exp(-dt * 10);
 
     runtimeBooks.forEach((book) => {
       const isSelected = book.id === selected;
-      const isHovered =
-        book.id === hovered && !coarsePointer && !reducedMotion;
+      const isHovered = book.id === hovered && !coarsePointer && !reducedMotion;
 
       book.targetPosition.set(0, 0, 0);
       book.targetQuaternion.identity();
@@ -433,9 +432,7 @@ export async function createLibraryScene(
       ) {
         book.wrapper.position.copy(book.targetPosition);
       }
-      if (
-        book.wrapper.quaternion.angleTo(book.targetQuaternion) < 0.00001
-      ) {
+      if (book.wrapper.quaternion.angleTo(book.targetQuaternion) < 0.00001) {
         book.wrapper.quaternion.copy(book.targetQuaternion);
       }
     });
@@ -463,11 +460,11 @@ export async function createLibraryScene(
   }
 
   function animateCamera(dt: number) {
-    if (!camera) return false;
+    if (!camera || !docked) return false;
 
     const oldPosition = camera.position.clone();
     const oldQuaternion = camera.quaternion.clone();
-    const enabled = !reducedMotion && !coarsePointer;
+    const enabled = docked && !reducedMotion && !coarsePointer;
 
     currentParallax.lerp(
       enabled ? parallax : new THREE.Vector2(),
@@ -551,6 +548,7 @@ export async function createLibraryScene(
 
   function contextLost(event: Event) {
     event.preventDefault();
+    unregister();
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     visible = false;
@@ -651,7 +649,7 @@ export async function createLibraryScene(
         const material = new THREE.MeshBasicMaterial({
           name: `${oldMaterial.name || "Environment"}_Baked`,
           map,
-          color: map ? 0xffffff : sourceMaterial.color ?? 0xffffff,
+          color: map ? 0xffffff : (sourceMaterial.color ?? 0xffffff),
           transparent: oldMaterial.transparent,
           opacity: oldMaterial.opacity,
           alphaTest: oldMaterial.alphaTest,
@@ -690,7 +688,7 @@ export async function createLibraryScene(
     }
 
     sourceCamera.updateWorldMatrix(true, false);
-    camera = sourceCamera.clone(false) as THREE.PerspectiveCamera;
+    camera = sourceCamera.clone();
     camera.name = "Prometheus_Library_Web_Camera";
     sourceCamera.matrixWorld.decompose(
       camera.position,
@@ -774,7 +772,7 @@ export async function createLibraryScene(
       }
 
       anchor.add(wrapper);
-      wrapper.visible = reducedMotion || dockProgress >= 0.998;
+      wrapper.visible = true;
       ownedRoots.push(gltf.scene);
       wrapper.updateWorldMatrix(true, true);
 
@@ -787,8 +785,7 @@ export async function createLibraryScene(
       }
 
       const outwardExtra = sourceRoot.userData.local_outward as
-        | number[]
-        | undefined;
+        number[] | undefined;
       const outward = Array.isArray(outwardExtra)
         ? new THREE.Vector3().fromArray(outwardExtra).normalize()
         : new THREE.Vector3(-1, 0, 0);
@@ -823,6 +820,7 @@ export async function createLibraryScene(
           material.toneMapped = true;
 
           const standard = material as THREE.MeshStandardMaterial;
+          standard.aoMapIntensity = 0.78;
           for (const slot of [
             "map",
             "normalMap",
@@ -854,10 +852,9 @@ export async function createLibraryScene(
       -0.4035022258758545,
     ).normalize();
 
-    const sun = new THREE.DirectionalLight(
-      new THREE.Color(1, 0.865, 0.695),
-      3,
-    );
+    const sun = new THREE.DirectionalLight(new THREE.Color(1, 0.865, 0.695), 3);
+    shadowLight = sun;
+    sun.shadow.intensity = 0;
     sun.position.copy(environmentCenter).addScaledVector(sunDirection, -8);
     sun.target.position.copy(environmentCenter);
     sun.castShadow = true;
@@ -893,6 +890,7 @@ export async function createLibraryScene(
 
     lights.push(sun, sun.target, fill, windowBounce);
 
+    syncDockVisibility();
     resize();
     progress(88, "Preparing the light and textures...");
     await renderer.compileAsync(scene, camera);
@@ -921,6 +919,60 @@ export async function createLibraryScene(
 
   requestLoop();
 
+  const unregister = registerBookEndpoint("target", {
+    view() {
+      const book = runtimeBooks.get(options.books[0].id)!;
+      // The displayed pose freezes on departure, including a selected/hovered
+      // book, so reversing never jumps from that pose back to its rest anchor.
+      scene.updateMatrixWorld(true);
+      const rect = options.host.getBoundingClientRect();
+      return {
+        object: book.scene,
+        scene,
+        camera: camera!,
+        rect: {
+          left: rect.left + viewport.x,
+          top: rect.top + viewport.y,
+          width: viewport.width,
+          height: viewport.height,
+        },
+      };
+    },
+    own(owned, arrival = owned ? 1 : 0) {
+      if (!owned && arrival === 0) {
+        runtimeBooks.forEach((book) => {
+          book.wrapper.position.set(0, 0, 0);
+          book.wrapper.quaternion.identity();
+        });
+        currentParallax.set(0, 0);
+        camera!.position.copy(baseCameraPosition);
+        camera!.quaternion.copy(baseCameraQuaternion);
+      }
+      const shadow = THREE.MathUtils.smoothstep(
+        arrival,
+        HANDOFF.shadowStart,
+        1,
+      );
+      const changedShadow =
+        shadowLight && shadowLight.shadow.intensity !== shadow;
+      if (shadowLight) shadowLight.shadow.intensity = shadow;
+      if (docked === owned && options.host.dataset.bookVisible !== undefined) {
+        if (changedShadow) renderScene();
+        return;
+      }
+      docked = owned;
+      if (!owned) {
+        resetSelection();
+        updateHovered(null);
+      }
+      syncDockVisibility();
+      options.host.dataset.bookVisible = String(owned);
+      options.onDockedChange?.(owned);
+      // Commit in the coordinator's frame, including while intersection-paused.
+      renderScene();
+    },
+  });
+
   return {
     selectBook(bookId) {
       const changed = selectBook(bookId);
@@ -933,11 +985,6 @@ export async function createLibraryScene(
     },
     getBookBounds(bookId) {
       return getBookBounds(bookId);
-    },
-    setDockProgress(next) {
-      dockProgress = THREE.MathUtils.clamp(next, 0, 1);
-      syncDockVisibility();
-      requestLoop();
     },
     setVisible(next) {
       visible = next;
@@ -978,6 +1025,7 @@ export async function createLibraryScene(
     dispose() {
       if (disposed) return;
       disposed = true;
+      unregister();
 
       if (frame) cancelAnimationFrame(frame);
       resizeObserver.disconnect();
@@ -985,10 +1033,7 @@ export async function createLibraryScene(
       renderer.domElement.removeEventListener("pointermove", pointerMove);
       renderer.domElement.removeEventListener("pointerleave", pointerLeave);
       renderer.domElement.removeEventListener("click", click);
-      renderer.domElement.removeEventListener(
-        "webglcontextlost",
-        contextLost,
-      );
+      renderer.domElement.removeEventListener("webglcontextlost", contextLost);
 
       lights.forEach((light) => {
         if (light instanceof THREE.DirectionalLight) {

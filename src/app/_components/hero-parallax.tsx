@@ -10,13 +10,13 @@ export function HeroParallax() {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame: number | undefined;
 
-    function clearMotion() {
+    const clearMotion = () => {
       hero.style.removeProperty("--hero-scene-y");
       hero.style.removeProperty("--hero-figure-y");
       hero.style.removeProperty("--hero-copy-y");
-    }
+    };
 
-    function sync() {
+    const sync = () => {
       frame = undefined;
       if (preference.matches) {
         clearMotion();
@@ -30,7 +30,7 @@ export function HeroParallax() {
       hero.style.setProperty("--hero-scene-y", `${distance * 0.12}px`);
       hero.style.setProperty("--hero-figure-y", `${distance * 0.065}px`);
       hero.style.setProperty("--hero-copy-y", `${distance * 0.035}px`);
-    }
+    };
 
     function schedule() {
       if (frame === undefined) frame = window.requestAnimationFrame(sync);

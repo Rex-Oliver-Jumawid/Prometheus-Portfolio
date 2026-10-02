@@ -142,7 +142,7 @@ for (const [width, height] of [
     const originalBrand = await brand.elementHandle();
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
-    await expect(dialog).toHaveCSS("background-color", "rgb(220, 61, 60)");
+    await expect(dialog).toHaveCSS("background-color", "rgb(194, 75, 68)");
     await expect(brand).toHaveCount(1);
     expect(
       await originalBrand!.evaluate((element) => element.isConnected),

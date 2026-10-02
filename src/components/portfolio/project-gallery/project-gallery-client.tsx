@@ -44,16 +44,6 @@ export function ProjectGalleryClient({
   const posterRef = useRef<HTMLImageElement>(null);
   const restoreFocusRef = useRef(false);
   const controllerRef = useRef<GalleryScene | null>(null);
-  const handoffTargetRef = useRef<{
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  } | null>(null);
-  const handoffSourceRef = useRef<{
-    host: DOMRect;
-    book: { left: number; top: number; width: number; height: number };
-  } | null>(null);
   const readerPhaseRef = useRef<"closed" | "opening" | "open" | "closing">(
     "closed",
   );
@@ -110,6 +100,7 @@ export function ProjectGalleryClient({
     );
   }, []);
   const openBook = useCallback(() => {
+    if (hostRef.current?.dataset.bookVisible === "false") return;
     if (readerPhaseRef.current !== "closed") return;
     setSpread(0);
     dialogRef.current?.showModal();
@@ -200,195 +191,11 @@ export function ProjectGalleryClient({
     let started = false;
     let alive = true;
 
-    let boundsFrame: number | undefined;
-
-    function publishBookBounds() {
-      const source =
-        controllerRef.current?.getBookBounds() ??
-        posterRef.current?.getBoundingClientRect();
-      if (!source?.width || !source.height) return;
-
-      document.dispatchEvent(
-        new CustomEvent("prometheus:book-source-bounds", {
-          detail: {
-            left: source.left,
-            top: source.top,
-            width: source.width,
-            height: source.height,
-          },
-        }),
-      );
-    }
-
-    function queueBookBounds() {
-      window.cancelAnimationFrame(boundsFrame ?? 0);
-      boundsFrame = window.requestAnimationFrame(publishBookBounds);
-    }
-
-    function resetHandoffCanvas() {
-      const canvas =
-        host?.querySelector("canvas") ??
-        document.body.querySelector<HTMLCanvasElement>(
-          'canvas[data-prometheus-handoff="true"]',
-        );
-      if (!canvas || !host) return;
-
-      if (canvas.parentElement !== host) host.append(canvas);
-      canvas.style.removeProperty("position");
-      canvas.style.removeProperty("inset");
-      canvas.style.removeProperty("left");
-      canvas.style.removeProperty("top");
-      canvas.style.removeProperty("width");
-      canvas.style.removeProperty("height");
-      canvas.style.removeProperty("z-index");
-      canvas.style.removeProperty("pointer-events");
-      canvas.style.removeProperty("transform");
-      canvas.style.removeProperty("transform-origin");
-      canvas.style.removeProperty("opacity");
-      canvas.style.removeProperty("filter");
-    }
-
-    function targetBoundsChanged(event: Event) {
-      handoffTargetRef.current = (
-        event as CustomEvent<{
-          left: number;
-          top: number;
-          width: number;
-          height: number;
-        }>
-      ).detail;
-
-      const current = Number(
-        document.documentElement.dataset.bookHandoffProgress,
-      );
-      if (Number.isFinite(current)) {
-        handoffChanged(
-          new CustomEvent("prometheus:book-handoff-progress", {
-            detail: { progress: current },
-          }),
-        );
-      }
-    }
-
-    function handoffChanged(event: Event) {
-      const progress = (event as CustomEvent<{ progress: number }>).detail
-        ?.progress;
-      const controller = controllerRef.current;
-      const canvas =
-        host?.querySelector("canvas") ??
-        document.body.querySelector<HTMLCanvasElement>(
-          'canvas[data-prometheus-handoff="true"]',
-        );
-
-      if (typeof progress !== "number" || !controller || !canvas || !host) return;
-
-      if (progress <= 0.001) {
-        handoffSourceRef.current = null;
-        canvas.removeAttribute("data-prometheus-handoff");
-        resetHandoffCanvas();
-        return;
-      }
-
-      if (progress >= 0.998) {
-        canvas.removeAttribute("data-prometheus-handoff");
-        resetHandoffCanvas();
-        handoffSourceRef.current = null;
-        return;
-      }
-
-      if (!handoffSourceRef.current) {
-        const book = controller.getBookBounds();
-        const hostRect = host.getBoundingClientRect();
-        if (!book?.width || !book.height || !hostRect.width || !hostRect.height) {
-          return;
-        }
-
-        handoffSourceRef.current = {
-          host: hostRect,
-          book: {
-            left: book.left,
-            top: book.top,
-            width: book.width,
-            height: book.height,
-          },
-        };
-      }
-
-      const source = handoffSourceRef.current;
-      const target = handoffTargetRef.current;
-      if (!source || !target?.width || !target.height) return;
-
-      if (canvas.parentElement !== document.body) {
-        document.body.append(canvas);
-      }
-      canvas.dataset.prometheusHandoff = "true";
-
-      const travel = progress * progress * (3 - 2 * progress);
-      const sourceCenterX = source.book.left + source.book.width / 2;
-      const sourceCenterY = source.book.top + source.book.height / 2;
-      const targetCenterX = target.left + target.width / 2;
-      const targetCenterY = target.top + target.height / 2;
-
-      const controlOneX = sourceCenterX + (targetCenterX - sourceCenterX) * 0.24;
-      const controlOneY = sourceCenterY - window.innerHeight * 0.08;
-      const controlTwoX = sourceCenterX + (targetCenterX - sourceCenterX) * 0.78;
-      const controlTwoY = targetCenterY - window.innerHeight * 0.105;
-      const inverse = 1 - travel;
-
-      const centerX =
-        inverse ** 3 * sourceCenterX +
-        3 * inverse ** 2 * travel * controlOneX +
-        3 * inverse * travel ** 2 * controlTwoX +
-        travel ** 3 * targetCenterX;
-      const centerY =
-        inverse ** 3 * sourceCenterY +
-        3 * inverse ** 2 * travel * controlOneY +
-        3 * inverse * travel ** 2 * controlTwoY +
-        travel ** 3 * targetCenterY;
-
-      const targetScale = Math.min(
-        target.width / source.book.width,
-        target.height / source.book.height,
-      );
-      const sizeProgress = Math.min(
-        1,
-        Math.max(0, (progress - 0.12) / 0.86),
-      );
-      const easedSize = sizeProgress * sizeProgress * (3 - 2 * sizeProgress);
-      const scale = 1 + (targetScale - 1) * easedSize;
-
-      const localBookCenterX =
-        source.book.left - source.host.left + source.book.width / 2;
-      const localBookCenterY =
-        source.book.top - source.host.top + source.book.height / 2;
-
-      const translateX =
-        centerX - source.host.left - localBookCenterX * scale;
-      const translateY =
-        centerY - source.host.top - localBookCenterY * scale;
-
-      canvas.style.position = "fixed";
-      canvas.style.inset = "auto";
-      canvas.style.left = `${source.host.left}px`;
-      canvas.style.top = `${source.host.top}px`;
-      canvas.style.width = `${source.host.width}px`;
-      canvas.style.height = `${source.host.height}px`;
-      canvas.style.zIndex = "90";
-      canvas.style.pointerEvents = "none";
-      canvas.style.transformOrigin = "0 0";
-      canvas.style.transform =
-        `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
-      canvas.style.opacity = "1";
-      canvas.style.filter =
-        "drop-shadow(0 14px 28px rgb(0 0 0 / 34%)) drop-shadow(0 0 18px rgb(232 179 72 / 20%))";
-    }
-
     function syncScroll() {
       const section = host!.closest("section") ?? host!;
       const top = section.getBoundingClientRect().top;
       const progress = Math.min(1, Math.max(0, 1 - top / window.innerHeight));
       controllerRef.current?.setScrollProgress(progress);
-      queueBookBounds();
     }
     function syncVisibility() {
       const visible =
@@ -424,19 +231,6 @@ export function ProjectGalleryClient({
         controller.setReducedMotion(preference.matches);
         syncScroll();
         syncVisibility();
-        queueBookBounds();
-
-        const currentHandoff = Number(
-          document.documentElement.dataset.bookHandoffProgress,
-        );
-        if (Number.isFinite(currentHandoff)) {
-          handoffChanged(
-            new CustomEvent("prometheus:book-handoff-progress", {
-              detail: { progress: currentHandoff },
-            }),
-          );
-        }
-
         setStatus("ready");
       } catch {
         if (alive && !abort.signal.aborted) setStatus("fallback");
@@ -472,15 +266,6 @@ export function ProjectGalleryClient({
     visibilityObserver.observe(host);
     preference.addEventListener("change", motionChanged);
     document.addEventListener("visibilitychange", syncVisibility);
-    document.addEventListener("prometheus:book-bounds-request", queueBookBounds);
-    document.addEventListener(
-      "prometheus:book-target-bounds",
-      targetBoundsChanged,
-    );
-    document.addEventListener(
-      "prometheus:book-handoff-progress",
-      handoffChanged,
-    );
     host.addEventListener("gallery-motion-change", syncVisibility);
     window.addEventListener("scroll", syncScroll, { passive: true });
     window.addEventListener("resize", syncScroll);
@@ -491,23 +276,9 @@ export function ProjectGalleryClient({
       visibilityObserver.disconnect();
       preference.removeEventListener("change", motionChanged);
       document.removeEventListener("visibilitychange", syncVisibility);
-      document.removeEventListener(
-        "prometheus:book-bounds-request",
-        queueBookBounds,
-      );
-      document.removeEventListener(
-        "prometheus:book-target-bounds",
-        targetBoundsChanged,
-      );
-      document.removeEventListener(
-        "prometheus:book-handoff-progress",
-        handoffChanged,
-      );
-      resetHandoffCanvas();
       host.removeEventListener("gallery-motion-change", syncVisibility);
       window.removeEventListener("scroll", syncScroll);
       window.removeEventListener("resize", syncScroll);
-      window.cancelAnimationFrame(boundsFrame ?? 0);
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };

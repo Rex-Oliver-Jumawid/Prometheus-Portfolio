@@ -1,111 +1,156 @@
 "use client";
 
-import { useEffect } from "react";
-
-function clamp01(value: number) {
-  return Math.min(1, Math.max(0, value));
-}
-
-function smooth(value: number) {
-  const t = clamp01(value);
-  return t * t * (3 - 2 * t);
-}
-
-function sectionStart(section: HTMLElement) {
-  const measured = Number(section.dataset.viewportStart);
-  if (Number.isFinite(measured)) return measured;
-
-  // Fallback before StickyViewports has measured the stack.
-  const root = section.parentElement;
-  if (!root) return section.getBoundingClientRect().top + window.scrollY;
-
-  let start = root.getBoundingClientRect().top + window.scrollY;
-  for (const child of Array.from(root.children)) {
-    if (!(child instanceof HTMLElement)) continue;
-    if (child === section) return start;
-    if (child.tagName === "SECTION") start += child.getBoundingClientRect().height;
-  }
-  return start;
-}
+import { useEffect, useRef } from "react";
+import {
+  bookEndpoints,
+  HANDOFF,
+  handoffProgress,
+  subscribeBookEndpoints,
+} from "@/lib/three/book-handoff";
+import type { createBookHandoffLayer } from "@/lib/three/create-book-handoff-layer";
+import styles from "./project-book-handoff.module.css";
 
 export function ProjectBookHandoff() {
+  const layerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const work = document.getElementById("work");
-    const library = document.getElementById("library");
-    if (!work || !library) return;
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let frame: number | undefined;
-
-    function publishProgress(progress: number) {
-      document.documentElement.dataset.bookHandoffProgress = String(progress);
-      document.dispatchEvent(
-        new CustomEvent("prometheus:book-handoff-progress", {
-          detail: { progress },
-        }),
-      );
-    }
-
-    function update() {
-      frame = undefined;
-
-      const workStart = sectionStart(work);
-      const libraryStart = sectionStart(library);
-      const workHeight =
-        Number(work.dataset.viewportHeight) || work.getBoundingClientRect().height;
-
-      // Only animate in the actual work -> library corridor.
-      // The book is fully owned by the work section before this point, and fully
-      // owned by the library after it. This prevents it from leaking into hero/footer.
-      const start =
-        libraryStart - Math.min(workHeight * 0.62, window.innerHeight * 0.52);
-      const end = libraryStart + window.innerHeight * 0.12;
-
-      const rawProgress = clamp01(
-        (window.scrollY - start) / Math.max(1, end - start),
-      );
-
-      // Hard ownership guards are intentional. Sticky siblings can remain
-      // visually pinned outside their normal-flow range.
-      const guardedProgress =
-        window.scrollY < workStart
-          ? 0
-          : window.scrollY > end
-            ? 1
-            : rawProgress;
-
-      const progress = reducedMotion.matches
-        ? guardedProgress >= 0.5
-          ? 1
-          : 0
-        : smooth(guardedProgress);
-
-      publishProgress(progress);
-    }
-
+    const work = document.getElementById("work"),
+      library = document.getElementById("library");
+    const footer = document.getElementById("contact"),
+      host = layerRef.current;
+    if (!work || !library || !footer || !host) return;
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0,
+      alive = true,
+      loading = false,
+      failed = false;
+    let layer: ReturnType<typeof createBookHandoffLayer> | undefined;
+    let displayed = 0,
+      last = 0,
+      recovering = false,
+      hadTarget = false;
     function schedule() {
-      if (frame === undefined) frame = window.requestAnimationFrame(update);
+      if (!frame && alive) frame = requestAnimationFrame(update);
     }
-
+    async function load() {
+      if (loading || layer || failed) return;
+      loading = true;
+      try {
+        const { createBookHandoffLayer } =
+          await import("@/lib/three/create-book-handoff-layer");
+        if (!alive) return;
+        layer = createBookHandoffLayer(host!, () => {
+          failed = true;
+          schedule();
+        });
+      } catch {
+        failed = true;
+      } finally {
+        loading = false;
+        schedule();
+      }
+    }
+    function update(now: number) {
+      frame = 0;
+      // Sum flow heights: pinned visual tops never enter the scroll timeline.
+      let start = work!.parentElement!.getBoundingClientRect().top + scrollY;
+      const starts = new Map<Element, number>();
+      for (const section of work!.parentElement!.children) {
+        if (section.tagName !== "SECTION") continue;
+        starts.set(section, start);
+        start += section.getBoundingClientRect().height;
+      }
+      const desired = handoffProgress(
+        scrollY,
+        starts.get(work!)!,
+        starts.get(library!)!,
+        innerHeight,
+      );
+      const { source, target } = bookEndpoints();
+      const inCorridor =
+        scrollY >= starts.get(work!)! && scrollY < starts.get(footer!)!;
+      const ready = !!source && !!target && !!layer && !failed;
+      if (source && !motion.matches) void load();
+      if (ready && !hadTarget && desired > 0 && inCorridor) recovering = true;
+      hadTarget = ready;
+      if (motion.matches || failed) {
+        recovering = false;
+        displayed = desired >= 0.5 ? 1 : 0;
+      } else if (recovering && ready && inCorridor) {
+        const step =
+          Math.min(0.05, Math.max(0, (now - last) / 1000)) /
+          HANDOFF.recoverySeconds;
+        displayed +=
+          Math.sign(desired - displayed) *
+          Math.min(step, Math.abs(desired - displayed));
+        if (displayed === desired) recovering = false;
+      } else {
+        recovering = false;
+        displayed = ready ? desired : 0;
+      }
+      last = now;
+      const travel =
+        !!source &&
+        !!layer &&
+        !failed &&
+        inCorridor &&
+        !motion.matches &&
+        desired > 0 &&
+        displayed < 1;
+      const docked =
+        !!target &&
+        (motion.matches || failed || !source
+          ? desired >= 0.5
+          : displayed === 1 || (!inCorridor && desired === 1));
+      if (travel) {
+        try {
+          const sourceView = source!.view();
+          layer!.render(sourceView, target?.view() ?? sourceView, displayed);
+        } catch {
+          failed = true;
+          schedule();
+          return;
+        }
+      }
+      source?.own(!travel && !docked);
+      target?.own(docked, displayed);
+      host!.dataset.visible = String(travel && !document.hidden);
+      // The footer can enter before its flow start. Clip to its actual top.
+      const top = Math.max(0, work!.getBoundingClientRect().top);
+      const bottom = Math.max(
+        0,
+        innerHeight - footer!.getBoundingClientRect().top,
+      );
+      host!.style.clipPath = `inset(${top}px 0 ${bottom}px 0)`;
+      host!.dataset.owner = travel ? "handoff" : docked ? "shelf" : "source";
+      host!.dataset.progress = String(displayed);
+      if (recovering) schedule();
+    }
+    const unsubscribe = subscribeBookEndpoints(schedule),
+      observer = new ResizeObserver(schedule);
+    [work, library, footer].forEach((section) => observer.observe(section));
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
-    reducedMotion.addEventListener("change", schedule);
-
-    // StickyViewports measures in an effect too. Queue twice so its canonical
-    // starts are available even on the initial load.
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(schedule);
-    });
-
+    document.addEventListener("visibilitychange", schedule);
+    motion.addEventListener("change", schedule);
+    schedule();
     return () => {
-      window.cancelAnimationFrame(frame ?? 0);
+      alive = false;
+      cancelAnimationFrame(frame);
+      unsubscribe();
+      observer.disconnect();
+      layer?.dispose();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
-      reducedMotion.removeEventListener("change", schedule);
-      publishProgress(0);
-      delete document.documentElement.dataset.bookHandoffProgress;
+      document.removeEventListener("visibilitychange", schedule);
+      motion.removeEventListener("change", schedule);
     };
   }, []);
-
-  return null;
+  return (
+    <div
+      ref={layerRef}
+      className={styles.handoff}
+      data-testid="book-handoff"
+      aria-hidden="true"
+    />
+  );
 }

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { registerBookEndpoint } from "./book-handoff";
 
 type GalleryOptions = {
   host: HTMLElement;
@@ -70,8 +71,8 @@ export async function createGalleryScene(
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.95;
+  renderer.toneMapping = THREE.AgXToneMapping;
+  renderer.toneMappingExposure = 2 ** 0.14;
   renderer.setClearColor(0x000000, 0);
   renderer.domElement.setAttribute("aria-hidden", "true");
 
@@ -121,6 +122,8 @@ export async function createGalleryScene(
   scene.add(key, key.target, fill, rim);
   book.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
     const materials = Array.isArray(object.material)
       ? object.material
       : [object.material];
@@ -157,6 +160,7 @@ export async function createGalleryScene(
   let idleTimer: number | undefined;
   let frame = 0;
   let hasRendered = false;
+  let handoffOwned = false;
   let last = performance.now();
 
   function resize() {
@@ -182,6 +186,7 @@ export async function createGalleryScene(
     if (disposed || !visible) return;
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
+    if (handoffOwned) return;
     if (reduced) progress = 1;
     else if (!paused) progress = scrollProgress;
     const growth = THREE.MathUtils.smoothstep(progress, 0, 1);
@@ -284,6 +289,7 @@ export async function createGalleryScene(
   }
   function contextLost(event: Event) {
     event.preventDefault();
+    unregister();
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     visible = false;
@@ -300,6 +306,33 @@ export async function createGalleryScene(
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(host);
   resize();
+
+  const unregister = host.closest('#work[data-standalone="true"]')
+    ? () => {}
+    : registerBookEndpoint("source", {
+        view() {
+          book.updateWorldMatrix(true, true);
+          camera.updateMatrixWorld();
+          return {
+            object: book,
+            scene,
+            camera,
+            rect: host.getBoundingClientRect(),
+          };
+        },
+        own(owned) {
+          const changed = handoffOwned === owned;
+          handoffOwned = !owned;
+          bookPivot.visible = owned;
+          host.dataset.bookVisible = String(owned);
+          host.tabIndex = owned ? 0 : -1;
+          host.setAttribute("aria-disabled", String(!owned));
+          if (changed) {
+            renderer.render(scene, camera);
+            if (owned) requestRender();
+          }
+        },
+      });
 
   return {
     getCoverPose() {
@@ -425,6 +458,7 @@ export async function createGalleryScene(
     dispose() {
       if (disposed) return;
       disposed = true;
+      unregister();
       window.clearTimeout(idleTimer);
       if (frame) cancelAnimationFrame(frame);
       resizeObserver.disconnect();

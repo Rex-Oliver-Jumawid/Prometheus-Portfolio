@@ -14,7 +14,9 @@ export function ProjectLibraryClient() {
   const controllerRef = useRef<LibraryScene | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
-  const [loadingLabel, setLoadingLabel] = useState("Preparing the bookshelf...");
+  const [loadingLabel, setLoadingLabel] = useState(
+    "Preparing the bookshelf...",
+  );
   const [selected, setSelected] = useState<LibraryBook["id"] | null>(null);
   const [hovered, setHovered] = useState<LibraryBook["id"] | null>(null);
   const [docked, setDocked] = useState(false);
@@ -37,67 +39,26 @@ export function ProjectLibraryClient() {
       controllerRef.current?.setVisible(active && !document.hidden);
     }
 
-    function publishBookBounds() {
-      const hostRect = host.getBoundingClientRect();
-      const canonical = book.handoffViewportBounds;
-      if (
-        !canonical ||
-        !hostRect.width ||
-        !hostRect.height
-      ) {
-        return;
-      }
-
-      const presentationAspect = 16 / 9;
-      let viewWidth = hostRect.width;
-      let viewHeight = viewWidth / presentationAspect;
-      if (viewHeight > hostRect.height) {
-        viewHeight = hostRect.height;
-        viewWidth = viewHeight * presentationAspect;
-      }
-
-      const viewportLeft = hostRect.left + (hostRect.width - viewWidth) / 2;
-      const viewportTop = hostRect.top + (hostRect.height - viewHeight) / 2;
-
-      document.dispatchEvent(
-        new CustomEvent("prometheus:book-target-bounds", {
-          detail: {
-            left: viewportLeft + canonical.left * viewWidth,
-            top: viewportTop + canonical.top * viewHeight,
-            width: canonical.width * viewWidth,
-            height: canonical.height * viewHeight,
-          },
-        }),
-      );
-    }
-
-    function handoffChanged(event: Event) {
-      const progress = (event as CustomEvent<{ progress: number }>).detail
-        ?.progress;
-      if (typeof progress !== "number") return;
-      controllerRef.current?.setDockProgress(progress);
-      setDocked(progress >= 0.998);
-      window.requestAnimationFrame(publishBookBounds);
-    }
-
     async function loadScene() {
       if (started) return;
       started = true;
       setStatus("loading");
 
       try {
-        const { createLibraryScene } = await import(
-          "@/lib/three/create-library-scene"
-        );
+        const { createLibraryScene } =
+          await import("@/lib/three/create-library-scene");
         if (!alive) return;
 
         const controller = await createLibraryScene({
-          host,
+          host: host!,
           environmentUrl: prometheusLibrary.environmentUrl,
           books: prometheusLibrary.books,
           signal: abort.signal,
           reducedMotion: motionPreference.matches,
           coarsePointer: coarsePreference.matches,
+          onDockedChange: (owned) => {
+            if (alive) setDocked(owned);
+          },
           onProgress(nextProgress, label) {
             if (!alive) return;
             setProgress(nextProgress);
@@ -122,16 +83,6 @@ export function ProjectLibraryClient() {
         controllerRef.current = controller;
         controller.setVisible(active && !document.hidden);
 
-        const currentHandoff = Number(
-          document.documentElement.dataset.bookHandoffProgress,
-        );
-        if (Number.isFinite(currentHandoff)) {
-          controller.setDockProgress(currentHandoff);
-          setDocked(currentHandoff >= 0.998);
-        }
-
-        window.requestAnimationFrame(publishBookBounds);
-        document.dispatchEvent(new Event("prometheus:book-bounds-request"));
         setProgress(100);
         setStatus("ready");
       } catch (error) {
@@ -161,7 +112,7 @@ export function ProjectLibraryClient() {
           nearObserver.disconnect();
         }
       },
-      { rootMargin: "1000px" },
+      { rootMargin: "250px" },
     );
 
     const visibilityObserver = new IntersectionObserver(
@@ -177,10 +128,6 @@ export function ProjectLibraryClient() {
     motionPreference.addEventListener("change", motionChanged);
     coarsePreference.addEventListener("change", pointerChanged);
     document.addEventListener("visibilitychange", syncVisibility);
-    document.addEventListener("prometheus:book-bounds-request", publishBookBounds);
-    document.addEventListener("prometheus:book-handoff-progress", handoffChanged);
-    window.addEventListener("scroll", publishBookBounds, { passive: true });
-    window.addEventListener("resize", publishBookBounds);
 
     return () => {
       alive = false;
@@ -190,16 +137,6 @@ export function ProjectLibraryClient() {
       motionPreference.removeEventListener("change", motionChanged);
       coarsePreference.removeEventListener("change", pointerChanged);
       document.removeEventListener("visibilitychange", syncVisibility);
-      document.removeEventListener(
-        "prometheus:book-bounds-request",
-        publishBookBounds,
-      );
-      document.removeEventListener(
-        "prometheus:book-handoff-progress",
-        handoffChanged,
-      );
-      window.removeEventListener("scroll", publishBookBounds);
-      window.removeEventListener("resize", publishBookBounds);
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };
@@ -240,7 +177,9 @@ export function ProjectLibraryClient() {
         {status === "fallback" && (
           <div className={styles.overlay} role="status">
             <div className={styles.overlayContent}>
-              <p className={styles.overlayEyebrow}>Library preview unavailable</p>
+              <p className={styles.overlayEyebrow}>
+                Library preview unavailable
+              </p>
               <p className={styles.fallbackText}>
                 The interactive shelf could not load in this browser.
               </p>
