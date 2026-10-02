@@ -20,6 +20,13 @@ type LibrarySceneOptions = {
 export type LibraryScene = {
   selectBook: (bookId: LibraryBook["id"]) => boolean;
   resetSelection: () => void;
+  getBookBounds: (bookId: LibraryBook["id"]) => {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null;
+  setDockProgress: (progress: number) => void;
   setVisible: (visible: boolean) => void;
   setReducedMotion: (reduced: boolean) => void;
   setCoarsePointer: (coarse: boolean) => void;
@@ -140,6 +147,7 @@ export async function createLibraryScene(
   let pointerDirty = false;
   let lastRaycastTime = 0;
   let environmentEmphasis = 1;
+  let dockProgress = reducedMotion ? 1 : 0;
   let viewport = {
     x: 0,
     y: 0,
@@ -280,8 +288,70 @@ export async function createLibraryScene(
     return true;
   }
 
-  function pickBook() {
+  function getBookBounds(bookId: LibraryBook["id"]) {
     if (!camera || disposed) return null;
+
+    const book = runtimeBooks.get(bookId);
+    if (!book) return null;
+
+    scene.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+
+    const bounds = new THREE.Box3().setFromObject(book.wrapper);
+    if (bounds.isEmpty()) return null;
+
+    const canvasRect = renderer.domElement.getBoundingClientRect();
+    const topOffset =
+      viewport.canvasHeight - viewport.y - viewport.height;
+    const corners = [
+      new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.min.z),
+      new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.max.z),
+      new THREE.Vector3(bounds.min.x, bounds.max.y, bounds.min.z),
+      new THREE.Vector3(bounds.min.x, bounds.max.y, bounds.max.z),
+      new THREE.Vector3(bounds.max.x, bounds.min.y, bounds.min.z),
+      new THREE.Vector3(bounds.max.x, bounds.min.y, bounds.max.z),
+      new THREE.Vector3(bounds.max.x, bounds.max.y, bounds.min.z),
+      new THREE.Vector3(bounds.max.x, bounds.max.y, bounds.max.z),
+    ];
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    corners.forEach((corner) => {
+      const projected = corner.project(camera!);
+      const x =
+        canvasRect.left +
+        viewport.x +
+        ((projected.x + 1) / 2) * viewport.width;
+      const y =
+        canvasRect.top +
+        topOffset +
+        ((1 - projected.y) / 2) * viewport.height;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    });
+
+    return {
+      left: minX,
+      top: minY,
+      width: Math.max(0, maxX - minX),
+      height: Math.max(0, maxY - minY),
+    };
+  }
+
+  function syncDockVisibility() {
+    runtimeBooks.forEach((book) => {
+      book.wrapper.visible = reducedMotion || dockProgress >= 0.88;
+    });
+    renderDirty = true;
+  }
+
+  function pickBook() {
+    if (!camera || disposed || dockProgress < 0.88) return null;
 
     scene.updateMatrixWorld(true);
     raycaster.setFromCamera(pointer, camera);
@@ -704,6 +774,7 @@ export async function createLibraryScene(
       }
 
       anchor.add(wrapper);
+      wrapper.visible = reducedMotion || dockProgress >= 0.88;
       ownedRoots.push(gltf.scene);
       wrapper.updateWorldMatrix(true, true);
 
@@ -860,6 +931,14 @@ export async function createLibraryScene(
       resetSelection();
       requestLoop();
     },
+    getBookBounds(bookId) {
+      return getBookBounds(bookId);
+    },
+    setDockProgress(next) {
+      dockProgress = THREE.MathUtils.clamp(next, 0, 1);
+      syncDockVisibility();
+      requestLoop();
+    },
     setVisible(next) {
       visible = next;
       if (!visible && frame) {
@@ -877,6 +956,7 @@ export async function createLibraryScene(
         parallax.set(0, 0);
         currentParallax.set(0, 0);
       }
+      syncDockVisibility();
       pointerDirty = true;
       renderDirty = true;
       requestLoop();

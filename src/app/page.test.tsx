@@ -21,6 +21,10 @@ vi.mock("./_components/hero-parallax", () => ({
   HeroParallax: () => null,
 }));
 
+vi.mock("@/components/portfolio/project-book-handoff/project-book-handoff", () => ({
+  ProjectBookHandoff: () => null,
+}));
+
 vi.mock("@/components/portfolio/project-gallery/gallery-backdrop", () => ({
   GalleryBackdrop: () => null,
 }));

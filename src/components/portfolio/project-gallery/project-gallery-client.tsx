@@ -190,11 +190,37 @@ export function ProjectGalleryClient({
     let started = false;
     let alive = true;
 
+    let boundsFrame: number | undefined;
+
+    function publishBookBounds() {
+      const source =
+        controllerRef.current?.getBookBounds() ??
+        posterRef.current?.getBoundingClientRect();
+      if (!source?.width || !source.height) return;
+
+      document.dispatchEvent(
+        new CustomEvent("prometheus:book-source-bounds", {
+          detail: {
+            left: source.left,
+            top: source.top,
+            width: source.width,
+            height: source.height,
+          },
+        }),
+      );
+    }
+
+    function queueBookBounds() {
+      window.cancelAnimationFrame(boundsFrame ?? 0);
+      boundsFrame = window.requestAnimationFrame(publishBookBounds);
+    }
+
     function syncScroll() {
       const section = host!.closest("section") ?? host!;
       const top = section.getBoundingClientRect().top;
       const progress = Math.min(1, Math.max(0, 1 - top / window.innerHeight));
       controllerRef.current?.setScrollProgress(progress);
+      queueBookBounds();
     }
     function syncVisibility() {
       const visible =
@@ -230,6 +256,7 @@ export function ProjectGalleryClient({
         controller.setReducedMotion(preference.matches);
         syncScroll();
         syncVisibility();
+        queueBookBounds();
         setStatus("ready");
       } catch {
         if (alive && !abort.signal.aborted) setStatus("fallback");
@@ -265,6 +292,7 @@ export function ProjectGalleryClient({
     visibilityObserver.observe(host);
     preference.addEventListener("change", motionChanged);
     document.addEventListener("visibilitychange", syncVisibility);
+    document.addEventListener("prometheus:book-bounds-request", queueBookBounds);
     host.addEventListener("gallery-motion-change", syncVisibility);
     window.addEventListener("scroll", syncScroll, { passive: true });
     window.addEventListener("resize", syncScroll);
@@ -275,9 +303,14 @@ export function ProjectGalleryClient({
       visibilityObserver.disconnect();
       preference.removeEventListener("change", motionChanged);
       document.removeEventListener("visibilitychange", syncVisibility);
+      document.removeEventListener(
+        "prometheus:book-bounds-request",
+        queueBookBounds,
+      );
       host.removeEventListener("gallery-motion-change", syncVisibility);
       window.removeEventListener("scroll", syncScroll);
       window.removeEventListener("resize", syncScroll);
+      window.cancelAnimationFrame(boundsFrame ?? 0);
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };

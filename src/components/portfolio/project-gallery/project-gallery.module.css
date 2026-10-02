@@ -709,3 +709,9 @@
     height: 100%;
   }
 }
+
+
+.gallery:not([data-standalone="true"]) .canvas,
+.gallery:not([data-standalone="true"]) .fallback {
+  opacity: var(--book-handoff-source-opacity, 1);
+}

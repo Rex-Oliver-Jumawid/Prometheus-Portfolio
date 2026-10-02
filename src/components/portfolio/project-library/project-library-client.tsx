@@ -17,6 +17,8 @@ export function ProjectLibraryClient() {
   const [loadingLabel, setLoadingLabel] = useState("Preparing the bookshelf...");
   const [selected, setSelected] = useState<LibraryBook["id"] | null>(null);
   const [hovered, setHovered] = useState<LibraryBook["id"] | null>(null);
+  const [docked, setDocked] = useState(false);
+  const book = prometheusLibrary.books[0];
 
   useEffect(() => {
     const host = hostRef.current;
@@ -33,6 +35,26 @@ export function ProjectLibraryClient() {
 
     function syncVisibility() {
       controllerRef.current?.setVisible(active && !document.hidden);
+    }
+
+    function publishBookBounds() {
+      const bounds = controllerRef.current?.getBookBounds(book.id);
+      if (!bounds?.width || !bounds.height) return;
+
+      document.dispatchEvent(
+        new CustomEvent("prometheus:book-target-bounds", {
+          detail: bounds,
+        }),
+      );
+    }
+
+    function handoffChanged(event: Event) {
+      const progress = (event as CustomEvent<{ progress: number }>).detail
+        ?.progress;
+      if (typeof progress !== "number") return;
+      controllerRef.current?.setDockProgress(progress);
+      setDocked(progress >= 0.88);
+      window.requestAnimationFrame(publishBookBounds);
     }
 
     async function loadScene() {
@@ -76,6 +98,8 @@ export function ProjectLibraryClient() {
 
         controllerRef.current = controller;
         controller.setVisible(active && !document.hidden);
+        window.requestAnimationFrame(publishBookBounds);
+        document.dispatchEvent(new Event("prometheus:book-bounds-request"));
         setProgress(100);
         setStatus("ready");
       } catch (error) {
@@ -121,6 +145,10 @@ export function ProjectLibraryClient() {
     motionPreference.addEventListener("change", motionChanged);
     coarsePreference.addEventListener("change", pointerChanged);
     document.addEventListener("visibilitychange", syncVisibility);
+    document.addEventListener("prometheus:book-bounds-request", publishBookBounds);
+    document.addEventListener("prometheus:book-handoff-progress", handoffChanged);
+    window.addEventListener("scroll", publishBookBounds, { passive: true });
+    window.addEventListener("resize", publishBookBounds);
 
     return () => {
       alive = false;
@@ -130,12 +158,21 @@ export function ProjectLibraryClient() {
       motionPreference.removeEventListener("change", motionChanged);
       coarsePreference.removeEventListener("change", pointerChanged);
       document.removeEventListener("visibilitychange", syncVisibility);
+      document.removeEventListener(
+        "prometheus:book-bounds-request",
+        publishBookBounds,
+      );
+      document.removeEventListener(
+        "prometheus:book-handoff-progress",
+        handoffChanged,
+      );
+      window.removeEventListener("scroll", publishBookBounds);
+      window.removeEventListener("resize", publishBookBounds);
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };
-  }, []);
+  }, [book.id]);
 
-  const book = prometheusLibrary.books[0];
   const isSelected = selected === book.id;
 
   function toggleBook() {
@@ -184,7 +221,7 @@ export function ProjectLibraryClient() {
           data-active={isSelected}
           data-hovered={hovered === book.id}
           type="button"
-          disabled={status !== "ready"}
+          disabled={status !== "ready" || !docked}
           aria-pressed={isSelected}
           onClick={toggleBook}
           onPointerEnter={() => controllerRef.current?.setHovered(book.id)}

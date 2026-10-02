@@ -1,3 +1,4 @@
+import { ProjectBookHandoff } from "@/components/portfolio/project-book-handoff/project-book-handoff";
 import { ProjectGallerySection } from "@/components/portfolio/project-gallery/project-gallery-section";
 import { ProjectLibrarySection } from "@/components/portfolio/project-library/project-library-section";
 
@@ -12,6 +13,8 @@ export default function Home() {
       <ProjectGallerySection />
 
       <ProjectLibrarySection />
+
+      <ProjectBookHandoff />
 
       <section
         id="contact"
