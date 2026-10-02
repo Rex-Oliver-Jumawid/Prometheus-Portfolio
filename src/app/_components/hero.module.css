@@ -243,17 +243,87 @@
   margin-left: calc(var(--banner-width) + 16px);
 }
 
+.menuClose::before {
+  border-color: var(--cream);
+}
+
 .hamburger {
-  display: flex;
-  width: 22px;
-  flex-direction: column;
-  gap: 5px;
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 13px;
+  transform: rotate(0deg);
+  transition: transform 520ms cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .hamburger span {
+  position: absolute;
+  left: 0;
   width: 100%;
   height: 1px;
   background: currentColor;
+  transform: translateY(0) rotate(0deg);
+  transform-origin: center;
+  transition:
+    top 520ms cubic-bezier(0.165, 0.84, 0.44, 1),
+    transform 520ms cubic-bezier(0.165, 0.84, 0.44, 1),
+    opacity 260ms ease,
+    width 520ms cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.hamburger span:nth-child(1) {
+  top: 0;
+}
+
+.hamburger span:nth-child(2) {
+  top: 6px;
+}
+
+.hamburger span:nth-child(3) {
+  top: 12px;
+}
+
+.menuClose .hamburger {
+  transform: rotate(180deg);
+}
+
+.menuClose .hamburger span:nth-child(1) {
+  top: 6px;
+  transform: rotate(45deg);
+}
+
+.menuClose .hamburger span:nth-child(2) {
+  width: 0;
+  opacity: 0;
+}
+
+.menuClose .hamburger span:nth-child(3) {
+  top: 6px;
+  transform: rotate(-45deg);
+}
+
+.navPanel[data-starting-style] .menuClose .hamburger,
+.navPanel[data-ending-style] .menuClose .hamburger {
+  transform: rotate(0deg);
+}
+
+.navPanel[data-starting-style] .menuClose .hamburger span:nth-child(1),
+.navPanel[data-ending-style] .menuClose .hamburger span:nth-child(1) {
+  top: 0;
+  transform: rotate(0deg);
+}
+
+.navPanel[data-starting-style] .menuClose .hamburger span:nth-child(2),
+.navPanel[data-ending-style] .menuClose .hamburger span:nth-child(2) {
+  top: 6px;
+  width: 100%;
+  opacity: 1;
+}
+
+.navPanel[data-starting-style] .menuClose .hamburger span:nth-child(3),
+.navPanel[data-ending-style] .menuClose .hamburger span:nth-child(3) {
+  top: 12px;
+  transform: rotate(0deg);
 }
 
 .content {
@@ -540,28 +610,6 @@
   align-items: flex-start;
   justify-content: flex-start;
   padding-top: 0;
-}
-
-.closeIcon {
-  position: relative;
-  width: 16px;
-  height: 16px;
-}
-
-.closeIcon::before,
-.closeIcon::after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 16px;
-  height: 1px;
-  background: currentColor;
-  content: "";
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.closeIcon::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .navDescription {
