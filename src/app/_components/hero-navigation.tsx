@@ -47,6 +47,14 @@ export function HeroNavigation() {
           </span>
         </button>
       </header>
+
+      <div
+        className={styles.navGlass}
+        data-open={open}
+        data-navigation-glass
+        aria-hidden="true"
+      />
+
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.scrim} />
         <Dialog.Popup

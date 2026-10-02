@@ -142,18 +142,22 @@ for (const [width, height] of [
     const originalBrand = await brand.elementHandle();
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
-    await expect(dialog).toHaveCSS(
+    const glass = page.locator("[data-navigation-glass]");
+    await expect(glass).toHaveCSS(
       "background-color",
       "rgba(105, 47, 45, 0.67)",
     );
+    await expect(dialog).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     if (width > 640) {
       expect((await dialog.boundingBox())!.width).toBeCloseTo(width * 0.6, 0);
+      expect((await glass.boundingBox())!.width).toBeCloseTo(width * 0.6, 0);
     } else {
       expect((await dialog.boundingBox())!.width).toBeCloseTo(width, 0);
+      expect((await glass.boundingBox())!.width).toBeCloseTo(width, 0);
     }
     expect(
-      await dialog.evaluate((element) =>
-        getComputedStyle(element).backdropFilter.includes("blur"),
+      await glass.evaluate((element) =>
+        getComputedStyle(element).backdropFilter.includes("blur(48px)"),
       ),
     ).toBe(true);
     await expect(
