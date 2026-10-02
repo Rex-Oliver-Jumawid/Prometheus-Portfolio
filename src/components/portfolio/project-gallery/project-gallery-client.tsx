@@ -53,12 +53,7 @@ function BookPageContent({
               tabIndex={-1}
             />
           </div>
-          <a
-            className={styles.castBook}
-            href={demoUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a className={styles.castBook} href={demoUrl}>
             {page.demo.ctaLabel}
             <span aria-hidden="true">↗</span>
           </a>
