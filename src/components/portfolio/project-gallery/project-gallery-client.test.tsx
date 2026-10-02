@@ -237,6 +237,11 @@ describe("isolated project gallery", () => {
     expect(
       within(dialog).queryByRole("link", { name: /original book project/i }),
     ).toBeNull();
+    const demoLink = within(dialog).getByRole("link", {
+      name: /try the live system/i,
+    });
+    expect(demoLink).toHaveAttribute("href", furnitureOdyssey.demoUrl);
+    expect(demoLink).toHaveAttribute("target", "_blank");
     expect(within(dialog).queryByText(/^Pages /)).toBeNull();
     expect(dialog.querySelectorAll("article")).toHaveLength(2);
     expect(scene.setVisible).toHaveBeenLastCalledWith(false);
