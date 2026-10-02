@@ -23,3 +23,13 @@ The scene owns and disposes renderer/context, animation frames, resize observer,
 See the book README under `public/models/projects/furniture-odyssey`. One original book GLB (2.87MB) loads near this viewport. The background video and retained pillar assets are unused. No vendor Three.js files from the book repository are copied; this scene uses the project's installed Three.js dependency.
 
 The six reading pages are explicitly sample copy, not a completed case study. The section defaults to an h2 and omits the duplicate home wordmark beneath the homepage hero. The `standalone` option supplies an h1 and home link for `/gallery`.
+
+
+## Book-to-library handoff
+
+On the homepage, the Furniture Odyssey handoff reuses the live Three.js gallery canvas while the page scrolls into the library.
+The canvas is temporarily promoted to a fixed viewport layer and translated/scaled along a curved path toward the measured Furniture Odyssey shelf bounds.
+This avoids replacing the moving book with a flat cover image.
+The library copy remains hidden until the final handoff frames, where it takes over at the same measured position.
+Scrolling upward reverses the same progress-driven transition.
+Reduced-motion users receive a direct state handoff instead of the traveling animation.

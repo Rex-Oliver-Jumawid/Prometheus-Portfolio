@@ -226,8 +226,12 @@ export function ProjectGalleryClient({
     }
 
     function resetHandoffCanvas() {
-      const canvas = host?.querySelector("canvas");
-      if (!canvas) return;
+      const canvas =
+        host?.querySelector("canvas") ??
+        document.body.querySelector<HTMLCanvasElement>(
+          'canvas[data-prometheus-handoff="true"]',
+        );
+      if (!canvas || !host) return;
 
       if (canvas.parentElement !== host) host.append(canvas);
       canvas.style.removeProperty("position");
@@ -259,9 +263,11 @@ export function ProjectGalleryClient({
       const progress = (event as CustomEvent<{ progress: number }>).detail
         ?.progress;
       const controller = controllerRef.current;
-      const canvas = host?.querySelector("canvas") ?? document.body.querySelector(
-        'canvas[data-prometheus-handoff="true"]',
-      );
+      const canvas =
+        host?.querySelector("canvas") ??
+        document.body.querySelector<HTMLCanvasElement>(
+          'canvas[data-prometheus-handoff="true"]',
+        );
 
       if (typeof progress !== "number" || !controller || !canvas || !host) return;
 
@@ -296,6 +302,10 @@ export function ProjectGalleryClient({
 
       if (progress >= 0.995) {
         canvas.style.opacity = "0";
+        if (progress >= 0.999) {
+          canvas.removeAttribute("data-prometheus-handoff");
+          resetHandoffCanvas();
+        }
         return;
       }
 
