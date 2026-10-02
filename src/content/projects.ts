@@ -78,10 +78,8 @@ export const furnitureOdyssey: PortfolioProject = {
     },
     {
       label: "The live system",
-      title: "Step inside Furniture Odyssey.",
-      paragraphs: [
-        "Preview the working sales operations dashboard, then continue into the live system.",
-      ],
+      title: "The system, alive.",
+      paragraphs: [],
       demo: {
         previewPath: "/dashboard",
         ctaLabel: "Cast this book",
