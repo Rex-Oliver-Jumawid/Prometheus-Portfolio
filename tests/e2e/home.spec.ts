@@ -167,15 +167,43 @@ for (const [width, height] of [
           getComputedStyle(element).filter.includes("blur(46px)"),
         ),
     ).toBe(true);
-    await expect(
-      dialog.getByRole("navigation", { name: "Primary navigation" }).getByRole("link"),
-    ).toHaveCount(4);
+    const primaryNavigation = dialog.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    await expect(primaryNavigation.getByRole("link")).toHaveCount(4);
+
+    const storyLink = primaryNavigation.getByRole("link", {
+      name: "Story",
+      exact: true,
+    });
+    const libraryLink = primaryNavigation.getByRole("link", {
+      name: "Library",
+      exact: true,
+    });
+    await storyLink.hover();
+    const storyIndicatorOffset = await primaryNavigation.evaluate((element) =>
+      parseFloat(
+        getComputedStyle(element).getPropertyValue("--nav-indicator-offset"),
+      ),
+    );
+    await libraryLink.hover();
+    const libraryIndicatorOffset = await primaryNavigation.evaluate((element) =>
+      parseFloat(
+        getComputedStyle(element).getPropertyValue("--nav-indicator-offset"),
+      ),
+    );
+    expect(libraryIndicatorOffset).toBeGreaterThan(storyIndicatorOffset);
     await expect(brand).toHaveCount(1);
     expect(
       await originalBrand!.evaluate((element) => element.isConnected),
     ).toBe(true);
     await expect(brand).toHaveCSS("color", "rgb(220, 61, 60)");
     await expect(brand).toBeInViewport({ ratio: 1 });
+    const openBrandBounds = (await brand.boundingBox())!;
+    expect(openBrandBounds.x).toBeCloseTo(brandBounds.x, 0);
+    expect(openBrandBounds.y).toBeCloseTo(brandBounds.y, 0);
+    expect(openBrandBounds.width).toBeCloseTo(brandBounds.width, 0);
+    expect(openBrandBounds.height).toBeCloseTo(brandBounds.height, 0);
     expect(
       await brand.evaluate((element) => {
         const rect = element.getBoundingClientRect();

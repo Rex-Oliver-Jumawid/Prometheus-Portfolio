@@ -84,6 +84,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
+  height: var(--navigation-height);
   padding: 0 var(--hero-gutter);
   pointer-events: none;
   animation: navEnter 700ms ease both;
@@ -92,10 +93,6 @@
 .header a,
 .header button {
   pointer-events: auto;
-}
-
-.header[data-navigation-open="true"] {
-  position: fixed;
 }
 
 .brand {
@@ -649,8 +646,34 @@
 }
 
 .navLinks {
+  --nav-indicator-offset: 0px;
+  --nav-indicator-height: 0px;
+  position: relative;
   display: flex;
   flex-direction: column;
+}
+
+.navLinks::before {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: calc(-1 * clamp(24px, 3vw, 38px));
+  width: 2px;
+  height: var(--nav-indicator-height);
+  background: var(--cream);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, var(--nav-indicator-offset), 0) scaleY(0.72);
+  transform-origin: center;
+  transition:
+    transform 480ms cubic-bezier(0.165, 0.84, 0.44, 1),
+    height 480ms cubic-bezier(0.165, 0.84, 0.44, 1),
+    opacity 180ms ease;
+}
+
+.navLinks[data-indicator-active="true"]::before {
+  opacity: 1;
 }
 
 .navLinks a {
@@ -695,33 +718,12 @@
   transform: translate3d(-100%, 0, 0);
 }
 
-.navLinks a::before {
-  position: absolute;
-  top: 0.04em;
-  bottom: 0.04em;
-  left: calc(-1 * clamp(24px, 3vw, 38px));
-  width: 1px;
-  background: var(--cream);
-  content: "";
-  opacity: 0;
-  transform: scaleY(0);
-  transform-origin: center;
-  transition:
-    transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1),
-    opacity 300ms ease;
-}
-
 .navLinks:has(a:is(:hover, :focus-visible)) a:not(:hover, :focus-visible) {
   opacity: 0.48;
 }
 
 .navLinks a:is(:hover, :focus-visible) {
   transform: translate3d(5px, 0, 0);
-}
-
-.navLinks a:is(:hover, :focus-visible)::before {
-  opacity: 1;
-  transform: scaleY(1);
 }
 
 .navFooter {
@@ -888,7 +890,7 @@
     font-size: clamp(2.55rem, 12.5vw, 3.8rem);
   }
 
-  .navLinks a::before {
+  .navLinks::before {
     left: -19px;
   }
 

@@ -17,6 +17,26 @@ const links = [
 export function HeroNavigation() {
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const navLinksRef = useRef<HTMLElement>(null);
+
+  const moveNavIndicator = (target: HTMLAnchorElement) => {
+    const navigation = navLinksRef.current;
+    if (!navigation) return;
+
+    navigation.style.setProperty(
+      "--nav-indicator-offset",
+      `${target.offsetTop}px`,
+    );
+    navigation.style.setProperty(
+      "--nav-indicator-height",
+      `${target.offsetHeight}px`,
+    );
+    navigation.dataset.indicatorActive = "true";
+  };
+
+  const hideNavIndicator = () => {
+    navLinksRef.current?.removeAttribute("data-indicator-active");
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen} modal="trap-focus">
@@ -78,11 +98,25 @@ export function HeroNavigation() {
           <div className={styles.navLayout}>
             <div className={styles.navBlank} aria-hidden="true" />
             <div className={styles.navContent}>
-              <nav className={styles.navLinks} aria-label="Primary navigation">
+              <nav
+                ref={navLinksRef}
+                className={styles.navLinks}
+                aria-label="Primary navigation"
+                onPointerLeave={hideNavIndicator}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) {
+                    hideNavIndicator();
+                  }
+                }}
+              >
                 {links.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
+                    onPointerEnter={(event) =>
+                      moveNavIndicator(event.currentTarget)
+                    }
+                    onFocus={(event) => moveNavIndicator(event.currentTarget)}
                     onClick={() => setOpen(false)}
                   >
                     {link.label}
