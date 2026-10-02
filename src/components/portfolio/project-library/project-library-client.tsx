@@ -129,7 +129,7 @@ export function ProjectLibraryClient() {
           nearObserver.disconnect();
         }
       },
-      { rootMargin: "350px" },
+      { rootMargin: "1000px" },
     );
 
     const visibilityObserver = new IntersectionObserver(

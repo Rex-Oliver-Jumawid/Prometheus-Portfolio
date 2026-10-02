@@ -774,7 +774,7 @@ export async function createLibraryScene(
       }
 
       anchor.add(wrapper);
-      wrapper.visible = reducedMotion || dockProgress >= 0.88;
+      wrapper.visible = reducedMotion || dockProgress >= 0.985;
       ownedRoots.push(gltf.scene);
       wrapper.updateWorldMatrix(true, true);
 
