@@ -423,6 +423,16 @@ export function ProjectGalleryClient({
               </p>
               <h2 id="reader-title">{project.title}</h2>
             </div>
+            {project.demoUrl ? (
+              <a
+                className={styles.demoLink}
+                href={project.demoUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Try the live system <span aria-hidden="true">↗</span>
+              </a>
+            ) : null}
           </div>
           <div className={styles.bookViewport}>
             <div
