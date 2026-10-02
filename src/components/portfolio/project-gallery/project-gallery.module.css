@@ -243,6 +243,39 @@
   font-weight: 400;
   margin: 8px 0 0;
 }
+.demoLink {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
+  border-radius: 999px;
+  padding: 0 16px;
+  color: var(--paper);
+  font-family: var(--edition-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+.demoLink:is(:hover, :focus-visible) {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--brand-night);
+  transform: translateY(-1px);
+}
+.demoLink:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 4px;
+}
 .bookViewport {
   display: grid;
   place-items: center;
