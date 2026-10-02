@@ -21,16 +21,51 @@ type PageTurn = {
   scrollTop: number;
 };
 
-function BookPageContent({ page }: { page?: BookPage }) {
-  return page ? (
+function BookPageContent({
+  page,
+  demoUrl,
+}: {
+  page?: BookPage;
+  demoUrl?: string;
+}) {
+  if (!page) return null;
+
+  const livePreviewUrl =
+    page.demo && demoUrl
+      ? `${demoUrl.replace(/\/$/, "")}${page.demo.previewPath}`
+      : null;
+
+  return (
     <>
       <p className={styles.eyebrow}>{page.label}</p>
       <h3>{page.title}</h3>
       {page.paragraphs.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
+      {page.demo && demoUrl && livePreviewUrl ? (
+        <div className={styles.demoPortal}>
+          <div className={styles.demoPreview} aria-hidden="true">
+            <iframe
+              className={styles.demoPreviewFrame}
+              src={livePreviewUrl}
+              title="Furniture Odyssey live system preview"
+              loading="lazy"
+              tabIndex={-1}
+            />
+          </div>
+          <a
+            className={styles.castBook}
+            href={demoUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {page.demo.ctaLabel}
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      ) : null}
     </>
-  ) : null;
+  );
 }
 
 export function ProjectGalleryClient({
@@ -423,16 +458,6 @@ export function ProjectGalleryClient({
               </p>
               <h2 id="reader-title">{project.title}</h2>
             </div>
-            {project.demoUrl ? (
-              <a
-                className={styles.demoLink}
-                href={project.demoUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Try the live system <span aria-hidden="true">↗</span>
-              </a>
-            ) : null}
           </div>
           <div className={styles.bookViewport}>
             <div
@@ -455,7 +480,10 @@ export function ProjectGalleryClient({
                     data-side={index === 0 ? "left" : "right"}
                     tabIndex={0}
                   >
-                    <BookPageContent page={project.pages[pageIndex]} />
+                    <BookPageContent
+                      page={project.pages[pageIndex]}
+                      demoUrl={project.demoUrl}
+                    />
                   </article>
                 ))}
               </div>
@@ -477,14 +505,20 @@ export function ProjectGalleryClient({
                       if (element) element.scrollTop = turn.scrollTop;
                     }}
                   >
-                    <BookPageContent page={project.pages[frontIndex]} />
+                    <BookPageContent
+                      page={project.pages[frontIndex]}
+                      demoUrl={project.demoUrl}
+                    />
                   </div>
                   <div
                     className={`${styles.paper} ${styles.turnFace}`}
                     data-face="back"
                     data-side={turn.direction === 1 ? "left" : "right"}
                   >
-                    <BookPageContent page={project.pages[backIndex]} />
+                    <BookPageContent
+                      page={project.pages[backIndex]}
+                      demoUrl={project.demoUrl}
+                    />
                   </div>
                 </div>
               )}
