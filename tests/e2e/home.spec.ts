@@ -144,7 +144,7 @@ for (const [width, height] of [
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
     await expect(dialog).toHaveCSS(
       "background-color",
-      "rgba(126, 52, 50, 0.82)",
+      "rgba(126, 52, 50, 0.56)",
     );
     if (width > 640) {
       expect((await dialog.boundingBox())!.width).toBeCloseTo(width * 0.6, 0);
