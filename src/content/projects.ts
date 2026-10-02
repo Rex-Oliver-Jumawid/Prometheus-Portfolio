@@ -12,6 +12,7 @@ export type PortfolioProject = {
   coverUrl: string;
   readerCover: { url: string; width: number; height: number };
   sourceUrl: string;
+  demoUrl?: string;
   pages: readonly BookPage[];
 };
 
@@ -29,6 +30,7 @@ export const furnitureOdyssey: PortfolioProject = {
     height: 1493,
   },
   sourceUrl: "https://github.com/PaulEscobia13/furniture-odyssey-book",
+  demoUrl: "https://furniture-odyssey-pos.vercel.app/",
   pages: [
     {
       label: "The case study",
