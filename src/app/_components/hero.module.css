@@ -160,6 +160,18 @@
   color: var(--brand-flame);
 }
 
+.header[data-navigation-open="true"]
+  .brand:is(:hover, :focus-visible)
+  .ribbon {
+  color: var(--white);
+}
+
+.header[data-navigation-open="true"]
+  .brand:is(:hover, :focus-visible)
+  .ribbon::before {
+  transform: scale(0);
+}
+
 .brand:hover {
   color: var(--brand-ember);
 }
