@@ -181,7 +181,7 @@ describe("isolated project gallery", () => {
       name: /cast this book/i,
     });
     expect(demoLink).toHaveAttribute("href", furnitureOdyssey.demoUrl);
-    expect(demoLink).toHaveAttribute("target", "_blank");
+    expect(demoLink).not.toHaveAttribute("target");
     expect(lastSpread.querySelector("iframe")).toHaveAttribute(
       "src",
       "https://furniture-odyssey-pos.vercel.app/dashboard",
