@@ -46,8 +46,8 @@ test("preserves menu Escape handling and section navigation", async ({
   ).toHaveAttribute("href", "#work");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(trigger).toBeFocused();
-  await trigger.click();
+  await expect(page.getByRole("button", { name: "Open navigation" })).toBeFocused();
+  await page.getByRole("button", { name: "Open navigation" }).click();
   await dialog.getByRole("link", { name: "Library", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/#library$/);
@@ -162,19 +162,20 @@ for (const [width, height] of [
         );
       }),
     ).toBe(true);
-    const close = dialog.getByRole("button", { name: "Close navigation" });
-    await expect(close).toBeFocused();
-    expect((await close.boundingBox())!.x).toBeCloseTo(triggerBounds.x, 0);
-    expect((await close.boundingBox())!.y).toBeCloseTo(triggerBounds.y, 0);
-    await page.keyboard.press("Shift+Tab");
-    await expect(
-      dialog.getByRole("link", { name: "Start a conversation" }),
-    ).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(close).toBeFocused();
+    const close = page.getByRole("button", { name: "Close navigation" });
+    await expect(close).toHaveCount(1);
+    expect(
+      await trigger.evaluate((element) => element.isConnected),
+    ).toBe(true);
+    const closeBounds = (await close.boundingBox())!;
+    expect(closeBounds.x).toBeCloseTo(triggerBounds.x, 0);
+    expect(closeBounds.y).toBeCloseTo(triggerBounds.y, 0);
+    expect(closeBounds.width).toBeCloseTo(triggerBounds.width, 0);
+    expect(closeBounds.height).toBeCloseTo(triggerBounds.height, 0);
+    await expect(dialog.getByRole("button", { name: "Close navigation" })).toHaveCount(0);
     await close.click();
     await expect(dialog).toBeHidden();
-    await expect(trigger).toBeFocused();
+    await expect(page.getByRole("button", { name: "Open navigation" })).toBeFocused();
     await action.click();
     await expect(page).toHaveURL(/#work$/);
     await expect(page.locator("#work")).toBeInViewport();

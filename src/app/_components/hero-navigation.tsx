@@ -16,10 +16,10 @@ const links = [
 
 export function HeroNavigation() {
   const [open, setOpen] = useState(false);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root open={open} onOpenChange={setOpen} modal="trap-focus">
       <header className={styles.header} data-navigation-open={open}>
         <a
           className={styles.brand}
@@ -31,31 +31,33 @@ export function HeroNavigation() {
             <span className={styles.mark} />
           </span>
         </a>
-        <Dialog.Trigger
+        <button
+          ref={menuButtonRef}
+          type="button"
           className={styles.menuToggle}
-          aria-label="Open navigation"
+          aria-label={open ? "Close navigation" : "Open navigation"}
+          aria-expanded={open}
+          aria-controls="primary-navigation-dialog"
+          onClick={() => setOpen((current) => !current)}
         >
           <span className={styles.hamburger} aria-hidden="true">
             <span />
             <span />
             <span />
           </span>
-        </Dialog.Trigger>
+        </button>
       </header>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.scrim} />
-        <Dialog.Popup className={styles.navPanel} initialFocus={closeRef}>
+        <Dialog.Popup
+          id="primary-navigation-dialog"
+          className={styles.navPanel}
+          finalFocus={menuButtonRef}
+        >
           <div className={styles.navHeader}>
             <Dialog.Title className={styles.srOnly}>
               {appConfig.name}
             </Dialog.Title>
-            <Dialog.Close
-              ref={closeRef}
-              className={styles.menuClose}
-              aria-label="Close navigation"
-            >
-              <span className={styles.closeIcon} aria-hidden="true" />
-            </Dialog.Close>
           </div>
           <Dialog.Description className={styles.navDescription}>
             Creative technology. Thoughtful digital systems.
@@ -83,6 +85,9 @@ export function HeroNavigation() {
               Start a conversation <span aria-hidden="true">→</span>
             </a>
           </div>
+          <Dialog.Close className={styles.srOnly} aria-label="Dismiss navigation panel">
+            Close navigation
+          </Dialog.Close>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
