@@ -728,11 +728,6 @@
 }
 
 
-.gallery:not([data-standalone="true"]) .canvas,
-.gallery:not([data-standalone="true"]) .fallback {
-  opacity: var(--book-handoff-source-opacity, 1);
-}
-
 
 .gallery:not([data-standalone="true"])::before,
 .gallery:not([data-standalone="true"])::after {
