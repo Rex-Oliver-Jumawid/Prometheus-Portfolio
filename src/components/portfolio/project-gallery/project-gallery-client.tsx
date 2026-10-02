@@ -53,7 +53,17 @@ function BookPageContent({
               tabIndex={-1}
             />
           </div>
-          <a className={styles.castBook} href={demoUrl}>
+          <a
+            className={styles.castBook}
+            href={demoUrl}
+            onClick={(event) => {
+              event.preventDefault();
+              const destination = new URL(demoUrl);
+              destination.searchParams.set("source", "prometheus-portfolio");
+              destination.searchParams.set("returnTo", window.location.href);
+              window.location.assign(destination.toString());
+            }}
+          >
             {page.demo.ctaLabel}
             <span aria-hidden="true">↗</span>
           </a>
