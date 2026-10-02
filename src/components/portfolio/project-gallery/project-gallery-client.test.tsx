@@ -174,6 +174,18 @@ describe("isolated project gallery", () => {
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
     finishPageTurn(screen.getByRole("dialog"));
     expect(screen.getByRole("button", { name: /Next/ })).toBeDisabled();
+    const lastSpread = screen
+      .getByRole("dialog")
+      .querySelector(`.${styles.spread}`) as HTMLElement;
+    const demoLink = within(lastSpread).getByRole("link", {
+      name: /cast this book/i,
+    });
+    expect(demoLink).toHaveAttribute("href", furnitureOdyssey.demoUrl);
+    expect(demoLink).toHaveAttribute("target", "_blank");
+    expect(lastSpread.querySelector("iframe")).toHaveAttribute(
+      "src",
+      "https://furniture-odyssey-pos.vercel.app/dashboard",
+    );
     fireEvent.click(screen.getByRole("dialog"));
     finishBookAnimation(screen.getByRole("dialog"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -237,11 +249,9 @@ describe("isolated project gallery", () => {
     expect(
       within(dialog).queryByRole("link", { name: /original book project/i }),
     ).toBeNull();
-    const demoLink = within(dialog).getByRole("link", {
-      name: /try the live system/i,
-    });
-    expect(demoLink).toHaveAttribute("href", furnitureOdyssey.demoUrl);
-    expect(demoLink).toHaveAttribute("target", "_blank");
+    expect(
+      within(dialog).queryByRole("link", { name: /cast this book/i }),
+    ).toBeNull();
     expect(within(dialog).queryByText(/^Pages /)).toBeNull();
     expect(dialog.querySelectorAll("article")).toHaveLength(2);
     expect(scene.setVisible).toHaveBeenLastCalledWith(false);
