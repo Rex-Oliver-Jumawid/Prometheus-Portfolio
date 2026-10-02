@@ -11,10 +11,23 @@ function smooth(value: number) {
   return t * t * (3 - 2 * t);
 }
 
+function documentFlowTop(element: HTMLElement) {
+  let top = 0;
+  let current: HTMLElement | null = element;
+
+  while (current) {
+    top += current.offsetTop;
+    current = current.offsetParent as HTMLElement | null;
+  }
+
+  return top;
+}
+
 export function ProjectBookHandoff() {
   useEffect(() => {
+    const work = document.getElementById("work");
     const library = document.getElementById("library");
-    if (!library) return;
+    if (!work || !library) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame: number | undefined;
@@ -30,14 +43,31 @@ export function ProjectBookHandoff() {
     function update() {
       frame = undefined;
 
-      const libraryRect = library.getBoundingClientRect();
-      const startTop = window.innerHeight * 0.94;
-      const endTop = window.innerHeight * 0.16;
-      const rawProgress = clamp01(
-        (startTop - libraryRect.top) / Math.max(1, startTop - endTop),
+      const workTop = documentFlowTop(work);
+      const libraryTop = documentFlowTop(library);
+      const workHeight = work.offsetHeight;
+      const libraryHeight = library.offsetHeight;
+
+      // The handoff belongs only to the lower part of the floating-book panel
+      // and the opening part of the library panel. Using normal-flow offsets
+      // keeps this stable even though both panels become position: sticky.
+      const start = workTop + workHeight * 0.38;
+      const end = Math.max(
+        start + window.innerHeight * 0.36,
+        libraryTop + libraryHeight * 0.08,
       );
 
-      publishProgress(reducedMotion.matches ? (rawProgress >= 0.5 ? 1 : 0) : smooth(rawProgress));
+      const rawProgress = clamp01(
+        (window.scrollY - start) / Math.max(1, end - start),
+      );
+
+      const progress = reducedMotion.matches
+        ? rawProgress >= 0.5
+          ? 1
+          : 0
+        : smooth(rawProgress);
+
+      publishProgress(progress);
     }
 
     function schedule() {
@@ -54,6 +84,7 @@ export function ProjectBookHandoff() {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       reducedMotion.removeEventListener("change", schedule);
+      publishProgress(0);
     };
   }, []);
 

@@ -278,6 +278,13 @@ export function ProjectGalleryClient({
         return;
       }
 
+      if (progress >= 0.995) {
+        canvas.removeAttribute("data-prometheus-handoff");
+        resetHandoffCanvas();
+        handoffSourceRef.current = null;
+        return;
+      }
+
       if (!handoffSourceRef.current) {
         const book = controller.getBookBounds();
         const hostRect = host.getBoundingClientRect();
@@ -299,15 +306,6 @@ export function ProjectGalleryClient({
       const source = handoffSourceRef.current;
       const target = handoffTargetRef.current;
       if (!source || !target?.width || !target.height) return;
-
-      if (progress >= 0.995) {
-        canvas.style.opacity = "0";
-        if (progress >= 0.999) {
-          canvas.removeAttribute("data-prometheus-handoff");
-          resetHandoffCanvas();
-        }
-        return;
-      }
 
       if (canvas.parentElement !== document.body) {
         document.body.append(canvas);

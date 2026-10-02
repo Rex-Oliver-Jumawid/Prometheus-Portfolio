@@ -30,6 +30,7 @@ The six reading pages are explicitly sample copy, not a completed case study. Th
 On the homepage, the Furniture Odyssey handoff reuses the live Three.js gallery canvas while the page scrolls into the library.
 The canvas is temporarily promoted to a fixed viewport layer and translated/scaled along a curved path toward the measured Furniture Odyssey shelf bounds.
 This avoids replacing the moving book with a flat cover image.
+Handoff progress is derived from the normal document-flow positions of the work and library sections rather than their sticky visual rectangles, so the moving canvas cannot remain attached over the hero or footer.
 The library copy remains hidden until the final handoff frames, where it takes over at the same measured position.
 Scrolling upward reverses the same progress-driven transition.
 Reduced-motion users receive a direct state handoff instead of the traveling animation.
