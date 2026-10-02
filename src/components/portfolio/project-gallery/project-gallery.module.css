@@ -678,3 +678,34 @@
     visibility: hidden;
   }
 }
+
+
+/* Homepage handoff: the book-only viewport is intentionally shorter so the
+   page advances into the bookshelf faster than the hero. */
+.gallery:not([data-standalone="true"]) {
+  height: 72svh;
+  min-height: 560px;
+}
+
+.gallery:not([data-standalone="true"]) .canvas,
+.gallery:not([data-standalone="true"]) .fallback {
+  inset: 0;
+  height: 100%;
+}
+
+.gallery:not([data-standalone="true"]) .bookPoster {
+  height: 88%;
+}
+
+@media (max-width: 600px) {
+  .gallery:not([data-standalone="true"]) {
+    height: 82svh;
+    min-height: 520px;
+  }
+
+  .gallery:not([data-standalone="true"]) .canvas,
+  .gallery:not([data-standalone="true"]) .fallback {
+    inset: 0;
+    height: 100%;
+  }
+}

@@ -1,12 +1,14 @@
 import Image from "next/image";
 
 import { HeroNavigation } from "./hero-navigation";
+import { HeroParallax } from "./hero-parallax";
 import styles from "./hero.module.css";
 
 export function Hero() {
   return (
     <>
       <HeroNavigation />
+      <HeroParallax />
       <section id="top" className={styles.hero} aria-labelledby="hero-title">
         <div className={styles.scene} aria-hidden="true">
           <Image

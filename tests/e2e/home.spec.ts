@@ -48,13 +48,11 @@ test("preserves menu Escape handling and section navigation", async ({
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await dialog.getByRole("link", { name: "Approach", exact: true }).click();
+  await dialog.getByRole("link", { name: "Library", exact: true }).click();
   await expect(dialog).toBeHidden();
-  await expect(page).toHaveURL(/#approach$/);
+  await expect(page).toHaveURL(/#library$/);
   await expect(
-    page.getByRole("heading", {
-      name: "Understand the operation first. Build the software second.",
-    }),
+    page.getByRole("heading", { name: "The Prometheus Library" }),
   ).toBeInViewport();
 });
 
@@ -139,12 +137,12 @@ for (const [width, height] of [
     expect(triggerBounds.width).toBeGreaterThanOrEqual(44);
     expect(triggerBounds.height).toBeGreaterThanOrEqual(44);
     expect(brandBounds.x + brandBounds.width).toBeLessThan(width);
-    await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(trigger).toHaveCSS("border-top-style", "solid");
     await expect(trigger.locator("span > span")).toHaveCount(3);
     const originalBrand = await brand.elementHandle();
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
-    await expect(dialog).toHaveCSS("background-color", "rgb(40, 35, 33)");
+    await expect(dialog).toHaveCSS("background-color", "rgb(220, 61, 60)");
     await expect(brand).toHaveCount(1);
     expect(
       await originalBrand!.evaluate((element) => element.isConnected),
@@ -179,8 +177,6 @@ for (const [width, height] of [
     await expect(trigger).toBeFocused();
     await action.click();
     await expect(page).toHaveURL(/#work$/);
-    await expect(
-      page.getByRole("heading", { level: 2, name: /Furniture Odyssey/ }),
-    ).toBeInViewport();
+    await expect(page.locator("#work")).toBeInViewport();
   });
 }

@@ -17,11 +17,14 @@ vi.mock("./_components/sticky-viewports", () => ({
   ),
 }));
 
+vi.mock("./_components/hero-parallax", () => ({
+  HeroParallax: () => null,
+}));
+
 vi.mock("@/components/portfolio/project-gallery/gallery-backdrop", () => ({
   GalleryBackdrop: () => null,
 }));
 
-// Scene lifecycle and reading interactions are covered by the gallery client tests.
 vi.mock(
   "@/components/portfolio/project-gallery/project-gallery-client",
   () => ({
@@ -29,39 +32,52 @@ vi.mock(
   }),
 );
 
+vi.mock(
+  "@/components/portfolio/project-library/project-library-client",
+  () => ({
+    ProjectLibraryClient: () => null,
+  }),
+);
+
 afterEach(cleanup);
 
 describe("portfolio homepage", () => {
-  it("presents the portfolio as the primary public experience", () => {
+  it("presents the hero, book, library, and contact footer in order", () => {
     render(<Home />);
 
-    expect(
-      screen.getByRole("heading", {
-        level: 1,
-        name: /Where Ideas Ignite/,
-      }),
-    ).toBeInTheDocument();
+    const heroHeading = screen.getByRole("heading", {
+      level: 1,
+      name: /Where Ideas Ignite/,
+    });
+    const hero = heroHeading.closest("section")!;
 
     const galleryHeading = screen.getByRole("heading", {
       level: 2,
-      name: /Furniture Odyssey/,
+      name: "Furniture Odyssey",
     });
-    const gallery = galleryHeading.closest("section");
+    const gallery = galleryHeading.closest("section")!;
     expect(gallery).toHaveAttribute("id", "work");
+    expect(hero.nextElementSibling).toBe(gallery);
+
+    const libraryHeading = screen.getByRole("heading", {
+      level: 2,
+      name: "The Prometheus Library",
+    });
+    const library = libraryHeading.closest("section")!;
+    expect(library).toHaveAttribute("id", "library");
+    expect(gallery.nextElementSibling).toBe(library);
+
     expect(
-      screen.getByRole("heading", { level: 1 }).closest("section")
-        ?.nextElementSibling,
-    ).toBe(gallery);
-    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+      screen.getByRole("heading", {
+        level: 2,
+        name: /build a system around how your business actually works/i,
+      }),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole("link", { name: "Explore our work" }),
     ).toHaveAttribute("href", "#work");
-
-    expect(screen.queryByText("Scroll to explore")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("Design meets technology"),
-    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
   it("opens accessible navigation, closes on Escape, and restores focus", async () => {
@@ -73,18 +89,15 @@ describe("portfolio homepage", () => {
     const dialog = await screen.findByRole("dialog", { name: "Prometheus" });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(
-      document.querySelectorAll('a[aria-label="Prometheus home"]'),
-    ).toHaveLength(1);
-    expect(
-      within(dialog).queryByRole("link", { name: "Prometheus home" }),
-    ).not.toBeInTheDocument();
-    expect(
       within(dialog).getByRole("navigation", { name: "Primary navigation" }),
     ).toBeInTheDocument();
     expect(within(dialog).getByRole("link", { name: "Work" })).toHaveAttribute(
       "href",
       "#work",
     );
+    expect(
+      within(dialog).getByRole("link", { name: "Library" }),
+    ).toHaveAttribute("href", "#library");
 
     fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() =>
@@ -94,31 +107,24 @@ describe("portfolio homepage", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("closes navigation when a portfolio section is selected", async () => {
+  it("closes navigation when the library is selected", async () => {
     render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     const dialog = await screen.findByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("link", { name: "Approach" }));
+    fireEvent.click(within(dialog).getByRole("link", { name: "Library" }));
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
   });
 
-  it("keeps the hero focused on the artwork and one primary action", () => {
+  it("keeps the homepage gallery visually book-only", () => {
     render(<Home />);
-    const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
-    expect(within(hero).queryByRole("complementary")).not.toBeInTheDocument();
-    expect(within(hero).queryByRole("article")).not.toBeInTheDocument();
+    const gallery = document.querySelector("#work")!;
     expect(
-      within(hero).getByText(
-        "We turn ambitious ideas into systems built around the way your business actually works.",
-      ),
-    ).toBeInTheDocument();
+      within(gallery).queryByText("A Prometheus case study"),
+    ).not.toBeInTheDocument();
     expect(
-      within(hero).getByText("Creative systems studio"),
-    ).toBeInTheDocument();
-    expect(
-      within(hero).queryByRole("link", { name: "Learn more" }),
+      within(gallery).queryByText(/Products, orders, quotations/),
     ).not.toBeInTheDocument();
   });
 });

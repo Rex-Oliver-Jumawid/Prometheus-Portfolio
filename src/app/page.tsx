@@ -1,16 +1,8 @@
 import { ProjectGallerySection } from "@/components/portfolio/project-gallery/project-gallery-section";
+import { ProjectLibrarySection } from "@/components/portfolio/project-library/project-library-section";
 
 import { Hero } from "./_components/hero";
 import { StickyViewports } from "./_components/sticky-viewports";
-
-const capabilities = [
-  "Product design",
-  "Web applications",
-  "Internal systems",
-  "Workflow automation",
-  "Prototypes",
-  "Design systems",
-] as const;
 
 export default function Home() {
   return (
@@ -19,102 +11,48 @@ export default function Home() {
 
       <ProjectGallerySection />
 
-      <section
-        id="approach"
-        className="approach-section"
-        aria-labelledby="approach-title"
-      >
-        <div className="section-shell approach-grid">
-          <div className="section-intro approach-intro">
-            <p className="eyebrow eyebrow-light">How we work</p>
-            <h2 id="approach-title">
-              Understand the operation first. Build the software second.
-            </h2>
-          </div>
-
-          <ol className="approach-list">
-            <li>
-              <span>01</span>
-              <div>
-                <h3>Map the real workflow</h3>
-                <p>
-                  We identify where information starts, where it gets stuck, and
-                  what people are doing manually to keep work moving.
-                </p>
-              </div>
-            </li>
-            <li>
-              <span>02</span>
-              <div>
-                <h3>Prototype the system</h3>
-                <p>
-                  We turn that workflow into a focused interface before the
-                  implementation grows around the wrong assumptions.
-                </p>
-              </div>
-            </li>
-            <li>
-              <span>03</span>
-              <div>
-                <h3>Build in useful slices</h3>
-                <p>
-                  We ship complete working paths, validate them with the people
-                  using the system, and expand from there.
-                </p>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section
-        id="capabilities"
-        className="capabilities-section"
-        aria-labelledby="capabilities-title"
-      >
-        <div className="section-shell">
-          <div className="section-intro compact">
-            <p className="eyebrow">Capabilities</p>
-            <h2 id="capabilities-title">
-              Design and engineering under one roof.
-            </h2>
-          </div>
-          <div className="capability-marquee" role="list">
-            {capabilities.map((capability, index) => (
-              <div className="capability-item" role="listitem" key={capability}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                {capability}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ProjectLibrarySection />
 
       <section
         id="contact"
-        className="contact-section"
+        className="contact-footer"
         aria-labelledby="contact-title"
       >
-        <div className="section-shell">
-          <p className="eyebrow">Have something complicated?</p>
-          <h2 id="contact-title">
-            Tell us what your team is trying to untangle.
-          </h2>
-          <p>
-            The portfolio foundation is ready. Wire your preferred email,
-            social, or booking link here when the public contact channel is
-            finalized.
+        <div className="footer-artboard">
+          <div className="footer-shell">
+            <div className="footer-topline" aria-hidden="true">
+              <span>Prometheus</span>
+              <span>Contact us</span>
+            </div>
+
+            <div className="footer-message">
+              <h2 id="contact-title">
+                Let&apos;s build a system around how your business actually works.
+              </h2>
+              <p>
+                Tell us where work becomes repetitive, fragmented, or difficult
+                to keep track of. We&apos;ll start there.
+              </p>
+            </div>
+
+            <div className="footer-lower">
+              <span className="footer-meeting">Book a 15-minute meeting</span>
+
+              <nav className="footer-links" aria-label="Footer navigation">
+                <a href="#top">Story</a>
+                <a href="#work">Systems</a>
+                <a href="#work">Approach</a>
+                <a href="#library">Projects</a>
+                <a href="#work">Selected Work</a>
+              </nav>
+            </div>
+          </div>
+
+          <p className="footer-wordmark" aria-hidden="true">
+            PROMETHEUS
           </p>
-          <a className="text-link" href="#top">
-            Back to top <span aria-hidden="true">↑</span>
-          </a>
         </div>
       </section>
-
-      <footer className="site-footer section-shell">
-        <span>Prometheus</span>
-        <span>Digital systems for growing businesses.</span>
-      </footer>
     </StickyViewports>
   );
 }

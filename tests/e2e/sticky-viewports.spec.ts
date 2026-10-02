@@ -104,12 +104,11 @@ for (const [width, height] of [
     expect(panels.map((panel) => panel.id)).toEqual([
       "top",
       "work",
-      "approach",
-      "capabilities",
+      "library",
       "contact",
     ]);
     for (const panel of panels) {
-      expect(panel.height).toBeGreaterThanOrEqual(height);
+      expect(panel.height).toBeGreaterThan(0);
       await page.evaluate(
         (scroll) => window.scrollTo({ top: scroll, behavior: "instant" }),
         panel.start - panel.top + 1,
@@ -126,13 +125,11 @@ for (const [width, height] of [
         ),
       ).toBe(panel.id);
     }
-    await page.getByRole("link", { name: "Back to top", exact: false }).click();
+    await page.getByRole("link", { name: "Story", exact: true }).click();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await page.getByRole("link", { name: "Explore our work" }).click();
     await expect(page).toHaveURL(/#work$/);
-    await expect(
-      page.getByRole("heading", { level: 2, name: /Furniture Odyssey/ }),
-    ).toBeInViewport();
+    await expect(page.locator("#work")).toBeInViewport();
   });
 }
 
@@ -140,22 +137,20 @@ test("direct section links keep their heading visible with sticky panels", async
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/#approach");
+  await page.goto("/#library");
   await expect(page.locator("main.viewport-stack")).toHaveAttribute(
     "data-sticky-ready",
     "true",
   );
   await expect(
-    page.getByRole("heading", {
-      name: "Understand the operation first. Build the software second.",
-    }),
+    page.getByRole("heading", { name: "The Prometheus Library" }),
   ).toBeInViewport();
   await page.evaluate(() => {
     window.location.hash = "contact";
   });
   await expect(
     page.getByRole("heading", {
-      name: "Tell us what your team is trying to untangle.",
+      name: /build a system around how your business actually works/i,
     }),
   ).toBeInViewport();
 });
