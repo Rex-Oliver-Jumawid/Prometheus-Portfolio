@@ -1,8 +1,8 @@
 .hero,
 .navGlass {
   --hero-scene-speed: 0.3;
-  --figure-width: min(60vw, 92svh);
-  --figure-start-y: 3svh;
+  --figure-width: min(56vw, 82svh);
+  --figure-start-y: 24svh;
   --hero-scroll-distance: 100svh;
   --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
   --figure-travel: calc(var(--hero-progress, 0) * var(--hero-reveal-distance));
@@ -580,7 +580,7 @@
   top: var(--figure-start-y);
   width: var(--figure-width);
   aspect-ratio: 700 / 736;
-  background: url("/assets/hero/prometheus-figure.webp") center / contain no-repeat;
+  background: url("/assets/hero/prometheus-figure-v2.webp") center / contain no-repeat;
   filter: blur(42px) saturate(54%) brightness(0.74) contrast(0.84);
   transform: translate3d(0, calc(-1 * var(--figure-travel)), 0) scale(1.035);
   transform-origin: center;
@@ -807,8 +807,8 @@
 @media (max-width: 1000px) {
   .hero,
   .navGlass {
-    --figure-start-y: 8svh;
-    --figure-width: min(84vw, 96svh);
+    --figure-start-y: 26svh;
+    --figure-width: min(78vw, 82svh);
   }
 
   .navGlassFigure {
@@ -832,8 +832,8 @@
 @media (max-width: 640px) {
   .hero,
   .navGlass {
-    --figure-start-y: 16svh;
-    --figure-width: min(118vw, 88svh);
+    --figure-start-y: 30svh;
+    --figure-width: min(118vw, 72svh);
   }
   .header,
   .navPanel {
