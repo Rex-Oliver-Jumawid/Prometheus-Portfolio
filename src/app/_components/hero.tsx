@@ -34,7 +34,7 @@ export function Hero() {
               alt=""
               width={1254}
               height={1254}
-              sizes="(max-width: 640px) 148vw, (max-width: 1000px) 102vw, 76vw"
+              sizes="(max-width: 640px) 166vw, (max-width: 1000px) 116vw, 88vw"
               loading="eager"
               unoptimized
               draggable={false}
