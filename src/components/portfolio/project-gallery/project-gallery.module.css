@@ -9,7 +9,18 @@
   font-family: var(--edition-sans);
 }
 
-:global(.viewport-stack[data-sticky-ready="true"]) > .gallery {
+.galleryViewport {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: inherit;
+}
+
+:global(.viewport-stack[data-sticky-ready="true"])
+  > .gallery
+  > .galleryViewport {
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
@@ -692,10 +703,23 @@
 }
 
 
-/* Homepage: keep the Furniture Odyssey showcase as its own full viewport. */
+/* Homepage: hold the Furniture Odyssey showcase for one extra viewport of
+   scroll before the library is allowed to enter. */
 .gallery:not([data-standalone="true"]) {
+  --gallery-hold-distance: 100svh;
+  z-index: var(--viewport-order, 2);
+  height: calc(100svh + var(--gallery-hold-distance));
+  min-height: calc(100svh + var(--gallery-hold-distance));
+  overflow: visible;
+  background: #4a2f1c;
+}
+
+.gallery:not([data-standalone="true"]) .galleryViewport {
+  position: sticky;
+  top: 0;
   height: 100svh;
   min-height: 100svh;
+  overflow: hidden;
   background: #4a2f1c;
 }
 
@@ -713,11 +737,6 @@
 }
 
 @media (max-width: 600px) {
-  .gallery:not([data-standalone="true"]) {
-    height: 100svh;
-    min-height: 100svh;
-  }
-
   .gallery:not([data-standalone="true"]) .canvas,
   .gallery:not([data-standalone="true"]) .fallback {
     inset: 0;
