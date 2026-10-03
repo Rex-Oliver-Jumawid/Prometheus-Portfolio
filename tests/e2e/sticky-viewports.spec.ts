@@ -56,7 +56,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
       (top) => window.scrollTo({ top, behavior: "instant" }),
       scroll,
     );
-    const hero = page.locator("#top");
+    const hero = page.locator("#top [data-hero-stage]");
     const gallery = page.locator("#work");
     await expect.poll(async () => (await hero.boundingBox())!.y).toBe(0);
     const galleryTop = (await gallery.boundingBox())!.y;

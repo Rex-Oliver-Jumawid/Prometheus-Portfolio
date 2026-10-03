@@ -8,7 +8,7 @@ for (const [width, height] of [
   [320, 568],
   [844, 390],
 ]) {
-  test(`reveals the full character to his knees before the gallery at ${width}x${height}`, async ({
+  test(`keeps the head clear over two screens of parallax before the gallery at ${width}x${height}`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height });
@@ -42,7 +42,11 @@ for (const [width, height] of [
     );
     expect((await stage.boundingBox())!.height).toBe(height);
     const travel = (await hero.boundingBox())!.height - height;
-    expect(travel).toBeGreaterThan(0);
+    expect(travel).toBeCloseTo(height * 2, 0);
+    const reveal = Math.min(
+      (original.width * 402) / 986 + offset,
+      Math.max(0, original.y + (original.width * 170) / 986 - height * 0.35),
+    );
     await expect
       .poll(async () => (await gallery.boundingBox())!.y)
       .toBeCloseTo(height + travel, 0);
@@ -61,8 +65,8 @@ for (const [width, height] of [
       );
       await expect
         .poll(async () => (await figure.boundingBox())!.y)
-        .toBeCloseTo(original.y - scroll, 0);
-      // The second section cannot cover the character during the reveal.
+        .toBeCloseTo(original.y - (reveal * scroll) / travel, 0);
+      // Keep the second section below the viewport for the entire two-screen hold.
       expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
         height - 1,
       );
@@ -74,12 +78,15 @@ for (const [width, height] of [
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
       if (progress === 1) {
-        const knee =
-          (await figure.boundingBox())!.y + (original.width * 1120) / 986;
-        expect(Math.abs(knee - height)).toBeLessThan(1);
+        const head =
+          (await figure.boundingBox())!.y + (original.width * 170) / 986;
+        expect(head).toBeGreaterThanOrEqual(height * 0.35 - 1);
+        expect(head).toBeLessThanOrEqual(height * 0.35 + 1);
         if (width === 1440 || width === 390) {
-          await info.attach("knees", {
-            body: await page.screenshot({ path: info.outputPath("knees.png") }),
+          await info.attach("head-stop", {
+            body: await page.screenshot({
+              path: info.outputPath("head-stop.png"),
+            }),
             contentType: "image/png",
           });
         }
@@ -96,9 +103,34 @@ for (const [width, height] of [
       .toBeLessThan(1);
     await expect
       .poll(async () => (await figure.boundingBox())!.y)
-      .toBeCloseTo(original.y - travel, 0);
+      .toBeCloseTo(original.y - reveal, 0);
   });
 }
+
+test("two screen-sized wheel movements complete the reveal before section two enters", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const hero = page.locator("#top");
+  await expect(hero).toHaveAttribute("data-parallax-ready", "true");
+  for (const progress of [0.5, 1]) {
+    await page.mouse.wheel(0, 900);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeCloseTo(progress * 1800, 0);
+    await expect
+      .poll(() =>
+        hero.evaluate((element) =>
+          Number(element.style.getPropertyValue("--hero-progress")),
+        ),
+      )
+      .toBeCloseTo(progress, 2);
+    expect(
+      (await page.locator("#work").boundingBox())!.y,
+    ).toBeGreaterThanOrEqual(899);
+  }
+});
 
 test("changing motion preference removes the hold and scrolling transforms", async ({
   page,
@@ -109,7 +141,7 @@ test("changing motion preference removes the hold and scrolling transforms", asy
   await page.evaluate(() => window.scrollTo({ top: 180, behavior: "instant" }));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(hero).not.toHaveAttribute("data-parallax-ready", "true");
-  await expect(hero).toHaveCSS("--hero-travel", "");
+  await expect(hero).toHaveCSS("--hero-progress", "");
   expect((await hero.boundingBox())!.height).toBe(
     await page.evaluate(() => innerHeight),
   );

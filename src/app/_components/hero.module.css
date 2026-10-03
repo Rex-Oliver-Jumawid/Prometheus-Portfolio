@@ -8,22 +8,24 @@
   --figure-start-y: calc(
     100svh + var(--figure-offset) - var(--figure-width) * 718 / 986
   );
-  /* The lower knee is at 1120px in the original character artwork. */
-  --hero-reveal-distance: calc(
+  --hero-scroll-distance: 200svh;
+  --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
+  --figure-travel: calc(var(--hero-progress, 0) * var(--hero-reveal-distance));
+  /* The crown is at source y=170px. Stop it in the middle region of the screen. */
+  --figure-head-stop: 35svh;
+  --figure-knee-reveal: calc(
     var(--figure-width) * 402 / 986 + var(--figure-offset)
   );
-}
-
-/* Keep section boundaries on whole CSS pixels for the live book handoff. */
-@supports (height: round(up, 1px, 1px)) {
-  .hero,
-  .navGlass {
-    --hero-reveal-distance: round(
-      up,
-      calc(var(--figure-width) * 402 / 986 + var(--figure-offset)),
-      1px
-    );
-  }
+  --hero-reveal-distance: min(
+    var(--figure-knee-reveal),
+    max(
+      0px,
+      calc(
+        var(--figure-start-y) + var(--figure-width) * 170 / 986 -
+          var(--figure-head-stop)
+      )
+    )
+  );
 }
 
 .hero {
@@ -35,11 +37,12 @@
 }
 
 .hero[data-parallax-ready="true"] {
-  height: calc(100svh + var(--hero-reveal-distance));
+  height: calc(100svh + var(--hero-scroll-distance));
 }
 
 .stage {
-  position: relative;
+  position: sticky;
+  top: 0;
   display: flex;
   height: 100svh;
   overflow: clip;
@@ -51,7 +54,7 @@
 .scene {
   position: absolute;
   z-index: -2;
-  inset: 0 0 calc(-1 * var(--hero-reveal-distance) * var(--hero-scene-speed));
+  inset: 0 0 calc(-1 * var(--figure-knee-reveal) * var(--hero-scene-speed));
   overflow: hidden;
   pointer-events: none;
   transform: translate3d(
@@ -75,7 +78,7 @@
   right: 4%;
   top: var(--figure-start-y);
   width: var(--figure-width);
-  transform: translate3d(0, calc(-1 * var(--hero-travel, 0px)), 0);
+  transform: translate3d(0, calc(-1 * var(--figure-travel)), 0);
   will-change: transform;
 }
 
@@ -608,7 +611,7 @@
   aspect-ratio: 986 / 1595;
   background: url("/assets/hero/figure-full.webp") center / contain no-repeat;
   filter: blur(42px) saturate(54%) brightness(0.74) contrast(0.84);
-  transform: translate3d(0, calc(-1 * var(--hero-travel, 0px)), 0) scale(1.035);
+  transform: translate3d(0, calc(-1 * var(--figure-travel)), 0) scale(1.035);
   transform-origin: center;
   will-change: transform;
 }

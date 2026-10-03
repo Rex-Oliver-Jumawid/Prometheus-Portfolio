@@ -18,7 +18,7 @@ export function HeroParallax() {
 
     function clearMotion() {
       targets.forEach((target) => {
-        target.style.removeProperty("--hero-travel");
+        target.style.removeProperty("--hero-progress");
       });
     }
 
@@ -30,9 +30,12 @@ export function HeroParallax() {
       }
       // Use the document flow start; a pinned section's visual top never moves.
       const start = Number(hero!.dataset.viewportStart ?? 0);
-      const travel = Math.min(distance, Math.max(0, window.scrollY - start));
+      const progress =
+        distance > 0
+          ? Math.min(1, Math.max(0, (window.scrollY - start) / distance))
+          : 0;
       targets.forEach((target) => {
-        target.style.setProperty("--hero-travel", `${travel}px`);
+        target.style.setProperty("--hero-progress", String(progress));
       });
     }
 
@@ -42,7 +45,7 @@ export function HeroParallax() {
 
     function measure() {
       // CSS owns the artwork anchors and responsive dimensions. The hero's
-      // extra flow height is exactly the distance needed to reveal the knees.
+      // extra flow height controls duration independently of the artwork's pan.
       distance = Math.max(
         0,
         hero!.getBoundingClientRect().height -
