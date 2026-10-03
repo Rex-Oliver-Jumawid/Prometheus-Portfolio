@@ -29,6 +29,27 @@ function BookPageContent({ page }: { page?: BookPage }) {
       {page.paragraphs.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
+      {page.image ? (
+        <div className={styles.pageMedia}>
+          <Image
+            src={page.image.src}
+            alt={page.image.alt}
+            fill
+            sizes="(max-width: 600px) 42vw, 520px"
+          />
+        </div>
+      ) : null}
+      {page.action ? (
+        <a
+          className={styles.pageAction}
+          href={page.action.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>{page.action.label}</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      ) : null}
     </>
   ) : null;
 }
