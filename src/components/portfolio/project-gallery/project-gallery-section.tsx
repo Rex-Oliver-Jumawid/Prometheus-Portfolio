@@ -24,6 +24,9 @@ export function ProjectGallerySection({
       data-standalone={standalone ? "true" : undefined}
       aria-labelledby="gallery-title"
     >
+      {!standalone && (
+        <div className={styles.sceneBackground} aria-hidden="true" />
+      )}
       <GalleryBackdrop />
 
       {standalone ? (
