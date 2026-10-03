@@ -32,9 +32,9 @@ export function Hero() {
             <Image
               src="/assets/hero/prometheus-figure.webp"
               alt=""
-              width={360}
-              height={319}
-              sizes="(max-width: 640px) 138vw, (max-width: 1000px) 105vw, 74vw"
+              width={700}
+              height={736}
+              sizes="(max-width: 640px) 118vw, (max-width: 1000px) 84vw, 60vw"
               loading="eager"
               draggable={false}
             />
