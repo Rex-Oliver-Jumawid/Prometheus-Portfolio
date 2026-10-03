@@ -1,7 +1,7 @@
 .hero,
 .navGlass {
   --hero-scene-speed: 0.3;
-  --figure-width: min(66vw, 96svh);
+  --figure-width: min(76vw, 108svh);
   --figure-start-y: 24svh;
   --hero-scroll-distance: 100svh;
   --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
@@ -808,7 +808,7 @@
   .hero,
   .navGlass {
     --figure-start-y: 26svh;
-    --figure-width: min(90vw, 94svh);
+    --figure-width: min(102vw, 106svh);
   }
 
   .navGlassFigure {
@@ -833,7 +833,7 @@
   .hero,
   .navGlass {
     --figure-start-y: 30svh;
-    --figure-width: min(132vw, 82svh);
+    --figure-width: min(148vw, 92svh);
   }
   .header,
   .navPanel {
