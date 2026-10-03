@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#182130" />
+  <title>Sea of Clouds - Scroll Dive</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --cream:#fff1cf;
+      --ink:#131925;
+      --red:#b72b24;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--ink);color:var(--cream);font-family:Arial,sans-serif}
+    body{overflow-x:hidden}
+    .dive-track{height:650svh;position:relative}
+    .stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;isolation:isolate;background:#61768a}
+    .sky{position:absolute;inset:0;z-index:0;background:
+      radial-gradient(circle at 13% 4%,rgba(255,238,174,.98) 0 4%,rgba(246,199,112,.82) 14%,rgba(246,199,112,0) 38%),
+      radial-gradient(ellipse at 52% 38%,#8ca6b7 0%,#60798f 42%,#28384d 78%,#151d2a 100%);
+      transform:scale(1.03)}
+    .sky::before{content:"";position:absolute;inset:-10%;background:linear-gradient(135deg,rgba(255,231,164,.32),transparent 32%);filter:blur(24px)}
+    .darkness{position:absolute;inset:0;z-index:3;pointer-events:none;background:
+      radial-gradient(ellipse at 50% 28%,rgba(43,50,61,0) 0 28%,rgba(18,23,32,.35) 70%,rgba(7,10,16,.76) 100%);
+      opacity:0}
+    #cloudCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;display:block;pointer-events:none}
+    .hero{position:absolute;z-index:1;inset:0;display:flex;align-items:center;padding:clamp(30px,8vw,120px);pointer-events:none}
+    .hero-inner{max-width:850px}
+    .eyebrow{text-transform:uppercase;letter-spacing:.23em;font-size:11px;margin:0 0 22px;color:#fff1cfd0}
+    h1{font:400 clamp(66px,9vw,145px)/.92 Georgia,"Times New Roman",serif;letter-spacing:-.055em;margin:0;text-shadow:0 3px 30px #1b1f2c44}
+    h1 em{font-weight:400}
+    .cue{position:absolute;z-index:5;left:clamp(28px,8vw,120px);bottom:30px;font-size:10px;text-transform:uppercase;letter-spacing:.22em;display:flex;gap:12px;align-items:center}
+    .cue::before{content:"";width:1px;height:38px;background:#fff1cf88}
+    .next{min-height:100svh;padding:110px clamp(28px,8vw,120px);background:#111721;display:grid;align-content:center}
+    .next h2{max-width:900px;font:400 clamp(48px,7vw,100px)/.98 Georgia,"Times New Roman",serif;letter-spacing:-.045em;margin:0 0 24px}
+    .next p{max-width:590px;color:#aeb9c9;line-height:1.75;font-size:16px}
+    .status{position:absolute;right:18px;bottom:16px;z-index:8;font-size:11px;color:#fff9;display:none}
+    @media (max-width:700px){.dive-track{height:560svh}.hero{align-items:flex-end;padding-bottom:120px}h1{font-size:clamp(58px,17vw,92px)}}
+    @media (prefers-reduced-motion:reduce){.dive-track{height:180svh}.hero{opacity:.15}.darkness{opacity:.45}}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="dive-track" id="top">
+      <div class="stage">
+        <div class="sky"></div>
+        <section class="hero">
+          <div class="hero-inner">
+            <p class="eyebrow">Independent minds. Extraordinary ideas.</p>
+            <h1>Where Ideas<br><em>Ignite.</em></h1>
+          </div>
+        </section>
+        <canvas id="cloudCanvas" aria-hidden="true"></canvas>
+        <div class="darkness"></div>
+        <div class="cue">Scroll to dive</div>
+        <div class="status" id="status"></div>
+      </div>
+    </section>
+    <section class="next">
+      <div>
+        <p class="eyebrow">Below the clouds</p>
+        <h2>The next world appears beneath you.</h2>
+        <p>This section is only here to show the end of the dive. The cloud field above is driven directly by scroll position.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    const canvas = document.getElementById('cloudCanvas');
+    const stage = document.querySelector('.stage');
+    const track = document.querySelector('.dive-track');
+    const hero = document.querySelector('.hero');
+    const cue = document.querySelector('.cue');
+    const darkness = document.querySelector('.darkness');
+    const sky = document.querySelector('.sky');
+    const status = document.getElementById('status');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    let THREE;
+    try {
+      THREE = await import('https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js');
+    } catch (error) {
+      status.style.display = 'block';
+      status.textContent = 'Three.js could not load.';
+      console.error(error);
+      throw error;
+    }
+
+    const clamp = (v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+    const smooth = (a,b,v)=>{const x=clamp((v-a)/(b-a));return x*x*(3-2*x)};
+    const lerp = (a,b,t)=>a+(b-a)*t;
+
+    // Deterministic PRNG so every reload produces the same cloud field.
+    function mulberry32(seed){
+      return function(){
+        let t=seed+=0x6D2B79F5;
+        t=Math.imul(t^t>>>15,t|1);
+        t^=t+Math.imul(t^t>>>7,t|61);
+        return ((t^t>>>14)>>>0)/4294967296;
+      }
+    }
+    const rand = mulberry32(9328471);
+
+    function createCloudAtlas(){
+      const variants=4, cell=320;
+      const c=document.createElement('canvas');
+      c.width=cell*variants;
+      c.height=cell;
+      const ctx=c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+
+      function lobe(cx,cy,r,light=1){
+        const gx=cx-r*.28, gy=cy-r*.34;
+        const g=ctx.createRadialGradient(gx,gy,r*.05,cx,cy,r);
+        const hi=Math.round(252*light), mid=Math.round(229*light), lo=Math.round(181*light);
+        g.addColorStop(0,`rgba(${hi},${hi},${hi},.98)`);
+        g.addColorStop(.36,`rgba(${hi},${hi},${hi},.95)`);
+        g.addColorStop(.69,`rgba(${mid},${mid},${mid},.72)`);
+        g.addColorStop(.9,`rgba(${lo},${lo},${lo},.28)`);
+        g.addColorStop(1,'rgba(150,150,150,0)');
+        ctx.fillStyle=g;
+        ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+      }
+
+      for(let v=0;v<variants;v++){
+        const ox=v*cell;
+        ctx.save();
+        ctx.beginPath();ctx.rect(ox,0,cell,cell);ctx.clip();
+        ctx.globalCompositeOperation='source-over';
+        ctx.filter='blur(1.5px)';
+
+        // Broad soft base makes each sprite read as one cloud bank rather than circles.
+        const base=ctx.createRadialGradient(ox+cell*.5,cell*.56,cell*.05,ox+cell*.5,cell*.56,cell*.47);
+        base.addColorStop(0,'rgba(238,238,238,.92)');
+        base.addColorStop(.58,'rgba(220,220,220,.72)');
+        base.addColorStop(1,'rgba(170,170,170,0)');
+        ctx.fillStyle=base;
+        ctx.save();
+        ctx.translate(ox+cell*.5,cell*.58);
+        ctx.scale(1.55,.68);
+        ctx.beginPath();ctx.arc(0,0,cell*.34,0,Math.PI*2);ctx.fill();
+        ctx.restore();
+
+        const local=mulberry32(500+v*119);
+        const count=17+v*2;
+        for(let i=0;i<count;i++){
+          const x=ox+cell*(.13+local()*.74);
+          const y=cell*(.30+local()*.40);
+          const centerBias=1-Math.min(1,Math.abs((x-(ox+cell*.5))/(cell*.5)));
+          const r=cell*(.07+local()*.105)*(0.8+centerBias*.35);
+          const light=.9+local()*.12;
+          lobe(x,y,r,light);
+        }
+
+        // Soft underside shadow. This is what keeps the cloud from looking like cotton balls.
+        ctx.globalCompositeOperation='source-atop';
+        ctx.filter='blur(10px)';
+        const shadow=ctx.createLinearGradient(0,cell*.40,0,cell*.86);
+        shadow.addColorStop(0,'rgba(70,76,88,0)');
+        shadow.addColorStop(.55,'rgba(76,79,88,.18)');
+        shadow.addColorStop(1,'rgba(30,35,46,.55)');
+        ctx.fillStyle=shadow;ctx.fillRect(ox,0,cell,cell);
+
+        // Warm rim from the upper-left, matching the reference atmosphere.
+        ctx.globalCompositeOperation='screen';
+        ctx.filter='blur(13px)';
+        const sun=ctx.createRadialGradient(ox+cell*.18,cell*.18,0,ox+cell*.18,cell*.18,cell*.58);
+        sun.addColorStop(0,'rgba(255,224,147,.48)');
+        sun.addColorStop(.48,'rgba(255,209,116,.14)');
+        sun.addColorStop(1,'rgba(255,190,90,0)');
+        ctx.fillStyle=sun;ctx.fillRect(ox,0,cell,cell);
+        ctx.restore();
+      }
+      const tex=new THREE.CanvasTexture(c);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      tex.minFilter=THREE.LinearFilter;
+      tex.magFilter=THREE.LinearFilter;
+      tex.generateMipmaps=false;
+      return tex;
+    }
+
+    const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:false,powerPreference:'high-performance'});
+    renderer.setClearColor(0x000000,0);
+    renderer.outputColorSpace=THREE.SRGBColorSpace;
+    renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
+
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(56,1,.35,520);
+    camera.position.set(0,0,0);
+
+    const atlas=createCloudAtlas();
+    const base=new THREE.PlaneGeometry(1,1,1,1);
+    const geometry=new THREE.InstancedBufferGeometry();
+    geometry.index=base.index;
+    geometry.setAttribute('position',base.attributes.position);
+    geometry.setAttribute('uv',base.attributes.uv);
+
+    const FOV=THREE.MathUtils.degToRad(56);
+    const layers=39;
+    const perLayer=16;
+    const count=layers*perLayer;
+    geometry.instanceCount=count;
+
+    const offsets=new Float32Array(count*3);
+    const scales=new Float32Array(count*2);
+    const rotations=new Float32Array(count);
+    const variants=new Float32Array(count);
+    const opacities=new Float32Array(count);
+    const brightness=new Float32Array(count);
+    const sunAmount=new Float32Array(count);
+    const phases=new Float32Array(count);
+    const drifts=new Float32Array(count*2);
+
+    let k=0;
+    for(let layer=0;layer<layers;layer++){
+      const depth=11+layer*9.1;
+      // Extents are calculated for a 16:9-ish canvas then expanded. Resize never leaves holes
+      // because the cloud banks themselves are intentionally oversized.
+      const halfH=depth*Math.tan(FOV*.5)*1.32;
+      const halfW=halfH*1.95;
+      for(let i=0;i<perLayer;i++,k++){
+        const edge=i<8;
+        let x,y;
+        if(edge){
+          const side=i%4;
+          if(side===0){x=-halfW*(.55+rand()*.52);y=(rand()*2-1)*halfH;}
+          else if(side===1){x=halfW*(.55+rand()*.52);y=(rand()*2-1)*halfH;}
+          else if(side===2){x=(rand()*2-1)*halfW;y=-halfH*(.50+rand()*.56);}
+          else {x=(rand()*2-1)*halfW;y=halfH*(.50+rand()*.56);}
+        } else {
+          x=(rand()*2-1)*halfW*.78;
+          y=(rand()*2-1)*halfH*.72;
+        }
+        const z=-depth + (rand()-.5)*3.4;
+        offsets[k*3]=x;offsets[k*3+1]=y;offsets[k*3+2]=z;
+
+        const w=depth*(edge?(.22+rand()*.16):(.18+rand()*.14));
+        const h=w*(.46+rand()*.20);
+        scales[k*2]=w;scales[k*2+1]=h;
+        rotations[k]=(rand()-.5)*.24;
+        variants[k]=Math.floor(rand()*4);
+        opacities[k]=edge?(.52+rand()*.18):(.42+rand()*.20);
+        brightness[k]=.78+rand()*.32;
+        const normalizedX=clamp(1-(x/halfW+1)*.5);
+        const normalizedY=clamp((y/halfH+1)*.5);
+        sunAmount[k]=clamp(normalizedX*.72+normalizedY*.35);
+        phases[k]=rand()*Math.PI*2;
+        drifts[k*2]=(rand()-.5)*depth*.018;
+        drifts[k*2+1]=(rand()-.5)*depth*.012;
+      }
+    }
+
+    geometry.setAttribute('aOffset',new THREE.InstancedBufferAttribute(offsets,3));
+    geometry.setAttribute('aScale',new THREE.InstancedBufferAttribute(scales,2));
+    geometry.setAttribute('aRotation',new THREE.InstancedBufferAttribute(rotations,1));
+    geometry.setAttribute('aVariant',new THREE.InstancedBufferAttribute(variants,1));
+    geometry.setAttribute('aOpacity',new THREE.InstancedBufferAttribute(opacities,1));
+    geometry.setAttribute('aBrightness',new THREE.InstancedBufferAttribute(brightness,1));
+    geometry.setAttribute('aSun',new THREE.InstancedBufferAttribute(sunAmount,1));
+    geometry.setAttribute('aPhase',new THREE.InstancedBufferAttribute(phases,1));
+    geometry.setAttribute('aDrift',new THREE.InstancedBufferAttribute(drifts,2));
+
+    const material=new THREE.ShaderMaterial({
+      transparent:true,
+      depthWrite:false,
+      depthTest:true,
+      blending:THREE.NormalBlending,
+      uniforms:{
+        uAtlas:{value:atlas},
+        uProgress:{value:0},
+        uIntro:{value:0},
+        uMood:{value:0},
+        uFogNear:{value:20},
+        uFogFar:{value:115},
+      },
+      vertexShader:`
+        precision highp float;
+        attribute vec3 aOffset;
+        attribute vec2 aScale;
+        attribute float aRotation;
+        attribute float aVariant;
+        attribute float aOpacity;
+        attribute float aBrightness;
+        attribute float aSun;
+        attribute float aPhase;
+        attribute vec2 aDrift;
+        uniform float uProgress;
+        varying vec2 vUv;
+        varying float vVariant;
+        varying float vOpacity;
+        varying float vBrightness;
+        varying float vSun;
+        varying float vDepth;
+        void main(){
+          vec3 world=aOffset;
+          float motion=uProgress*6.2831853;
+          world.x += sin(motion*.72+aPhase)*aDrift.x;
+          world.y += cos(motion*.58+aPhase*1.13)*aDrift.y;
+
+          vec4 center=modelViewMatrix*vec4(world,1.0);
+          float depth=-center.z;
+          vec2 p=position.xy*aScale;
+          float s=sin(aRotation), c=cos(aRotation);
+          p=mat2(c,-s,s,c)*p;
+          center.xy+=p;
+          gl_Position=projectionMatrix*center;
+
+          vUv=uv;
+          vVariant=aVariant;
+          vOpacity=aOpacity;
+          vBrightness=aBrightness;
+          vSun=aSun;
+          vDepth=depth;
+        }
+      `,
+      fragmentShader:`
+        precision highp float;
+        uniform sampler2D uAtlas;
+        uniform float uIntro;
+        uniform float uMood;
+        uniform float uFogNear;
+        uniform float uFogFar;
+        varying vec2 vUv;
+        varying float vVariant;
+        varying float vOpacity;
+        varying float vBrightness;
+        varying float vSun;
+        varying float vDepth;
+        void main(){
+          vec2 tuv=vec2((vUv.x+vVariant)/4.0,vUv.y);
+          vec4 tex=texture2D(uAtlas,tuv);
+          float a=tex.a*vOpacity*uIntro;
+
+          // Fade only when a cloud is almost touching the camera, preventing hard popping.
+          a*=smoothstep(.45,2.6,vDepth);
+          if(a<.012) discard;
+
+          float fog=clamp((vDepth-uFogNear)/(uFogFar-uFogNear),0.0,1.0);
+          vec3 warmShadow=vec3(.34,.36,.40);
+          vec3 warmLight=vec3(1.05,.90,.64);
+          vec3 darkShadow=vec3(.10,.12,.17);
+          vec3 darkLight=vec3(.48,.49,.50);
+
+          float lum=dot(tex.rgb,vec3(.299,.587,.114));
+          vec3 warm=mix(warmShadow,warmLight,clamp(lum*.95+vSun*.26,0.0,1.0));
+          vec3 dark=mix(darkShadow,darkLight,clamp(lum*.82+vSun*.08,0.0,1.0));
+          vec3 col=mix(warm,dark,uMood)*vBrightness;
+
+          // Distant clouds blend into blue atmosphere, increasing depth perception.
+          vec3 warmFog=vec3(.48,.58,.66);
+          vec3 darkFog=vec3(.105,.13,.18);
+          col=mix(col,mix(warmFog,darkFog,uMood),fog*.62);
+          a*=1.0-fog*.30;
+          gl_FragColor=vec4(col,a);
+        }
+      `
+    });
+
+    const clouds=new THREE.Mesh(geometry,material);
+    clouds.frustumCulled=false;
+    scene.add(clouds);
+
+    let width=1,height=1,start=0,distance=1;
+    function resize(){
+      width=stage.clientWidth;height=stage.clientHeight;
+      renderer.setSize(width,height,false);
+      renderer.setPixelRatio(Math.min(devicePixelRatio||1,width<800?1.0:1.25));
+      camera.aspect=width/height;camera.updateProjectionMatrix();
+      start=track.getBoundingClientRect().top+scrollY;
+      distance=Math.max(1,track.offsetHeight-height);
+    }
+
+    const warmClear=new THREE.Color('#748b9d');
+    const darkClear=new THREE.Color('#111722');
+    const tempColor=new THREE.Color();
+    let target=0,current=0,raf=0,visible=true;
+
+    function updateVisuals(p){
+      const eased=smooth(0,1,p);
+      // 39 layers extend to ~356 world units. Camera dives 285 units through them.
+      camera.position.z=-285*eased;
+      camera.position.x=Math.sin(eased*Math.PI*1.4)*1.9;
+      camera.position.y=-eased*2.5+Math.sin(eased*Math.PI*2.0)*.7;
+
+      const intro=smooth(.015,.14,p)*(1-smooth(.94,1,p));
+      const mood=smooth(.34,.92,p);
+      material.uniforms.uProgress.value=p;
+      material.uniforms.uIntro.value=intro;
+      material.uniforms.uMood.value=mood;
+      material.uniforms.uFogNear.value=lerp(30,13,mood);
+      material.uniforms.uFogFar.value=lerp(125,78,mood);
+
+      hero.style.opacity=String(1-smooth(.035,.22,p));
+      hero.style.transform=`scale(${1+p*.28}) translateY(${p*7}vh)`;
+      cue.style.opacity=String(1-smooth(0,.035,p));
+      darkness.style.opacity=String(smooth(.40,.96,p)*.88);
+      sky.style.filter=`brightness(${lerp(1,.46,mood)}) saturate(${lerp(1,.72,mood)})`;
+      tempColor.copy(warmClear).lerp(darkClear,mood);
+      renderer.setClearColor(tempColor,0);
+      renderer.render(scene,camera);
+    }
+
+    function frame(){
+      raf=0;
+      if(!visible||document.hidden)return;
+      const delta=target-current;
+      if(Math.abs(delta)>.00015&&!reducedMotion.matches){
+        current+=delta*.17;
+        updateVisuals(current);
+        raf=requestAnimationFrame(frame);
+      }else{
+        current=target;
+        updateVisuals(current);
+      }
+    }
+    function schedule(){if(!raf)raf=requestAnimationFrame(frame)}
+    function onScroll(){
+      target=clamp((scrollY-start)/distance);
+      if(reducedMotion.matches)current=target;
+      schedule();
+    }
+
+    const observer=new IntersectionObserver(([entry])=>{
+      visible=entry.isIntersecting;
+      if(visible){onScroll();schedule()}
+      else if(raf){cancelAnimationFrame(raf);raf=0}
+    });
+    observer.observe(track);
+
+    addEventListener('scroll',onScroll,{passive:true});
+    addEventListener('resize',()=>{resize();onScroll()},{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden){onScroll();schedule()}});
+    reducedMotion.addEventListener?.('change',()=>{onScroll();schedule()});
+
+    resize();
+    onScroll();
+    updateVisuals(0);
+  </script>
+</body>
+</html>

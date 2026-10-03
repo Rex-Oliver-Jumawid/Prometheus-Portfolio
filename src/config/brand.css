@@ -12,6 +12,8 @@
   --brand-teal: #486a72;
   --brand-night: #1d1b19;
   --brand-charcoal: #282321;
+  --cloud-light: #fff8eb;
+  --cloud-shadow: #8297ad;
   --brand-serif:
     var(--font-instrument-serif, Georgia), "Times New Roman", serif;
   --edition-background: #181a1b;
