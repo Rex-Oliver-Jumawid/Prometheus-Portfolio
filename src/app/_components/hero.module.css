@@ -6,12 +6,10 @@
   --hero-scroll-distance: 100svh;
   --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
   --figure-travel: calc(var(--hero-progress, 0) * var(--hero-reveal-distance));
-  --figure-head-stop: clamp(20px, 3svh, 36px);
   --figure-knee-reveal: min(26svh, 18vw);
-  --hero-reveal-distance: max(
-    0px,
-    calc(var(--figure-start-y) - var(--figure-head-stop))
-  );
+  /* Final crop: bring the artwork box to the top edge, matching the
+     reference frame while leaving the lower leg/foot clipped below. */
+  --hero-reveal-distance: var(--figure-start-y);
 }
 
 .hero {
