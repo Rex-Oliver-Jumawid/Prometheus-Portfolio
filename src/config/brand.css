@@ -14,8 +14,9 @@
   --brand-charcoal: #282321;
   --cloud-gold: #d6b16a;
   --cloud-deep-gold: #8c642f;
-  --brand-serif:
-    var(--font-instrument-serif, Georgia), "Times New Roman", serif;
+  --brand-serif: var(--font-bosch, Georgia), "Times New Roman", serif;
+  --brand-subheading:
+    var(--font-casta, Georgia), "Times New Roman", serif;
   --edition-background: #181a1b;
   --edition-ink: #f1eee7;
   --edition-muted: #a4a6a6;
@@ -23,6 +24,6 @@
   --edition-accent: #a9bfc2;
   --edition-glow-center: #9c928620;
   --edition-glow-edge: #776f6210;
-  --edition-serif: "Libre Caslon Display", Georgia, serif;
+  --edition-serif: var(--brand-serif);
   --edition-sans: "DM Sans", Arial, sans-serif;
 }

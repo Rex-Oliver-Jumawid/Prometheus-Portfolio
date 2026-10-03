@@ -9,20 +9,19 @@ import { SmoothScroll } from "./_components/smooth-scroll";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 
-const instrumentSerif = localFont({
-  src: [
-    {
-      path: "./_fonts/instrument-serif-regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./_fonts/instrument-serif-italic.ttf",
-      weight: "400",
-      style: "italic",
-    },
-  ],
-  variable: "--font-instrument-serif",
+const bosch = localFont({
+  src: "./_fonts/bosch.woff2",
+  weight: "400",
+  style: "normal",
+  variable: "--font-bosch",
+  display: "swap",
+});
+
+const casta = localFont({
+  src: "./_fonts/casta-thin.woff2",
+  weight: "100",
+  style: "normal",
+  variable: "--font-casta",
   display: "swap",
 });
 
@@ -41,7 +40,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={instrumentSerif.variable}
+      className={`${bosch.variable} ${casta.variable}`}
     >
       <body>
         <SmoothScroll />

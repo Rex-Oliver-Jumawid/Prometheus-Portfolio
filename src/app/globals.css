@@ -94,6 +94,7 @@ a {
 .contact-section h2,
 .not-found h1 {
   margin: 0;
+  font-family: var(--brand-serif);
   font-weight: 760;
   letter-spacing: -0.06em;
   text-wrap: balance;
@@ -524,7 +525,7 @@ a {
   max-width: none;
   margin: 0;
   color: #fff4ea;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--brand-serif);
   font-size: 4cqw;
   font-weight: 500;
   line-height: 3.920052cqw;
@@ -534,6 +535,8 @@ a {
 
 .contact-footer .footer-message > p {
   width: 38.541667cqw;
+  font-family: var(--brand-subheading);
+  font-weight: 100;
   max-width: none;
   margin: 1.302083cqw 0 0;
   color: #eddcc6;
@@ -608,7 +611,7 @@ a {
   height: 11.71875cqw;
   margin: 0;
   color: #fff4ea;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--brand-serif);
   font-size: 14.583333cqw;
   font-weight: 400;
   line-height: 11.666667cqw;
