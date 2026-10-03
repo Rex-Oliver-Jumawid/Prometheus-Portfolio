@@ -17,9 +17,7 @@ for (const [width, height] of [
 
     const hero = page.locator("#top");
     const stage = hero.locator("[data-hero-stage]");
-    const figure = hero.locator(".figure img").or(
-      hero.locator('img[src*="Prometheus%20in%20Flight%20with%20Flame.png"]'),
-    );
+    const figure = hero.locator('img[width="1254"][height="1254"]');
     const gallery = page.locator("#work");
 
     await expect(hero).toHaveAttribute("data-parallax-ready", "true");
