@@ -1,5 +1,47 @@
 import { expect, test } from "@playwright/test";
 
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 667 },
+]) {
+  test(`banner and menu stay available while scrolling at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    const brand = page.getByRole("link", { name: "Prometheus home" });
+    const trigger = page.getByRole("button", { name: "Open navigation" });
+    await expect(brand).toBeInViewport();
+    const initialBrand = await brand.boundingBox();
+    const initialTrigger = await trigger.boundingBox();
+
+    for (const sectionId of ["work", "library", "contact"]) {
+      await page.evaluate((id) => {
+        const section = document.getElementById(id)!;
+        window.scrollTo({
+          top: Number(section.dataset.viewportStart),
+          behavior: "instant",
+        });
+      }, sectionId);
+      await expect(brand).toBeInViewport();
+      await expect(trigger).toBeInViewport();
+      expect(await brand.boundingBox()).toEqual(initialBrand);
+      expect(await trigger.boundingBox()).toEqual(initialTrigger);
+      await trigger.click();
+      const dialog = page.getByRole("dialog", { name: "Prometheus" });
+      await expect(dialog).toBeVisible();
+      await page
+        .getByRole("button", {
+          name: "Close navigation",
+          includeHidden: true,
+          exact: true,
+        })
+        .click();
+      await expect(dialog).toBeHidden();
+    }
+  });
+}
+
 test("the editorial action supports hover, focus, and reduced motion", async ({
   page,
 }) => {
