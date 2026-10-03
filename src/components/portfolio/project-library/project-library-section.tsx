@@ -1,7 +1,3 @@
-import "@fontsource/dm-sans/latin-400.css";
-import "@fontsource/dm-sans/latin-500.css";
-import "@fontsource/libre-caslon-display/latin-400.css";
-
 import { prometheusLibrary } from "@/content/library";
 
 import { ProjectLibraryClient } from "./project-library-client";

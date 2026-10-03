@@ -1,9 +1,5 @@
 import Link from "next/link";
 
-import "@fontsource/dm-sans/latin-400.css";
-import "@fontsource/dm-sans/latin-500.css";
-import "@fontsource/libre-caslon-display/latin-400.css";
-
 import { furnitureOdyssey } from "@/content/projects";
 
 import { GalleryBackdrop } from "./gallery-backdrop";

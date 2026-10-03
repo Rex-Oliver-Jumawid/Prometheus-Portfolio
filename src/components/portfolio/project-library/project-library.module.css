@@ -42,7 +42,7 @@
 
 .heading h2 {
   margin: 0;
-  font-family: "Libre Caslon Display", Georgia, "Times New Roman", serif;
+  font-family: var(--edition-serif);
   font-size: clamp(1.35rem, 2vw, 2rem);
   font-weight: 400;
   line-height: 1.15;
@@ -88,7 +88,7 @@
 
 .overlayTitle {
   margin: 12px 0 24px;
-  font-family: "Libre Caslon Display", Georgia, "Times New Roman", serif;
+  font-family: var(--edition-serif);
   font-size: 1.4rem;
   font-weight: 400;
   line-height: 1.35;
@@ -156,7 +156,7 @@
 }
 
 .bookControl strong {
-  font-family: "Libre Caslon Display", Georgia, "Times New Roman", serif;
+  font-family: var(--edition-serif);
   font-size: 1rem;
   font-weight: 400;
 }

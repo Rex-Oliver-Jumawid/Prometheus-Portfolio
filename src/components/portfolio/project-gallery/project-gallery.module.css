@@ -164,10 +164,12 @@
   color: var(--edition-accent);
 }
 .summary {
-  max-width: 280px;
+  max-width: 320px;
   color: var(--edition-description);
-  font-size: 18px;
-  line-height: 1.7;
+  font-family: var(--brand-subheading);
+  font-size: 22px;
+  font-weight: 100;
+  line-height: 1.4;
 }
 .reader button {
   cursor: pointer;
@@ -307,7 +309,8 @@
   border: 1px solid var(--line);
   border-radius: 1px 5px 5px 1px;
   color: var(--ink);
-  font-family: Georgia, serif;
+  font-family: var(--brand-subheading);
+  font-weight: 100;
   backface-visibility: hidden;
   background: linear-gradient(
     90deg,
