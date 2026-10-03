@@ -34,17 +34,29 @@ afterEach(() => {
   mocks.render.mockReset();
 });
 
-it("has exact reversible endpoints independent of sticky visual rectangles", () => {
-  expect(handoffProgress(0, 900, 1548, 900)).toBe(0);
-  expect(handoffProgress(900, 900, 1548, 900)).toBe(0);
-  expect(handoffProgress(901, 900, 1548, 900)).toBeGreaterThan(0);
-  expect(handoffProgress(1620, 900, 1548, 900)).toBe(1);
-  const down = [1200, 1300, 1400, 1500].map((y) =>
-    handoffProgress(y, 900, 1548, 900),
+it("holds the source book before beginning a reversible handoff", () => {
+  const work = 900;
+  const library = 2700;
+  const viewport = 900;
+  const delayedStart = work + viewport * 0.65;
+  const finish = library + viewport * 0.08;
+
+  expect(handoffProgress(0, work, library, viewport)).toBe(0);
+  expect(handoffProgress(work, work, library, viewport)).toBe(0);
+  expect(handoffProgress(delayedStart, work, library, viewport)).toBe(0);
+  expect(
+    handoffProgress(delayedStart + 1, work, library, viewport),
+  ).toBeGreaterThan(0);
+  expect(handoffProgress(finish, work, library, viewport)).toBe(1);
+
+  const down = [1600, 1900, 2200, 2500].map((y) =>
+    handoffProgress(y, work, library, viewport),
   );
   expect([...down].sort()).toEqual(down);
   expect(
-    [1500, 1400, 1300, 1200].map((y) => handoffProgress(y, 900, 1548, 900)),
+    [2500, 2200, 1900, 1600].map((y) =>
+      handoffProgress(y, work, library, viewport),
+    ),
   ).toEqual(down.reverse());
 });
 
