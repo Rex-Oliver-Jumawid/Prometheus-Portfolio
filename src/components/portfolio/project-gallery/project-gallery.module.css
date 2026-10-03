@@ -685,20 +685,11 @@
 .gallery:not([data-standalone="true"]) {
   height: 72svh;
   min-height: 560px;
-  background:
-    radial-gradient(
-      ellipse at 50% 44%,
-      rgb(247 211 126 / 42%) 0%,
-      rgb(184 126 42 / 24%) 20%,
-      rgb(91 63 27 / 18%) 38%,
-      transparent 62%
-    ),
-    radial-gradient(
-      ellipse at 50% 52%,
-      #352819 0%,
-      #1e1912 44%,
-      #11100e 78%
-    );
+  background-color: #4a2f1c;
+  background-image: url("/assets/project-gallery/library-reading-background.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .gallery:not([data-standalone="true"]) .canvas,
