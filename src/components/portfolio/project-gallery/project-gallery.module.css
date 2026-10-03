@@ -466,6 +466,63 @@
   line-height: 1.55;
   margin: 18px 0;
 }
+
+.pageMedia {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  margin-top: 24px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--brand-night) 16%, transparent);
+}
+
+.pageMedia img {
+  object-fit: cover;
+  object-position: left top;
+}
+
+.pageAction {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 36px;
+  padding: 0 20px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  color: var(--ink);
+  font-family: var(--edition-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
+}
+
+.pageAction span:last-child {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 220ms ease;
+}
+
+.pageAction:is(:hover, :focus-visible) {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-2px);
+}
+
+.pageAction:is(:hover, :focus-visible) span:last-child {
+  transform: translate(2px, -2px);
+}
 .pageArrow {
   position: absolute;
   z-index: 5;
@@ -670,6 +727,16 @@
   .paper > p:not(.eyebrow) {
     font-size: 14px;
     line-height: 1.5;
+  }
+  .pageMedia {
+    margin-top: 14px;
+    aspect-ratio: 4 / 3;
+  }
+  .pageAction {
+    min-height: 46px;
+    margin-top: 18px;
+    padding-inline: 12px;
+    font-size: 10px;
   }
   .pageArrow {
     width: 40px;
