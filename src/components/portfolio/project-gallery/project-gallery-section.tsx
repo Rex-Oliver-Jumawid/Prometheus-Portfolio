@@ -1,3 +1,6 @@
+import "@fontsource/dm-sans/latin-400.css";
+import "@fontsource/dm-sans/latin-500.css";
+
 import Link from "next/link";
 
 import { furnitureOdyssey } from "@/content/projects";
