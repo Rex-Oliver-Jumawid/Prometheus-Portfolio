@@ -1,7 +1,7 @@
 .hero,
 .navGlass {
   --hero-scene-speed: 0.3;
-  --figure-width: min(88vw, 122svh);
+  --figure-width: min(94vw, 128svh);
   --figure-start-y: 24svh;
   --hero-scroll-distance: 100svh;
   --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
@@ -61,7 +61,7 @@
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  right: -4%;
+  right: -1.5%;
   top: var(--figure-start-y);
   width: var(--figure-width);
   transform: translate3d(0, calc(-1 * var(--figure-travel)), 0);
@@ -808,7 +808,7 @@
   .hero,
   .navGlass {
     --figure-start-y: 26svh;
-    --figure-width: min(116vw, 120svh);
+    --figure-width: min(122vw, 126svh);
   }
 
   .navGlassFigure {
@@ -825,7 +825,7 @@
   }
 
   .figure {
-    right: -3%;
+    right: -1%;
   }
 }
 
@@ -833,7 +833,7 @@
   .hero,
   .navGlass {
     --figure-start-y: 30svh;
-    --figure-width: min(166vw, 104svh);
+    --figure-width: min(174vw, 110svh);
   }
   .header,
   .navPanel {
@@ -889,6 +889,10 @@
 
   .navGlassFigure {
     right: 1.5%;
+  }
+
+  .figure {
+    right: -0.5%;
   }
 
   .navLayout {
