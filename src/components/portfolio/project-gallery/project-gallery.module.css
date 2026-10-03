@@ -90,10 +90,11 @@
   inset: 0;
   pointer-events: none;
   background-color: #4a2f1c;
-  background-image: url("/assets/project-gallery/library-reading-background1.png");
-  background-position: center;
+  background-image: url("/assets/project-gallery/reading-room-roof-window.webp");
+  background-position: center var(--roof-y, 0%);
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: 100% auto;
+  will-change: background-position;
 }
 .canvas {
   z-index: 1;
@@ -703,13 +704,21 @@
 }
 
 
-/* Homepage: hold the Furniture Odyssey showcase for one extra viewport of
-   scroll before the library is allowed to enter. */
+/* Homepage: first pan from the roof window down through the room, then let
+   the book arrive on the table before the library handoff can begin. */
 .gallery:not([data-standalone="true"]) {
-  --gallery-hold-distance: 100svh;
+  --roof-pan-distance: 100svh;
+  --book-arrival-distance: 100svh;
+  --roof-y: 0%;
+  --book-offset-y: -45vh;
+  --fallback-book-scale: 0.28;
   z-index: var(--viewport-order, 2);
-  height: calc(100svh + var(--gallery-hold-distance));
-  min-height: calc(100svh + var(--gallery-hold-distance));
+  height: calc(
+    100svh + var(--roof-pan-distance) + var(--book-arrival-distance)
+  );
+  min-height: calc(
+    100svh + var(--roof-pan-distance) + var(--book-arrival-distance)
+  );
   overflow: visible;
   background: #4a2f1c;
 }
@@ -727,16 +736,25 @@
 .gallery:not([data-standalone="true"]) .fallback {
   inset: 0;
   height: 100%;
+  transform: translateY(var(--book-offset-y, -45vh));
+  will-change: transform;
 }
 
 .gallery:not([data-standalone="true"]) .bookPoster {
   height: 88%;
+  transform: translate(-50%, -50%) rotate(-4deg)
+    scale(var(--fallback-book-scale, 0.28));
+  transform-origin: center;
   filter:
     drop-shadow(0 0 24px rgb(246 201 94 / 28%))
     drop-shadow(0 18px 36px rgb(0 0 0 / 42%));
 }
 
 @media (max-width: 600px) {
+  .gallery:not([data-standalone="true"]) .sceneBackground {
+    background-size: auto 150%;
+  }
+
   .gallery:not([data-standalone="true"]) .canvas,
   .gallery:not([data-standalone="true"]) .fallback {
     inset: 0;

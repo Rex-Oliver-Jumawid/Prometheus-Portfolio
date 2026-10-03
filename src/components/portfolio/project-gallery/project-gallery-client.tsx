@@ -192,10 +192,43 @@ export function ProjectGalleryClient({
     let alive = true;
 
     function syncScroll() {
-      const section = host!.closest("section") ?? host!;
-      const top = section.getBoundingClientRect().top;
-      const progress = Math.min(1, Math.max(0, 1 - top / window.innerHeight));
-      controllerRef.current?.setScrollProgress(progress);
+      const section = (host!.closest("section") ?? host!) as HTMLElement;
+
+      if (section.dataset.standalone === "true") {
+        controllerRef.current?.setScrollProgress(1);
+        return;
+      }
+
+      const rect = section.getBoundingClientRect();
+      const travel = Math.max(1, rect.height - window.innerHeight);
+      const overallProgress = Math.min(
+        1,
+        Math.max(0, -rect.top / travel),
+      );
+
+      // Phase 1: spend the first full scroll beat moving from the skylight
+      // toward the lower room/table. The book does not start arriving yet.
+      const roofEnd = 0.5;
+      // Phase 2: bring the book down onto the table, then leave a short
+      // interaction hold before the separate shelf handoff starts.
+      const bookEnd = 0.78;
+      const roofProgress = Math.min(1, overallProgress / roofEnd);
+      const bookProgress = Math.min(
+        1,
+        Math.max(0, (overallProgress - roofEnd) / (bookEnd - roofEnd)),
+      );
+
+      section.style.setProperty("--roof-y", `${roofProgress * 100}%`);
+      section.style.setProperty(
+        "--book-offset-y",
+        `${(-0.45 + bookProgress * 0.5) * window.innerHeight}px`,
+      );
+      section.style.setProperty(
+        "--fallback-book-scale",
+        String(0.28 + bookProgress * 0.72),
+      );
+
+      controllerRef.current?.setScrollProgress(bookProgress);
     }
     function syncVisibility() {
       const visible =
