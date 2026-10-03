@@ -8,7 +8,7 @@ for (const [width, height] of [
   [320, 568],
   [844, 390],
 ]) {
-  test(`reveals Prometheus through the foot tip before the gallery at ${width}x${height}`, async ({
+  test(`stops Prometheus at the intended cinematic crop before the gallery at ${width}x${height}`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height });
@@ -17,7 +17,9 @@ for (const [width, height] of [
 
     const hero = page.locator("#top");
     const stage = hero.locator("[data-hero-stage]");
-    const figure = hero.locator("[data-hero-figure] img");
+    const figure = hero.locator(".figure img").or(
+      hero.locator('img[src*="Prometheus%20in%20Flight%20with%20Flame.png"]'),
+    );
     const gallery = page.locator("#work");
 
     await expect(hero).toHaveAttribute("data-parallax-ready", "true");
@@ -31,16 +33,8 @@ for (const [width, height] of [
     const original = (await figure.boundingBox())!;
     expect((await stage.boundingBox())!.height).toBe(height);
 
-    await expect
-      .poll(async () => (await hero.boundingBox())!.height - height)
-      .toBeGreaterThan(0);
-
     const travel = (await hero.boundingBox())!.height - height;
-    const expectedTravel = Math.max(
-      0,
-      original.y + original.height - height,
-    );
-    expect(travel).toBeCloseTo(expectedTravel, 0);
+    expect(travel).toBeCloseTo(height, 0);
 
     await expect
       .poll(async () => (await gallery.boundingBox())!.y)
@@ -60,11 +54,11 @@ for (const [width, height] of [
         scroll,
       );
 
+      const expectedY = original.y * (1 - progress);
       await expect
         .poll(async () => (await figure.boundingBox())!.y)
-        .toBeCloseTo(original.y - scroll, 0);
+        .toBeCloseTo(expectedY, 0);
 
-      // Keep section two outside the viewport until the full figure reveal ends.
       expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
         height - 1,
       );
@@ -79,12 +73,13 @@ for (const [width, height] of [
 
       if (progress === 1) {
         const finalFigure = (await figure.boundingBox())!;
-        expect(finalFigure.y + finalFigure.height).toBeCloseTo(height, 0);
+        expect(finalFigure.y).toBeCloseTo(0, 0);
+        expect(finalFigure.y + finalFigure.height).toBeGreaterThan(height);
 
         if (width === 1440 || width === 390) {
-          await info.attach("foot-stop", {
+          await info.attach("crop-stop", {
             body: await page.screenshot({
-              path: info.outputPath("foot-stop.png"),
+              path: info.outputPath("crop-stop.png"),
             }),
             contentType: "image/png",
           });
@@ -102,12 +97,13 @@ for (const [width, height] of [
       )
       .toBeLessThan(1);
 
-    const finalFigure = (await figure.boundingBox())!;
-    expect(finalFigure.y + finalFigure.height).toBeCloseTo(height, 0);
+    await expect
+      .poll(async () => (await figure.boundingBox())!.y)
+      .toBeCloseTo(0, 0);
   });
 }
 
-test("the measured hero scroll distance completes the figure reveal before section two enters", async ({
+test("one screen of scrolling reaches the cinematic crop before section two enters", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -116,14 +112,11 @@ test("the measured hero scroll distance completes the figure reveal before secti
   const hero = page.locator("#top");
   await expect(hero).toHaveAttribute("data-parallax-ready", "true");
 
-  const travel = (await hero.boundingBox())!.height - 900;
-  expect(travel).toBeGreaterThan(0);
-
   for (const progress of [0.5, 1]) {
-    await page.evaluate(
-      (top) => window.scrollTo({ top, behavior: "instant" }),
-      travel * progress,
-    );
+    await page.mouse.wheel(0, 450);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeCloseTo(progress * 900, 0);
     await expect
       .poll(() =>
         hero.evaluate((element) =>
