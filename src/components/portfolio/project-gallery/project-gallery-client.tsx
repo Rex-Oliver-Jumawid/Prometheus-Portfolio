@@ -196,6 +196,7 @@ export function ProjectGalleryClient({
 
       if (section.dataset.standalone === "true") {
         controllerRef.current?.setScrollProgress(1);
+        host!.style.pointerEvents = "";
         return;
       }
 
@@ -206,28 +207,39 @@ export function ProjectGalleryClient({
         Math.max(0, -rect.top / travel),
       );
 
-      // Phase 1: spend the first full scroll beat moving from the skylight
-      // toward the lower room/table. The book does not start arriving yet.
+      // First full scroll beat: move the portrait room from the skylight at
+      // the top down to the floor/table. The book stays completely hidden.
       const roofEnd = 0.5;
-      // Phase 2: bring the book down onto the table, then leave a short
-      // interaction hold before the separate shelf handoff starts.
-      const bookEnd = 0.78;
+      // Second beat: the book enters only after the room pan is complete,
+      // then settles low enough to read as sitting over the table area.
+      const bookEnd = 0.72;
       const roofProgress = Math.min(1, overallProgress / roofEnd);
       const bookProgress = Math.min(
         1,
         Math.max(0, (overallProgress - roofEnd) / (bookEnd - roofEnd)),
       );
+      const easedBook =
+        bookProgress * bookProgress * (3 - 2 * bookProgress);
+      const bookOpacity = Math.min(1, bookProgress * 1.8);
 
-      section.style.setProperty("--roof-y", `${roofProgress * 100}%`);
+      section.style.setProperty(
+        "--room-position",
+        `${roofProgress * 100}%`,
+      );
       section.style.setProperty(
         "--book-offset-y",
-        `${(-0.45 + bookProgress * 0.5) * window.innerHeight}px`,
+        `${(-0.32 + easedBook * 0.42) * window.innerHeight}px`,
       );
+      section.style.setProperty("--book-opacity", String(bookOpacity));
       section.style.setProperty(
         "--fallback-book-scale",
-        String(0.28 + bookProgress * 0.72),
+        String(0.28 + easedBook * 0.72),
       );
 
+      // Do not leave an invisible click target over the roof/room phase.
+      // Once the book has settled, it becomes fully interactive until the
+      // handoff coordinator takes ownership for the shelf transition.
+      host!.style.pointerEvents = bookProgress >= 0.98 ? "auto" : "none";
       controllerRef.current?.setScrollProgress(bookProgress);
     }
     function syncVisibility() {

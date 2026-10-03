@@ -91,9 +91,9 @@
   pointer-events: none;
   background-color: #4a2f1c;
   background-image: url("/assets/project-gallery/reading-room-roof-window.webp");
-  background-position: center var(--roof-y, 0%);
+  background-position: center var(--room-position, 0%);
   background-repeat: no-repeat;
-  background-size: 100% auto;
+  background-size: cover;
   will-change: background-position;
 }
 .canvas {
@@ -704,13 +704,17 @@
 }
 
 
-/* Homepage: first pan from the roof window down through the room, then let
-   the book arrive on the table before the library handoff can begin. */
+/* Homepage sequence:
+   1. pan from the skylight down through the room
+   2. bring the book down to the table
+   3. hold it there briefly for interaction
+   4. begin the existing transfer to the library shelf */
 .gallery:not([data-standalone="true"]) {
   --roof-pan-distance: 100svh;
   --book-arrival-distance: 100svh;
-  --roof-y: 0%;
-  --book-offset-y: -45vh;
+  --room-position: 0%;
+  --book-offset-y: -32vh;
+  --book-opacity: 0;
   --fallback-book-scale: 0.28;
   z-index: var(--viewport-order, 2);
   height: calc(
@@ -736,8 +740,9 @@
 .gallery:not([data-standalone="true"]) .fallback {
   inset: 0;
   height: 100%;
-  transform: translateY(var(--book-offset-y, -45vh));
-  will-change: transform;
+  opacity: var(--book-opacity, 0);
+  transform: translateY(var(--book-offset-y, -32vh));
+  will-change: opacity, transform;
 }
 
 .gallery:not([data-standalone="true"]) .bookPoster {
@@ -751,10 +756,6 @@
 }
 
 @media (max-width: 600px) {
-  .gallery:not([data-standalone="true"]) .sceneBackground {
-    background-size: auto 150%;
-  }
-
   .gallery:not([data-standalone="true"]) .canvas,
   .gallery:not([data-standalone="true"]) .fallback {
     inset: 0;

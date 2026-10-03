@@ -41,7 +41,7 @@ export const HANDOFF = {
   // The 2nd viewport now spends one scroll beat on the roof/room pan and a
   // second beat bringing the book onto the table. Start the shelf transfer
   // only near the end of that second beat so the book remains interactive.
-  startDelay: 1.75,
+  startDelay: 1.8,
   finish: 0.08,
   arc: 0.12,
   recoverySeconds: 0.65,
