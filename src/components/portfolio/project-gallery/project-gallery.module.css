@@ -10,6 +10,7 @@
 }
 
 :global(.viewport-stack[data-sticky-ready="true"]) > .gallery {
+  translate: 0 calc(-1 * var(--gallery-cloud-offset, 0px));
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
@@ -18,6 +19,10 @@
     rgb(0 0 0 / 88%) calc(var(--gallery-seam, 0px) * 0.85),
     #000 var(--gallery-seam, 0px)
   );
+}
+
+:global(.viewport-stack[data-sticky-ready="true"]) > .gallery[data-cloud-reveal="true"] {
+  mask-image: none;
 }
 
 .header {
@@ -680,11 +685,10 @@
 }
 
 
-/* Homepage handoff: the book-only viewport is intentionally shorter so the
-   page advances into the bookshelf faster than the hero. */
+/* The homepage gallery fills the second viewport beneath the cloud reveal. */
 .gallery:not([data-standalone="true"]) {
-  height: 72svh;
-  min-height: 560px;
+  height: 100svh;
+  min-height: 0;
   background:
     radial-gradient(
       ellipse at 50% 44%,
@@ -715,11 +719,6 @@
 }
 
 @media (max-width: 600px) {
-  .gallery:not([data-standalone="true"]) {
-    height: 82svh;
-    min-height: 520px;
-  }
-
   .gallery:not([data-standalone="true"]) .canvas,
   .gallery:not([data-standalone="true"]) .fallback {
     inset: 0;

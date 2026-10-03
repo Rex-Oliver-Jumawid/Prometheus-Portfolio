@@ -31,6 +31,8 @@ export function SmoothScroll() {
 
       lenis = new Lenis({
         autoRaf: true,
+        wheelMultiplier: 0.6,
+        lerp: 0.06,
         allowNestedScroll: true,
         stopInertiaOnNavigate: true,
         // Keep modal contents native, even while background scrolling is stopped.

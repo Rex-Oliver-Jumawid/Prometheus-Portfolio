@@ -13,6 +13,7 @@ export function CloudTransition() {
     const layer = layerRef.current;
     const canvas = canvasRef.current;
     const hero = document.getElementById("top");
+    const gallery = document.getElementById("work");
     const stage = hero?.querySelector<HTMLElement>("[data-hero-stage]");
     if (
       !layer ||
@@ -31,6 +32,8 @@ export function CloudTransition() {
     let frame: number | undefined;
 
     function hide() {
+      gallery?.style.removeProperty("--gallery-cloud-offset");
+      if (gallery) delete gallery.dataset.cloudReveal;
       delete layer!.dataset.active;
     }
 
@@ -45,8 +48,15 @@ export function CloudTransition() {
       const reveal = Math.max(0, hero!.getBoundingClientRect().height - height);
       // Start within the existing reveal instead of adding another scroll track.
       const lead = Math.min(reveal, height * 0.28);
-      const start = Number(hero!.dataset.viewportStart ?? 0) + reveal - lead;
-      const progress = (window.scrollY - start) / Math.max(1, lead + height);
+      const originalStart =
+        Number(hero!.dataset.viewportStart ?? 0) + reveal - lead;
+      const destination = Number(
+        gallery?.dataset.viewportStart ?? originalStart + lead + height,
+      );
+      // Keep the gallery handoff at the same point with a 40% shorter cloud track.
+      const distance = (destination - originalStart) * 0.6;
+      const start = destination - distance;
+      const progress = (window.scrollY - start) / Math.max(1, distance);
       if (progress <= 0 || progress >= 1) {
         hide();
         return;
@@ -54,6 +64,18 @@ export function CloudTransition() {
 
       layer!.dataset.active = "true";
       field.draw(progress);
+
+      // Place the gallery beneath opaque clouds and hold it still as they clear.
+      if (progress >= 0.25) {
+        if (gallery) gallery.dataset.cloudReveal = "true";
+        gallery?.style.setProperty(
+          "--gallery-cloud-offset",
+          `${Math.max(0, destination - window.scrollY)}px`,
+        );
+      } else {
+        gallery?.style.removeProperty("--gallery-cloud-offset");
+        if (gallery) delete gallery.dataset.cloudReveal;
+      }
     }
 
     function schedule() {

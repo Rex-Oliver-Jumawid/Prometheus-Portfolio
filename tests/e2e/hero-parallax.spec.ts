@@ -87,13 +87,12 @@ for (const [width, height] of [
     }
     await page.evaluate(
       (top) => window.scrollTo({ top, behavior: "instant" }),
-      travel + 120,
+      travel + height * 0.6,
     );
+    // Once inside the clouds, the gallery stays still beneath their reveal.
     await expect
-      .poll(async () =>
-        Math.abs((await gallery.boundingBox())!.y - (height - 120)),
-      )
-      .toBeLessThan(1);
+      .poll(async () => (await gallery.boundingBox())!.y)
+      .toBeCloseTo(0, 0);
     await expect
       .poll(async () => (await figure.boundingBox())!.y)
       .toBeCloseTo(original.y - travel, 0);

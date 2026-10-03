@@ -37,6 +37,7 @@ beforeEach(() => {
   vi.stubGlobal("scrollY", 0);
   vi.stubGlobal("innerWidth", 1440);
   vi.stubGlobal("innerHeight", 800);
+  vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
     {} as CanvasRenderingContext2D,
@@ -87,11 +88,13 @@ function mount() {
       <section id="top" data-viewport-start="0">
         <div data-hero-stage />
       </section>
+      <section id="work" data-viewport-start="1040" />
     </>,
   );
   return {
     ...view,
     hero: view.container.querySelector<HTMLElement>("#top")!,
+    gallery: view.container.querySelector<HTMLElement>("#work")!,
     layer: view.container.querySelector<HTMLElement>(
       "[data-cloud-transition]",
     )!,
@@ -125,13 +128,13 @@ it("uses the existing scroll distance, reverses the dive, and keeps character tr
   await scroll(12);
   expect(hero.style.getPropertyValue("--hero-travel")).toBe("12px");
   expect(layer.dataset.active).toBeUndefined();
-  await scroll(16 + 1024 * 0.3);
+  await scroll(425.6 + 614.4 * 0.3);
   expect(hero.style.getPropertyValue("--hero-travel")).toBe("240px");
   expect(layer.dataset.active).toBe("true");
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo(0.3);
   await scroll(1040);
   expect(layer.dataset.active).toBeUndefined();
-  await scroll(16 + 1024 * 0.24);
+  await scroll(425.6 + 614.4 * 0.24);
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo(0.24);
   expect(hero.getBoundingClientRect().height).toBe(1040);
   await scroll(0);
@@ -140,10 +143,11 @@ it("uses the existing scroll distance, reverses the dive, and keeps character tr
 
 it("skips the dive for reduced motion and releases drawing resources when preferences change", async () => {
   preference.matches = true;
-  const { hero, layer, unmount } = mount();
+  const { hero, layer, gallery, unmount } = mount();
   await scroll(400);
   expect(hero.getBoundingClientRect().height).toBe(800);
   expect(createField).not.toHaveBeenCalled();
+  expect(window.scrollTo).not.toHaveBeenCalled();
   preference.matches = false;
   await act(async () =>
     preference.addEventListener.mock.calls.forEach(([, listener]) =>
@@ -161,6 +165,7 @@ it("skips the dive for reduced motion and releases drawing resources when prefer
   flush();
   expect(hero.getBoundingClientRect().height).toBe(800);
   expect(layer.dataset.active).toBeUndefined();
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(field.dispose).toHaveBeenCalledOnce();
   unmount();
   expect(disconnect).toHaveBeenCalledTimes(2);
@@ -174,13 +179,70 @@ it("preserves native scrolling when canvas is unavailable", async () => {
   expect(hero.getBoundingClientRect().height).toBe(1040);
   expect(layer.dataset.active).toBeUndefined();
   expect(createField).toHaveBeenCalledOnce();
+  expect(window.scrollTo).not.toHaveBeenCalled();
+});
+
+it("holds the gallery still beneath the clouds without automatically scrolling", async () => {
+  const { layer, gallery } = mount();
+  await scroll(200);
+  expect(layer.dataset.active).toBeUndefined();
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
+  expect(window.scrollTo).not.toHaveBeenCalled();
+  await scroll(640);
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
+    "400px",
+  );
+  expect(window.scrollY).toBe(640);
+  expect(layer.dataset.active).toBe("true");
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((640 - 425.6) / 614.4);
+  await scroll(760);
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
+    "280px",
+  );
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((760 - 425.6) / 614.4);
+  await scroll(880);
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
+    "160px",
+  );
+  expect(layer.dataset.active).toBe("true");
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((880 - 425.6) / 614.4);
+  await scroll(1040);
+  expect(layer.dataset.active).toBeUndefined();
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
+  expect(window.scrollY).toBe(1040);
+  await scroll(700);
+  await scroll(400);
+  expect(window.scrollTo).not.toHaveBeenCalled();
+  await scroll(0);
+  await scroll(400);
+  expect(window.scrollTo).not.toHaveBeenCalled();
+});
+
+it("reverses the cloud journey with upward scrolling", async () => {
+  const { layer } = mount();
+  await scroll(400);
+  expect(window.scrollY).toBe(400);
+  await scroll(700);
+  await scroll(500);
+  expect(layer.dataset.active).toBe("true");
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((500 - 425.6) / 614.4);
+  expect(window.scrollTo).not.toHaveBeenCalled();
+});
+
+it("does not pull upward scrolling back into the second viewport", async () => {
+  vi.stubGlobal("scrollY", 2500);
+  mount();
+  await scroll(700);
+  await scroll(400);
+  expect(window.scrollTo).not.toHaveBeenCalled();
 });
 
 it("cleans up an active field and does not keep drawing after unmount", async () => {
-  const { unmount } = mount();
+  const { unmount, gallery } = mount();
   await scroll(700);
   expect(field.draw).toHaveBeenCalled();
   unmount();
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(field.dispose).toHaveBeenCalledOnce();
   field.draw.mockClear();
   await scroll(800);
@@ -198,7 +260,7 @@ it("keeps native scrolling when the cloud shader cannot initialize", async () =>
 });
 
 it("hides clouds and frees resources when the graphics context is lost", async () => {
-  const { container, layer } = mount();
+  const { container, layer, gallery } = mount();
   await scroll(700);
   expect(layer.dataset.active).toBe("true");
   fireEvent(
@@ -206,6 +268,7 @@ it("hides clouds and frees resources when the graphics context is lost", async (
     new Event("webglcontextlost", { cancelable: true }),
   );
   expect(layer.dataset.active).toBeUndefined();
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(field.dispose).toHaveBeenCalledOnce();
   field.draw.mockClear();
   await scroll(800);

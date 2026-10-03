@@ -58,18 +58,25 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     );
     const hero = page.locator("#top");
     const gallery = page.locator("#work");
+    if (reducedMotion === "no-preference") {
+      await expect(gallery).toHaveAttribute("data-cloud-reveal", "true");
+    }
     await expect.poll(async () => (await hero.boundingBox())!.y).toBe(0);
     const galleryTop = (await gallery.boundingBox())!.y;
-    await expect
-      .poll(() =>
-        gallery.evaluate((element) =>
-          Number.parseFloat(
-            getComputedStyle(element).getPropertyValue("--gallery-seam"),
+    if (reducedMotion === "reduce") {
+      await expect
+        .poll(() =>
+          gallery.evaluate((element) =>
+            Number.parseFloat(
+              getComputedStyle(element).getPropertyValue("--gallery-seam"),
+            ),
           ),
-        ),
-      )
-      .toBeCloseTo(252, 1);
-    await expect(gallery).not.toHaveCSS("mask-image", "none");
+        )
+        .toBeCloseTo(252, 1);
+      await expect(gallery).not.toHaveCSS("mask-image", "none");
+    } else {
+      await expect(gallery).toHaveCSS("mask-image", "none");
+    }
     // Activate the partially visible book without scrolling it into view first.
     await page
       .getByRole("button", { name: "Read Furniture Odyssey" })
