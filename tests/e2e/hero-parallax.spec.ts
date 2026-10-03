@@ -8,7 +8,7 @@ for (const [width, height] of [
   [320, 568],
   [844, 390],
 ]) {
-  test(`keeps the head clear over two screens of parallax before the gallery at ${width}x${height}`, async ({
+  test(`keeps the head clear over one screen of parallax before the gallery at ${width}x${height}`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height });
@@ -42,10 +42,11 @@ for (const [width, height] of [
     );
     expect((await stage.boundingBox())!.height).toBe(height);
     const travel = (await hero.boundingBox())!.height - height;
-    expect(travel).toBeCloseTo(height * 2, 0);
-    const reveal = Math.min(
-      (original.width * 402) / 986 + offset,
-      Math.max(0, original.y + (original.width * 170) / 986 - height * 0.35),
+    expect(travel).toBeCloseTo(height, 0);
+    const headGap = Math.max(24, Math.min(48, height * 0.04));
+    const reveal = Math.max(
+      0,
+      original.y + (original.width * 170) / 986 - headGap,
     );
     await expect
       .poll(async () => (await gallery.boundingBox())!.y)
@@ -66,7 +67,7 @@ for (const [width, height] of [
       await expect
         .poll(async () => (await figure.boundingBox())!.y)
         .toBeCloseTo(original.y - (reveal * scroll) / travel, 0);
-      // Keep the second section below the viewport for the entire two-screen hold.
+      // Keep the second section below the viewport for the entire one-screen hold.
       expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
         height - 1,
       );
@@ -80,8 +81,8 @@ for (const [width, height] of [
       if (progress === 1) {
         const head =
           (await figure.boundingBox())!.y + (original.width * 170) / 986;
-        expect(head).toBeGreaterThanOrEqual(height * 0.35 - 1);
-        expect(head).toBeLessThanOrEqual(height * 0.35 + 1);
+        expect(head).toBeGreaterThanOrEqual(headGap - 1);
+        expect(head).toBeLessThanOrEqual(headGap + 1);
         if (width === 1440 || width === 390) {
           await info.attach("head-stop", {
             body: await page.screenshot({
@@ -107,7 +108,7 @@ for (const [width, height] of [
   });
 }
 
-test("two screen-sized wheel movements complete the reveal before section two enters", async ({
+test("one screen of wheel scrolling complete the reveal before section two enters", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -115,10 +116,10 @@ test("two screen-sized wheel movements complete the reveal before section two en
   const hero = page.locator("#top");
   await expect(hero).toHaveAttribute("data-parallax-ready", "true");
   for (const progress of [0.5, 1]) {
-    await page.mouse.wheel(0, 900);
+    await page.mouse.wheel(0, 450);
     await expect
       .poll(() => page.evaluate(() => window.scrollY))
-      .toBeCloseTo(progress * 1800, 0);
+      .toBeCloseTo(progress * 900, 0);
     await expect
       .poll(() =>
         hero.evaluate((element) =>

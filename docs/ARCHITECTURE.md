@@ -90,10 +90,10 @@ Navigation links must remain semantic links rather than canvas hit targets.
 
 `hero.tsx` renders a viewport-height stage inside the hero section.
 `hero.module.css` owns the character's responsive width, original top anchor, and maximum reveal distance.
-The character's crown at source y=170px stops at 35% of the viewport height, preserving headroom in the middle region of the screen.
+The character's crown at source y=170px stops 4% of the viewport height below the top edge, with a gap clamped between 24px and 48px.
 `hero-parallax.tsx` progressively pans the full-body character upward as the user scrolls down, with the sky travelling more slowly.
 The sky and copy retain their relative parallax speeds, with faster copy movement on phones.
-The hero has two viewport heights of additional document flow, independent of the artwork pan distance.
+The hero has one viewport height of additional document flow, independent of the artwork pan distance.
 Scroll progress maps proportionally to the full reveal distance, then clamps at the endpoint before the second section enters.
 This duration uses screen distance because mouse-wheel rotation distances vary across devices and browser settings.
 The stage pins independently inside the longer hero, so the page boundary cannot push the visible artwork upward during the handoff.

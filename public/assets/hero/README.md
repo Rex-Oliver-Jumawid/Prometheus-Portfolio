@@ -12,7 +12,7 @@ The homepage and navigation glass use `sky-scroll.webp` and `figure-full.webp`.
 The full-body image is never cropped during asset preparation.
 CSS preserves the original character's width and top anchor.
 The lower knee is at source y=1120px and the crown is at source y=170px.
-The upward pan stops with the crown at 35% of the viewport height, even when this limits the knee reveal.
-The same proportional parallax runs over two viewport heights of scrolling before the second section enters.
+The upward pan stops with a small gap above the crown: 4% of the viewport height, clamped between 24px and 48px.
+The same proportional parallax runs over one viewport height of scrolling before the second section enters.
 
 These are decorative presentation assets. Hero content and section destinations live in `src/app/_components/`. Images are delivered through `next/image`; the sky has loading priority. The Instrument Serif fonts are self-hosted in `src/app/_fonts/`, with their accompanying OFL license.

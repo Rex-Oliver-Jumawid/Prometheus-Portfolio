@@ -8,22 +8,19 @@
   --figure-start-y: calc(
     100svh + var(--figure-offset) - var(--figure-width) * 718 / 986
   );
-  --hero-scroll-distance: 200svh;
+  --hero-scroll-distance: 100svh;
   --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
   --figure-travel: calc(var(--hero-progress, 0) * var(--hero-reveal-distance));
-  /* The crown is at source y=170px. Stop it in the middle region of the screen. */
-  --figure-head-stop: 35svh;
+  /* The crown is at source y=170px. Keep a small gap below the top edge. */
+  --figure-head-stop: clamp(24px, 4svh, 48px);
   --figure-knee-reveal: calc(
     var(--figure-width) * 402 / 986 + var(--figure-offset)
   );
-  --hero-reveal-distance: min(
-    var(--figure-knee-reveal),
-    max(
-      0px,
-      calc(
-        var(--figure-start-y) + var(--figure-width) * 170 / 986 -
-          var(--figure-head-stop)
-      )
+  --hero-reveal-distance: max(
+    0px,
+    calc(
+      var(--figure-start-y) + var(--figure-width) * 170 / 986 -
+        var(--figure-head-stop)
     )
   );
 }
