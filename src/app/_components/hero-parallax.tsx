@@ -6,14 +6,7 @@ export function HeroParallax() {
   useEffect(() => {
     const hero = document.getElementById("top");
     const stage = hero?.querySelector<HTMLElement>("[data-hero-stage]");
-    const figure = hero?.querySelector<HTMLElement>("[data-hero-figure]");
-    if (
-      !hero ||
-      !stage ||
-      !figure ||
-      typeof window.matchMedia !== "function"
-    )
-      return;
+    if (!hero || !stage || typeof window.matchMedia !== "function") return;
 
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const glass = document.querySelector<HTMLElement>(
@@ -26,9 +19,7 @@ export function HeroParallax() {
     function clearMotion() {
       targets.forEach((target) => {
         target.style.removeProperty("--hero-progress");
-        target.style.removeProperty("--hero-reveal-distance");
       });
-      hero!.style.removeProperty("--hero-scroll-distance");
     }
 
     function sync() {
@@ -55,48 +46,31 @@ export function HeroParallax() {
     }
 
     function measure() {
-      if (preference.matches) {
-        distance = 0;
-        return;
-      }
-
-      // Drive the reveal from the artwork itself instead of a fixed head/knee
-      // stop. The final frame aligns the bottom of Prometheus with the bottom
-      // of the sticky viewport, so the complete figure is revealed before the
-      // next section can enter.
-      const figureHeight = figure!.getBoundingClientRect().height;
-      const revealDistance = Math.max(
+      // Keep the scroll hold independent from the artwork crop. CSS owns the
+      // final Prometheus position so the composition can stop at the intended
+      // cinematic frame without changing how much wheel/trackpad travel it takes.
+      distance = Math.max(
         0,
-        figure!.offsetTop + figureHeight - stage!.clientHeight,
+        hero!.getBoundingClientRect().height -
+          stage!.getBoundingClientRect().height,
       );
-
-      distance = revealDistance;
-      targets.forEach((target) => {
-        target.style.setProperty(
-          "--hero-reveal-distance",
-          `${revealDistance}px`,
-        );
-      });
-      hero!.style.setProperty("--hero-scroll-distance", `${distance}px`);
       schedule();
     }
 
     function motionChanged() {
       if (preference.matches) {
         delete hero!.dataset.parallaxReady;
-        distance = 0;
         clearMotion();
       } else {
         hero!.dataset.parallaxReady = "true";
-        measure();
       }
+      measure();
     }
 
     motionChanged();
     const observer = new ResizeObserver(measure);
     observer.observe(hero);
     observer.observe(stage);
-    observer.observe(figure);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", measure);
     preference.addEventListener("change", motionChanged);
