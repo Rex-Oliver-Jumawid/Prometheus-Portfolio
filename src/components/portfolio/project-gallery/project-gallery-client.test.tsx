@@ -173,6 +173,22 @@ describe("isolated project gallery", () => {
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
     finishPageTurn(screen.getByRole("dialog"));
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    finishPageTurn(screen.getByRole("dialog"));
+    const finalSpread = screen
+      .getByRole("dialog")
+      .querySelector(`.${styles.spread}`) as HTMLElement;
+    expect(
+      within(finalSpread).getByAltText(
+        "Furniture Odyssey dashboard showing the live operations system.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(finalSpread).getByRole("link", { name: "Cast this book" }),
+    ).toHaveAttribute(
+      "href",
+      "https://furniture-odyssey-pos.vercel.app/demo",
+    );
     expect(screen.getByRole("button", { name: /Next/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("dialog"));
     finishBookAnimation(screen.getByRole("dialog"));
