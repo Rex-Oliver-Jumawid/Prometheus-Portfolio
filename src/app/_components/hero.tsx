@@ -28,7 +28,7 @@ export function Hero() {
             />
           </div>
 
-          <div className={styles.figure} aria-hidden="true">
+          <div className={styles.figure} data-hero-figure aria-hidden="true">
             <Image
               src="/assets/hero/Prometheus in Flight with Flame.png"
               alt=""
