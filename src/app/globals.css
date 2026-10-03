@@ -57,7 +57,8 @@ a {
   scroll-margin-top: 0;
 }
 
-.viewport-stack[data-sticky-ready="true"] > section {
+.viewport-stack[data-sticky-ready="true"]
+  > section:not([data-viewport-flow="true"]) {
   position: sticky;
   top: var(--viewport-top, 0px);
   z-index: var(--viewport-order, 1);
