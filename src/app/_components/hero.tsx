@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { HeroNavigation } from "./hero-navigation";
 import { HeroParallax } from "./hero-parallax";
+import { CloudTransition } from "./cloud-transition";
 import styles from "./hero.module.css";
 
 export function Hero() {
@@ -9,6 +10,7 @@ export function Hero() {
     <>
       <HeroNavigation />
       <HeroParallax />
+      <CloudTransition />
       <section
         id="top"
         className={styles.hero}
