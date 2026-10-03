@@ -61,7 +61,7 @@
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  right: 0%;
+  right: -4%;
   top: var(--figure-start-y);
   width: var(--figure-width);
   transform: translate3d(0, calc(-1 * var(--figure-travel)), 0);
@@ -825,7 +825,7 @@
   }
 
   .figure {
-    right: 1.5%;
+    right: -3%;
   }
 }
 
