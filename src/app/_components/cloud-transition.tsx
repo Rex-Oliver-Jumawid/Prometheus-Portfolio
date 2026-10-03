@@ -31,6 +31,11 @@ export function CloudTransition() {
     let failed = false;
     let frame: number | undefined;
 
+    function clearScrollRange() {
+      delete layer!.dataset.scrollStart;
+      delete layer!.dataset.scrollEnd;
+    }
+
     function hide() {
       gallery?.style.removeProperty("--gallery-cloud-offset");
       if (gallery) delete gallery.dataset.cloudReveal;
@@ -39,11 +44,6 @@ export function CloudTransition() {
 
     function sync() {
       frame = undefined;
-      if (motion.matches || document.hidden || !field) {
-        hide();
-        return;
-      }
-
       const height = stage!.getBoundingClientRect().height;
       const reveal = Math.max(0, hero!.getBoundingClientRect().height - height);
       // Start within the existing reveal instead of adding another scroll track.
@@ -53,9 +53,20 @@ export function CloudTransition() {
       const destination = Number(
         gallery?.dataset.viewportStart ?? originalStart + lead + height,
       );
-      // Keep the gallery handoff at the same point with a 40% shorter cloud track.
-      const distance = (destination - originalStart) * 0.6;
+      // Give the clouds more scroll distance while keeping the same gallery destination.
+      const distance = (destination - originalStart) * 0.9;
       const start = destination - distance;
+      // Publish before lazy rendering is ready so incoming wheel momentum slows too.
+      if (motion.matches || failed) {
+        clearScrollRange();
+      } else {
+        layer!.dataset.scrollStart = String(start);
+        layer!.dataset.scrollEnd = String(start + distance * 0.75);
+      }
+      if (motion.matches || document.hidden || !field) {
+        hide();
+        return;
+      }
       const progress = (window.scrollY - start) / Math.max(1, distance);
       if (progress <= 0 || progress >= 1) {
         hide();
@@ -66,7 +77,7 @@ export function CloudTransition() {
       field.draw(progress);
 
       // Place the gallery beneath opaque clouds and hold it still as they clear.
-      if (progress >= 0.25) {
+      if (progress >= 0.45) {
         if (gallery) gallery.dataset.cloudReveal = "true";
         gallery?.style.setProperty(
           "--gallery-cloud-offset",
@@ -103,10 +114,15 @@ export function CloudTransition() {
         field = nextField;
         if (!field) throw new Error("Cloud renderer unavailable");
         measure();
+        // Compile the first GPU draw while hidden, before the visible handoff.
+        field.draw(0);
       } catch {
         // Native section scrolling remains available if canvas cannot initialize.
         hide();
         failed = true;
+        clearScrollRange();
+        field?.dispose();
+        field = undefined;
       } finally {
         loading = false;
       }
@@ -127,6 +143,7 @@ export function CloudTransition() {
       event.preventDefault();
       hide();
       failed = true;
+      clearScrollRange();
       field?.dispose();
       field = undefined;
     }
@@ -155,8 +172,34 @@ export function CloudTransition() {
     measure();
     scrolled();
 
+    // Prepare during idle time on the hero, keeping its initial paint first.
+    const warmUp = () => {
+      if (disposed || document.hidden) return;
+      const start = Number(hero.dataset.viewportStart ?? 0);
+      if (
+        window.scrollY >= start &&
+        window.scrollY < start + hero.getBoundingClientRect().height
+      ) {
+        void prepare();
+      }
+    };
+    let cancelWarmup = () => {};
+    if (!motion.matches) {
+      if (
+        typeof window.requestIdleCallback === "function" &&
+        typeof window.cancelIdleCallback === "function"
+      ) {
+        const idle = window.requestIdleCallback(warmUp);
+        cancelWarmup = () => window.cancelIdleCallback(idle);
+      } else {
+        const timer = window.setTimeout(warmUp, 500);
+        cancelWarmup = () => window.clearTimeout(timer);
+      }
+    }
+
     return () => {
       disposed = true;
+      cancelWarmup();
       observer.disconnect();
       window.cancelAnimationFrame(frame ?? 0);
       window.removeEventListener("scroll", scrolled);
@@ -166,6 +209,7 @@ export function CloudTransition() {
       canvas.removeEventListener("webglcontextlost", contextLost);
       field?.dispose();
       hide();
+      clearScrollRange();
     };
   }, []);
 

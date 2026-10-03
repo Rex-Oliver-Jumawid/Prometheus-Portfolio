@@ -100,7 +100,6 @@ export function ProjectGalleryClient({
     );
   }, []);
   const openBook = useCallback(() => {
-    if (hostRef.current?.dataset.bookVisible === "false") return;
     if (readerPhaseRef.current !== "closed") return;
     setSpread(0);
     dialogRef.current?.showModal();

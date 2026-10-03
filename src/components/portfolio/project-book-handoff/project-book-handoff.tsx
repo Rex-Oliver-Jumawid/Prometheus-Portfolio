@@ -112,7 +112,7 @@ export function ProjectBookHandoff() {
         }
       }
       source?.own(!travel && !docked);
-      target?.own(docked, displayed);
+      target?.own(docked, source ? displayed : docked ? 1 : 0);
       host!.dataset.visible = String(travel && !document.hidden);
       // The footer can enter before its flow start. Clip to its actual top.
       const top = Math.max(0, work!.getBoundingClientRect().top);

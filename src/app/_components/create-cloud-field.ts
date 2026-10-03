@@ -46,26 +46,31 @@ const fragmentSource = `
     float crownMiddle = length((q - vec3(0.25, -0.9, -1.1)) / vec3(1.8, 2.0, 2.3));
     float crowns = min(min(crownLeft, crownInner), min(crownRight, min(crownMiddle, crownOuter)));
     float body = 1.0 - min(min(left, min(right, middle)), crowns);
-    float billows = turbulence(point * 0.85);
-    // Smaller overlapping puffs give the bank rounded tops throughout the crossing.
-    vec3 puff = vec3(
-      mod(point.x + 0.9 + (billows - 0.5), 1.8) - 0.9,
-      point.y - (0.65 + billows * 0.9),
-      mod(point.z + 0.9 + (billows - 0.5) * 0.7, 1.8) - 0.9
-    );
-    body = max(body, 1.0 - length(puff / vec3(1.05, 0.9, 1.05)));
-    float cloud = smoothstep(-0.08, 0.18, body + (billows - 0.5) * 0.4)
-      * mix(0.6, 1.35, smoothstep(0.32, 0.70, billows));
-    return cloud;
+    float billows = turbulence(point * 0.85) - 0.5;
+    float cloud = smoothstep(-0.02, 0.10, body + billows * 0.85) * 1.4;
+    // Original crossing density from 0609a4a.
+    float mist = smoothstep(0.16, 0.22, uProgress)
+      * (1.0 - smoothstep(0.3, 0.55, uProgress)) * 0.22;
+    return cloud + mist;
   }
 
   void main() {
+    float visibility = smoothstep(0.0, 0.035, uProgress)
+      * (1.0 - smoothstep(0.5, 0.75, uProgress));
+    if (visibility <= 0.0) {
+      gl_FragColor = vec4(0.0);
+      return;
+    }
     vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
-    float entry = smoothstep(0.0, 0.25, uProgress);
-    float emerge = smoothstep(0.45, 1.0, uProgress);
-    // Look down across the tops instead of travelling inside uniform, dense fog.
-    vec3 origin = vec3(sin(uProgress * 2.0) * 0.28, 4.2 + entry * 1.4 + emerge * 2.8, uProgress * 9.0);
-    vec3 ray = normalize(vec3(uv * 0.75 + vec2(0.0, -entry * (1.0 - emerge) * 1.7), 1.55));
+    // Original fly-through from 0609a4a; scrolling controls its pace.
+    // Stop forward and sideways travel when the gallery reveal begins.
+    float travel = min(uProgress, 0.45);
+    float entry = smoothstep(0.0, 0.25, travel);
+    // Keep vertical travel downward; rising here made the exit reverse direction.
+    vec3 origin = vec3(sin(travel * 2.0) * 0.28, 4.2 - entry * 5.8, travel * 9.0);
+    // Clear beneath the bank in the same direction as the entry.
+    origin.y = mix(origin.y, -5.3, smoothstep(0.45, 0.62, uProgress));
+    vec3 ray = normalize(vec3(uv * 0.68, 1.55));
     vec3 sun = normalize(vec3(-0.65, 0.75, -0.25));
     float rayDistance = 0.08;
     vec3 accumulated = vec3(0.0);
@@ -74,39 +79,26 @@ const fragmentSource = `
 
     // Integrate scattering through the volume, front to back. Dense clouds
     // terminate early, keeping the full-screen portion inexpensive.
-    for (int i = 0; i < 64; i++) {
-      float stepLength = 0.12 + float(i) * 0.002;
+    for (int i = 0; i < 48; i++) {
+      float stepLength = 0.18 + float(i) * 0.004;
       vec3 point = origin + ray * rayDistance;
       rayDistance += stepLength;
       float cloud = density(point);
       if (cloud > 0.01) {
         float nearSunDensity = density(point + sun * 0.4);
-        // Sample farther toward the sun so neighboring billows cast soft shadows.
-        float sunDensity = nearSunDensity * 0.4
-          + density(point + sun * 1.1) * 0.7
-          + density(point + sun * 2.4) * 1.3;
-        float sunlight = exp(-sunDensity * 1.65);
+        float sunDensity = nearSunDensity
+          + density(point + sun * 1.3) * 0.65;
+        float sunlight = exp(-sunDensity * 1.6);
         float rim = clamp(0.5 + (cloud - nearSunDensity) * 0.8, 0.0, 1.0);
         vec3 gold = mix(uGold, uDeepGold, mood);
         vec3 color = mix(gold * 0.32, gold * (1.0 + rim * 0.1), sunlight);
-        // Dense folds receive less ambient light, giving the undersides more depth.
         color *= mix(0.72, 1.0, exp(-cloud * 0.55));
-        float opacity = 1.0 - exp(-cloud * stepLength * 1.4);
+        float opacity = 1.0 - exp(-cloud * stepLength * 1.65);
         accumulated += transmittance * opacity * color;
         transmittance *= 1.0 - opacity;
         if (transmittance < 0.008) break;
       }
     }
-    // Stay inside the volume until the gallery approaches its final position.
-    float cover = smoothstep(0.16, 0.25, uProgress)
-      * (1.0 - smoothstep(0.45, 0.85, uProgress));
-    cover *= smoothstep(0.0, 0.1, 1.0 - transmittance);
-    // Opaque coverage keeps the volume's lighting instead of adding a flat fill.
-    vec3 volumeColor = accumulated / max(0.001, 1.0 - transmittance);
-    accumulated = mix(accumulated, volumeColor, cover);
-    transmittance *= 1.0 - cover;
-    float visibility = smoothstep(0.0, 0.035, uProgress)
-      * (1.0 - smoothstep(0.5, 1.0, uProgress));
     gl_FragColor = vec4(accumulated * visibility, (1.0 - transmittance) * visibility);
   }
 `;

@@ -35,6 +35,39 @@ export function SmoothScroll() {
         lerp: 0.06,
         allowNestedScroll: true,
         stopInertiaOnNavigate: true,
+        virtualScroll: (data) => {
+          if (data.event.type === "wheel") {
+            const clouds = document.querySelector<HTMLElement>(
+              "[data-cloud-transition][data-scroll-start][data-scroll-end]",
+            );
+            if (clouds) {
+              const start = Number(clouds.dataset.scrollStart);
+              const end = Number(clouds.dataset.scrollEnd);
+              const position = lenis?.targetScroll ?? window.scrollY;
+              const width = end - start;
+              const ramp = Math.min(width * 0.2, window.innerHeight * 0.18);
+              if (ramp > 0) {
+                // Integrate an eased entry/exit so even large or reversed wheel
+                // inputs keep moving without a sudden change in resistance.
+                const integral = (t: number) => t * t * t * (1 - t * 0.5);
+                const slowedDistance = (at: number) => {
+                  const x = at - start;
+                  if (x <= 0) return 0;
+                  if (x < ramp) return ramp * integral(x / ramp);
+                  if (x <= width - ramp) return x - ramp * 0.5;
+                  if (x < width)
+                    return width - ramp - ramp * integral((width - x) / ramp);
+                  return width - ramp;
+                };
+                data.deltaY -=
+                  (slowedDistance(position + data.deltaY) -
+                    slowedDistance(position)) *
+                  0.65;
+              }
+            }
+          }
+          return true;
+        },
         // Keep modal contents native, even while background scrolling is stopped.
         prevent: (element) => element.matches('dialog, [role="dialog"]'),
       });

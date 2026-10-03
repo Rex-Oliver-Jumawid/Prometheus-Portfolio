@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { createGalleryScene } from "./create-gallery-scene";
+import { bookEndpoints } from "./book-handoff";
 
 const mocks = vi.hoisted(() => ({ parse: vi.fn(), render: vi.fn() }));
 vi.mock("three", async (importOriginal) => {
@@ -93,6 +94,7 @@ it("grows on scroll, follows the reference idle float, and honors pause and redu
     onContextLost: vi.fn(),
   });
   try {
+    expect(bookEndpoints().source).toBeUndefined();
     controller.setPaused(true);
     controller.setVisible(false);
     controller.setScrollProgress(1);

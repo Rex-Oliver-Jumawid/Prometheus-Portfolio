@@ -128,13 +128,13 @@ it("uses the existing scroll distance, reverses the dive, and keeps character tr
   await scroll(12);
   expect(hero.style.getPropertyValue("--hero-travel")).toBe("12px");
   expect(layer.dataset.active).toBeUndefined();
-  await scroll(425.6 + 614.4 * 0.3);
+  await scroll(118.4 + 921.6 * 0.3);
   expect(hero.style.getPropertyValue("--hero-travel")).toBe("240px");
   expect(layer.dataset.active).toBe("true");
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo(0.3);
   await scroll(1040);
   expect(layer.dataset.active).toBeUndefined();
-  await scroll(425.6 + 614.4 * 0.24);
+  await scroll(118.4 + 921.6 * 0.24);
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo(0.24);
   expect(hero.getBoundingClientRect().height).toBe(1040);
   await scroll(0);
@@ -184,28 +184,28 @@ it("preserves native scrolling when canvas is unavailable", async () => {
 
 it("holds the gallery still beneath the clouds without automatically scrolling", async () => {
   const { layer, gallery } = mount();
-  await scroll(200);
+  await scroll(80);
   expect(layer.dataset.active).toBeUndefined();
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(window.scrollTo).not.toHaveBeenCalled();
-  await scroll(640);
-  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
-    "400px",
-  );
-  expect(window.scrollY).toBe(640);
+  await scroll(440);
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
+  expect(gallery.dataset.cloudReveal).toBeUndefined();
+  expect(window.scrollY).toBe(440);
   expect(layer.dataset.active).toBe("true");
-  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((640 - 425.6) / 614.4);
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((440 - 118.4) / 921.6);
   await scroll(760);
+  expect(gallery.dataset.cloudReveal).toBe("true");
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
     "280px",
   );
-  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((760 - 425.6) / 614.4);
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((760 - 118.4) / 921.6);
   await scroll(880);
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
     "160px",
   );
   expect(layer.dataset.active).toBe("true");
-  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((880 - 425.6) / 614.4);
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((880 - 118.4) / 921.6);
   await scroll(1040);
   expect(layer.dataset.active).toBeUndefined();
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
@@ -225,7 +225,7 @@ it("reverses the cloud journey with upward scrolling", async () => {
   await scroll(700);
   await scroll(500);
   expect(layer.dataset.active).toBe("true");
-  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((500 - 425.6) / 614.4);
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((500 - 118.4) / 921.6);
   expect(window.scrollTo).not.toHaveBeenCalled();
 });
 
@@ -289,6 +289,28 @@ it("disposes a field that finishes preparing after unmount", async () => {
   await act(async () => finish(field));
   expect(field.dispose).toHaveBeenCalledOnce();
   expect(field.draw).not.toHaveBeenCalled();
+});
+
+it("warms the first cloud draw while hidden and cancels idle preparation on unmount", async () => {
+  let warmUp: IdleRequestCallback | undefined;
+  const requestIdle = vi.fn((callback: IdleRequestCallback) => {
+    warmUp = callback;
+    return 7;
+  });
+  const cancelIdle = vi.fn();
+  vi.stubGlobal("requestIdleCallback", requestIdle);
+  vi.stubGlobal("cancelIdleCallback", cancelIdle);
+  const { layer, unmount } = mount();
+  expect(createField).not.toHaveBeenCalled();
+  await act(async () =>
+    warmUp?.({ didTimeout: false, timeRemaining: () => 16 }),
+  );
+  flush();
+  expect(createField).toHaveBeenCalledOnce();
+  expect(field.draw).toHaveBeenCalledWith(0);
+  expect(layer.dataset.active).toBeUndefined();
+  unmount();
+  expect(cancelIdle).toHaveBeenCalledWith(7);
 });
 
 it("skips preparing clouds on deep links and prepares them when scrolling back to the hero", async () => {
