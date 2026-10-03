@@ -8,16 +8,18 @@ for (const [width, height] of [
   [320, 568],
   [844, 390],
 ]) {
-  test(`keeps the head clear over one screen of parallax before the gallery at ${width}x${height}`, async ({
+  test(`reveals Prometheus through the foot tip before the gallery at ${width}x${height}`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
+
     const hero = page.locator("#top");
     const stage = hero.locator("[data-hero-stage]");
-    const figure = hero.locator('img[height="1595"]');
+    const figure = hero.locator("[data-hero-figure] img");
     const gallery = page.locator("#work");
+
     await expect(hero).toHaveAttribute("data-parallax-ready", "true");
     await expect(page.locator("main")).toHaveAttribute(
       "data-sticky-ready",
@@ -27,27 +29,19 @@ for (const [width, height] of [
     await page.evaluate(() => document.fonts.ready);
 
     const original = (await figure.boundingBox())!;
-    // The full asset preserves the original cropped hero's size and top anchor.
-    const expectedWidth =
-      width <= 640
-        ? Math.min(width * 1.24, height * 0.74)
-        : width <= 1000
-          ? Math.min(width * 0.95, height * 1.15)
-          : Math.min(width * 0.62, height * 1.1);
-    const offset = width <= 1000 ? 25 : height * 0.045;
-    expect(original.width).toBeCloseTo(expectedWidth, 0);
-    expect(original.y).toBeCloseTo(
-      height + offset - (expectedWidth * 718) / 986,
-      0,
-    );
     expect((await stage.boundingBox())!.height).toBe(height);
+
+    await expect
+      .poll(async () => (await hero.boundingBox())!.height - height)
+      .toBeGreaterThan(0);
+
     const travel = (await hero.boundingBox())!.height - height;
-    expect(travel).toBeCloseTo(height, 0);
-    const headGap = Math.max(24, Math.min(48, height * 0.04));
-    const reveal = Math.max(
+    const expectedTravel = Math.max(
       0,
-      original.y + (original.width * 170) / 986 - headGap,
+      original.y + original.height - height,
     );
+    expect(travel).toBeCloseTo(expectedTravel, 0);
+
     await expect
       .poll(async () => (await gallery.boundingBox())!.y)
       .toBeCloseTo(height + travel, 0);
@@ -58,19 +52,23 @@ for (const [width, height] of [
         contentType: "image/png",
       });
     }
+
     for (const progress of [0.5, 1, 0.25, 0]) {
       const scroll = Math.round(travel * progress);
       await page.evaluate(
         (top) => window.scrollTo({ top, behavior: "instant" }),
         scroll,
       );
+
       await expect
         .poll(async () => (await figure.boundingBox())!.y)
-        .toBeCloseTo(original.y - (reveal * scroll) / travel, 0);
-      // Keep the second section below the viewport for the entire one-screen hold.
+        .toBeCloseTo(original.y - scroll, 0);
+
+      // Keep section two outside the viewport until the full figure reveal ends.
       expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
         height - 1,
       );
+
       const skyBottom = await hero
         .locator('img[src*="sky-scroll.webp"]')
         .evaluate((image) => image.getBoundingClientRect().bottom);
@@ -78,21 +76,22 @@ for (const [width, height] of [
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
+
       if (progress === 1) {
-        const head =
-          (await figure.boundingBox())!.y + (original.width * 170) / 986;
-        expect(head).toBeGreaterThanOrEqual(headGap - 1);
-        expect(head).toBeLessThanOrEqual(headGap + 1);
+        const finalFigure = (await figure.boundingBox())!;
+        expect(finalFigure.y + finalFigure.height).toBeCloseTo(height, 0);
+
         if (width === 1440 || width === 390) {
-          await info.attach("head-stop", {
+          await info.attach("foot-stop", {
             body: await page.screenshot({
-              path: info.outputPath("head-stop.png"),
+              path: info.outputPath("foot-stop.png"),
             }),
             contentType: "image/png",
           });
         }
       }
     }
+
     await page.evaluate(
       (top) => window.scrollTo({ top, behavior: "instant" }),
       travel + 120,
@@ -102,24 +101,29 @@ for (const [width, height] of [
         Math.abs((await gallery.boundingBox())!.y - (height - 120)),
       )
       .toBeLessThan(1);
-    await expect
-      .poll(async () => (await figure.boundingBox())!.y)
-      .toBeCloseTo(original.y - reveal, 0);
+
+    const finalFigure = (await figure.boundingBox())!;
+    expect(finalFigure.y + finalFigure.height).toBeCloseTo(height, 0);
   });
 }
 
-test("one screen of wheel scrolling complete the reveal before section two enters", async ({
+test("the measured hero scroll distance completes the figure reveal before section two enters", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+
   const hero = page.locator("#top");
   await expect(hero).toHaveAttribute("data-parallax-ready", "true");
+
+  const travel = (await hero.boundingBox())!.height - 900;
+  expect(travel).toBeGreaterThan(0);
+
   for (const progress of [0.5, 1]) {
-    await page.mouse.wheel(0, 450);
-    await expect
-      .poll(() => page.evaluate(() => window.scrollY))
-      .toBeCloseTo(progress * 900, 0);
+    await page.evaluate(
+      (top) => window.scrollTo({ top, behavior: "instant" }),
+      travel * progress,
+    );
     await expect
       .poll(() =>
         hero.evaluate((element) =>
