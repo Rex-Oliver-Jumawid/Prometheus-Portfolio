@@ -579,8 +579,8 @@
   right: -1.5%;
   top: var(--figure-start-y);
   width: var(--figure-width);
-  aspect-ratio: 700 / 736;
-  background: url("/assets/hero/prometheus-figure-v2.webp") center / contain no-repeat;
+  aspect-ratio: 1 / 1;
+  background: url("/assets/hero/Prometheus in Flight with Flame.png") center / contain no-repeat;
   filter: blur(42px) saturate(54%) brightness(0.74) contrast(0.84);
   transform: translate3d(0, calc(-1 * var(--figure-travel)), 0) scale(1.035);
   transform-origin: center;

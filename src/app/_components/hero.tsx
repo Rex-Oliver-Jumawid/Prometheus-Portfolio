@@ -30,10 +30,10 @@ export function Hero() {
 
           <div className={styles.figure} aria-hidden="true">
             <Image
-              src="/assets/hero/prometheus-figure-v2.webp"
+              src="/assets/hero/Prometheus in Flight with Flame.png"
               alt=""
-              width={700}
-              height={736}
+              width={1254}
+              height={1254}
               sizes="(max-width: 640px) 118vw, (max-width: 1000px) 78vw, 56vw"
               loading="eager"
               unoptimized
