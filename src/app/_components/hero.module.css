@@ -1,27 +1,16 @@
 .hero,
 .navGlass {
   --hero-scene-speed: 0.3;
-  --hero-copy-speed: 0.25;
-  --figure-width: min(62vw, 110svh);
-  --figure-offset: 4.5svh;
-  /* Retain the original 718px crop's top while displaying the full 1595px asset. */
-  --figure-start-y: calc(
-    100svh + var(--figure-offset) - var(--figure-width) * 718 / 986
-  );
+  --figure-width: min(74vw, 118svh);
+  --figure-start-y: 22svh;
   --hero-scroll-distance: 100svh;
   --hero-travel: calc(var(--hero-progress, 0) * var(--figure-knee-reveal));
   --figure-travel: calc(var(--hero-progress, 0) * var(--hero-reveal-distance));
-  /* The crown is at source y=170px. Keep a small gap below the top edge. */
-  --figure-head-stop: clamp(24px, 4svh, 48px);
-  --figure-knee-reveal: calc(
-    var(--figure-width) * 402 / 986 + var(--figure-offset)
-  );
+  --figure-head-stop: clamp(20px, 3svh, 36px);
+  --figure-knee-reveal: min(36svh, 24vw);
   --hero-reveal-distance: max(
     0px,
-    calc(
-      var(--figure-start-y) + var(--figure-width) * 170 / 986 -
-        var(--figure-head-stop)
-    )
+    calc(var(--figure-start-y) - var(--figure-head-stop))
   );
 }
 
@@ -72,7 +61,7 @@
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  right: 4%;
+  right: -1.5%;
   top: var(--figure-start-y);
   width: var(--figure-width);
   transform: translate3d(0, calc(-1 * var(--figure-travel)), 0);
@@ -85,22 +74,7 @@
   height: auto;
 }
 
-.stage::after {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  content: "";
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgb(20 18 16 / 46%) 0%,
-    rgb(20 18 16 / 20%) 35%,
-    transparent 60%
-  );
-}
-
 .header,
-.content,
 .navPanel {
   --hero-gutter: clamp(20px, 4vw, 64px);
   --navigation-height: 88px;
@@ -602,11 +576,11 @@
 
 .navGlassFigure {
   position: absolute;
-  right: 4%;
+  right: -1.5%;
   top: var(--figure-start-y);
   width: var(--figure-width);
-  aspect-ratio: 986 / 1595;
-  background: url("/assets/hero/figure-full.webp") center / contain no-repeat;
+  aspect-ratio: 360 / 319;
+  background: url("/assets/hero/prometheus-figure.webp") center / contain no-repeat;
   filter: blur(42px) saturate(54%) brightness(0.74) contrast(0.84);
   transform: translate3d(0, calc(-1 * var(--figure-travel)), 0) scale(1.035);
   transform-origin: center;
@@ -833,8 +807,8 @@
 @media (max-width: 1000px) {
   .hero,
   .navGlass {
-    --figure-offset: 25px;
-    --figure-width: min(95vw, 115svh);
+    --figure-start-y: 26svh;
+    --figure-width: min(105vw, 118svh);
   }
 
   .navGlassFigure {
@@ -858,9 +832,8 @@
 @media (max-width: 640px) {
   .hero,
   .navGlass {
-    --figure-width: min(124vw, 74svh);
-    /* Clear the copy before the figure reaches the upper half of a phone. */
-    --hero-copy-speed: 1.8;
+    --figure-start-y: 34svh;
+    --figure-width: min(138vw, 96svh);
   }
   .header,
   .navPanel {
