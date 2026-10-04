@@ -62,7 +62,10 @@ export function ProjectGallerySection({
           </Heading>
         )}
 
-        <ProjectGalleryClient project={furnitureOdyssey} />
+        <ProjectGalleryClient
+          project={furnitureOdyssey}
+          prewarm={!standalone}
+        />
 
         <noscript>
           <p className={styles.noScript}>

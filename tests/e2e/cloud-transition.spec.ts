@@ -72,6 +72,7 @@ for (const [width, height] of [
             lightRange: number;
             warm: boolean;
             silhouetteRange: number;
+            maxHeight: number;
             maxAlpha: number;
             error: number;
           }>((resolve) => {
@@ -119,6 +120,7 @@ for (const [width, height] of [
                 lightRange: maxLight - minLight,
                 warm,
                 silhouetteRange: Math.max(...tops) - Math.min(...tops),
+                maxHeight: Math.max(...tops),
                 maxAlpha,
                 error: gl.getError(),
               });
@@ -129,6 +131,8 @@ for (const [width, height] of [
       if (progress === 0.03) {
         expect(pixels.minBottom).toBeGreaterThan(240);
         expect(pixels.silhouetteRange).toBeGreaterThan(0.025);
+        expect(pixels.maxHeight).toBeGreaterThan(0.12);
+        expect(pixels.maxHeight).toBeLessThan(0.25);
       }
       if (progress === 0.9) expect(pixels.maxAlpha).toBeGreaterThan(0);
       if (progress >= 0.49 && progress <= 0.8) {
@@ -188,7 +192,7 @@ for (const [width, height] of [
     const start = Number(await layer.getAttribute("data-scroll-start"));
     const distance =
       (Number(await layer.getAttribute("data-scroll-end")) - start) / 0.75;
-    const milestones = [0.03, 0.15, 0.3, 0.4, 0.49, 0.6, 0.75, 0.85, 0.95, 1];
+    const milestones = [0.03, 0.25, 0.5, 0.85, 1];
     let milestone = 0;
     let reached = false;
     for (const direction of [1, -1]) {
@@ -238,6 +242,12 @@ for (const [width, height] of [
         );
         const progress = (state.y - start) / distance;
         expect(state.overflow).toBe(false);
+        await expect(page.getByText(/Opening the library/i)).toHaveCount(0);
+        if (progress > 0.75) {
+          await expect(
+            page.locator('#work [data-visible="true"]'),
+          ).toBeVisible();
+        }
         if (progress > 0 && progress < 1) {
           expect(state.handoff).toBe("true");
           expect(state.stageY).toBeCloseTo(0, 0);

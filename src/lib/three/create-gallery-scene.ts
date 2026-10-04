@@ -78,7 +78,7 @@ export async function createGalleryScene(
 
   const loader = new GLTFLoader();
   async function load(url: string) {
-    const response = await fetch(url, { signal });
+    const response = await fetch(url, { signal, cache: "force-cache" });
     if (!response.ok)
       throw new Error(`Could not load gallery asset (${response.status}).`);
     const model = await loader.parseAsync(
@@ -150,7 +150,7 @@ export async function createGalleryScene(
 
   let reduced = options.reducedMotion;
   let paused = false;
-  let visible = true;
+  let visible = false;
   let disposed = false;
   let scrollProgress = 0;
   let progress = reduced ? 1 : 0;
@@ -294,6 +294,21 @@ export async function createGalleryScene(
     frame = 0;
     visible = false;
     options.onContextLost();
+  }
+  // Resolve readiness only after shader compilation, texture upload and a real
+  // frame. This also warms the GPU while the homepage hero is still visible.
+  try {
+    resize();
+    await renderer.compileAsync(scene, camera);
+    signal.throwIfAborted();
+    renderer.render(scene, camera);
+  } catch (error) {
+    if (frame) cancelAnimationFrame(frame);
+    disposeModel(book);
+    environment.dispose();
+    renderer.dispose();
+    renderer.forceContextLoss();
+    throw error;
   }
   host.append(renderer.domElement);
   host.style.cursor = "grab";

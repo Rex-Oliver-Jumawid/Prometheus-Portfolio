@@ -92,7 +92,7 @@ function disposeRoot(root: THREE.Object3D) {
 
 async function loadGltf(loader: GLTFLoader, url: string, signal: AbortSignal) {
   const resolvedUrl = new URL(url, window.location.href).href;
-  const response = await fetch(resolvedUrl, { signal });
+  const response = await fetch(resolvedUrl, { signal, cache: "force-cache" });
   if (!response.ok) {
     throw new Error(`Could not load library asset (${response.status}).`);
   }
@@ -557,6 +557,7 @@ export async function createLibraryScene(
 
   const loader = new GLTFLoader();
   const loadedRoots: THREE.Object3D[] = [];
+  let loadingFailed = false;
 
   try {
     progress(4, "Opening the library...");
@@ -565,6 +566,10 @@ export async function createLibraryScene(
     const total = options.books.length + 1;
     const loadTracked = async (url: string) => {
       const gltf = await loadGltf(loader, url, options.signal);
+      if (options.signal.aborted || loadingFailed) {
+        disposeRoot(gltf.scene);
+        throw new DOMException("Library loading cancelled", "AbortError");
+      }
       loadedRoots.push(gltf.scene);
       completed += 1;
       progress(
@@ -894,9 +899,11 @@ export async function createLibraryScene(
     resize();
     progress(88, "Preparing the light and textures...");
     await renderer.compileAsync(scene, camera);
+    options.signal.throwIfAborted();
     renderScene();
     progress(100, "The library is ready.");
   } catch (error) {
+    loadingFailed = true;
     loadedRoots.forEach((root) => {
       if (!ownedRoots.includes(root)) disposeRoot(root);
     });

@@ -23,8 +23,7 @@
   pointer-events: none;
 }
 
-.eyebrow,
-.overlayEyebrow {
+.eyebrow {
   margin: 0;
   color: #d1b17e;
   font-size: 0.58rem;
@@ -63,7 +62,7 @@
 .stage {
   position: relative;
   overflow: hidden;
-  background: #100e0b;
+  background: #100e0b url("/assets/project-gallery/library.png") center / cover;
 }
 
 .canvasHost {
@@ -71,54 +70,29 @@
   inset: 0;
 }
 
-.overlay {
+.canvasHost {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.canvasHost[data-ready="true"] {
+  opacity: 1;
+}
+.poster {
   position: absolute;
-  z-index: 3;
-  inset: 0;
+  inset: 15% 20%;
   display: grid;
   place-items: center;
-  padding: 24px;
-  background: #100e0b;
 }
-
-.overlayContent {
-  width: min(100%, 360px);
-  text-align: center;
+.poster img {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
 }
-
-.overlayTitle {
-  margin: 12px 0 24px;
-  font-family: "Libre Caslon Display", Georgia, "Times New Roman", serif;
-  font-size: 1.4rem;
-  font-weight: 400;
-  line-height: 1.35;
-}
-
-.progress {
-  display: block;
-  width: 100%;
-  height: 2px;
-  overflow: hidden;
-  border: 0;
-  border-radius: 0;
-  background: #362e23;
-  accent-color: #d1b17e;
-}
-
-.progress::-webkit-progress-bar {
-  background: #362e23;
-}
-
-.progress::-webkit-progress-value,
-.progress::-moz-progress-bar {
-  background: #d1b17e;
-}
-
-.fallbackText {
-  margin: 14px 0 0;
-  color: #d5c6b3;
-  font-size: 0.9rem;
-  line-height: 1.6;
+.poster:focus-visible {
+  outline: 2px solid #d1b17e;
+  outline-offset: 6px;
 }
 
 .bookControl {
@@ -228,7 +202,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bookControl {
+  .bookControl,
+  .canvasHost {
     transition: none;
   }
 }

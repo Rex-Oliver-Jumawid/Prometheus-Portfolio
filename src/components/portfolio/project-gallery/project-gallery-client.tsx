@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import type { BookPage, PortfolioProject } from "@/content/projects";
+import { scheduleIdlePreparation } from "@/lib/browser/schedule-idle-preparation";
 import type { GalleryScene } from "@/lib/three/create-gallery-scene";
 
 import styles from "./project-gallery.module.css";
@@ -56,8 +57,10 @@ function BookPageContent({ page }: { page?: BookPage }) {
 
 export function ProjectGalleryClient({
   project,
+  prewarm = false,
 }: {
   project: PortfolioProject;
+  prewarm?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -227,7 +230,7 @@ export function ProjectGalleryClient({
       controllerRef.current?.setVisible(visible);
     }
     async function loadScene() {
-      if (started) return;
+      if (started || !alive) return;
       started = true;
       try {
         const { createGalleryScene } =
@@ -255,6 +258,11 @@ export function ProjectGalleryClient({
         setStatus("ready");
       } catch {
         if (alive && !abort.signal.aborted) setStatus("fallback");
+      } finally {
+        if (alive && prewarm) {
+          host!.dataset.prepared = "true";
+          window.dispatchEvent(new Event("gallery-prepared"));
+        }
       }
     }
     function motionChanged() {
@@ -283,6 +291,9 @@ export function ProjectGalleryClient({
       active = entries[0].isIntersecting;
       syncVisibility();
     });
+    const cancelWarmup = prewarm
+      ? scheduleIdlePreparation(() => void loadScene())
+      : () => {};
     nearObserver.observe(host);
     visibilityObserver.observe(host);
     preference.addEventListener("change", motionChanged);
@@ -292,6 +303,8 @@ export function ProjectGalleryClient({
     window.addEventListener("resize", syncScroll);
     return () => {
       alive = false;
+      cancelWarmup();
+      delete host.dataset.prepared;
       abort.abort();
       nearObserver.disconnect();
       visibilityObserver.disconnect();
@@ -303,7 +316,7 @@ export function ProjectGalleryClient({
       controllerRef.current?.dispose();
       controllerRef.current = null;
     };
-  }, [project.modelUrl, openBook, finishClose, finishTurn]);
+  }, [project.modelUrl, prewarm, openBook, finishClose, finishTurn]);
 
   const lastSpread = Math.ceil(project.pages.length / 2) - 1;
   function turnPage(direction: -1 | 1) {

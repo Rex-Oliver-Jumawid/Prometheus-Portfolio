@@ -185,10 +185,7 @@ describe("isolated project gallery", () => {
     ).toBeInTheDocument();
     expect(
       within(finalSpread).getByRole("link", { name: "Cast this book" }),
-    ).toHaveAttribute(
-      "href",
-      "https://furniture-odyssey-pos.vercel.app/demo",
-    );
+    ).toHaveAttribute("href", "https://furniture-odyssey-pos.vercel.app/demo");
     expect(screen.getByRole("button", { name: /Next/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("dialog"));
     finishBookAnimation(screen.getByRole("dialog"));
@@ -468,5 +465,81 @@ describe("isolated project gallery", () => {
     expect(dialog).toBeInTheDocument();
     fireEvent.click(dialog.querySelector(`.${styles.bookViewport}`)!);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+
+describe("homepage preparation", () => {
+  function idle() {
+    let prepare: IdleRequestCallback | undefined;
+    vi.spyOn(document, "readyState", "get").mockReturnValue("complete");
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 11;
+    });
+    const cancel = vi.fn();
+    vi.stubGlobal("requestIdleCallback", (callback: IdleRequestCallback) => {
+      prepare = callback;
+      return 7;
+    });
+    vi.stubGlobal("cancelIdleCallback", cancel);
+    return {
+      run: () => prepare?.({ didTimeout: false, timeRemaining: () => 16 }),
+      cancel,
+    };
+  }
+
+  it("prepares before intersection, preserves the poster until ready, and never starts twice", async () => {
+    const warmup = idle();
+    let ready!: (value: GalleryScene) => void;
+    createScene.mockReturnValueOnce(
+      new Promise((resolve) => {
+        ready = resolve;
+      }),
+    );
+    const view = render(
+      <ProjectGalleryClient project={furnitureOdyssey} prewarm />,
+    );
+    const poster = view.container.querySelector(`.${styles.fallback}`)!;
+    expect(createScene).not.toHaveBeenCalled();
+    await act(async () => warmup.run());
+    expect(createScene).toHaveBeenCalledOnce();
+    expect(poster).toHaveAttribute("data-hidden", "false");
+    expect(screen.getByText("Loading 3D book.")).toHaveClass(styles.srOnly);
+    expect(screen.queryByText(/Opening the library/i)).toBeNull();
+    enterViewport();
+    await act(async () => warmup.run());
+    expect(createScene).toHaveBeenCalledOnce();
+    await act(async () => ready(scene));
+    expect(poster).toHaveAttribute("data-hidden", "true");
+    expect(
+      screen.getByRole("button", { name: "Read Furniture Odyssey" }),
+    ).toHaveAttribute("data-visible", "true");
+    view.unmount();
+    expect(scene.dispose).toHaveBeenCalledOnce();
+    expect(warmup.cancel).toHaveBeenCalledWith(7);
+  });
+
+  it("cancels idle work and disposes preparation that completes after unmount", async () => {
+    const warmup = idle();
+    const first = render(
+      <ProjectGalleryClient project={furnitureOdyssey} prewarm />,
+    );
+    first.unmount();
+    await act(async () => warmup.run());
+    expect(createScene).not.toHaveBeenCalled();
+    let finish!: (value: GalleryScene) => void;
+    createScene.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const second = render(
+      <ProjectGalleryClient project={furnitureOdyssey} prewarm />,
+    );
+    await act(async () => warmup.run());
+    second.unmount();
+    expect(createScene.mock.calls[0][0].signal.aborted).toBe(true);
+    await act(async () => finish(scene));
+    expect(scene.dispose).toHaveBeenCalledOnce();
   });
 });

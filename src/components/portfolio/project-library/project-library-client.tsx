@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import { furnitureOdyssey } from "@/content/projects";
+import { scheduleIdlePreparation } from "@/lib/browser/schedule-idle-preparation";
 import { useEffect, useRef, useState } from "react";
 
 import { prometheusLibrary, type LibraryBook } from "@/content/library";
@@ -40,7 +43,7 @@ export function ProjectLibraryClient() {
     }
 
     async function loadScene() {
-      if (started) return;
+      if (started || !alive) return;
       started = true;
       setStatus("loading");
 
@@ -123,6 +126,16 @@ export function ProjectLibraryClient() {
       { threshold: 0.01 },
     );
 
+    // The first book has priority. Prepare the shelf in the next idle slot,
+    // reusing the browser-cached book bytes rather than competing with the hero.
+    let cancelWarmup = () => {};
+    function galleryPrepared() {
+      cancelWarmup();
+      cancelWarmup = scheduleIdlePreparation(() => void loadScene());
+    }
+    window.addEventListener("gallery-prepared", galleryPrepared);
+    if (document.querySelector('#work [data-prepared="true"]'))
+      galleryPrepared();
     nearObserver.observe(host);
     visibilityObserver.observe(host);
     motionPreference.addEventListener("change", motionChanged);
@@ -131,6 +144,8 @@ export function ProjectLibraryClient() {
 
     return () => {
       alive = false;
+      cancelWarmup();
+      window.removeEventListener("gallery-prepared", galleryPrepared);
       abort.abort();
       nearObserver.disconnect();
       visibilityObserver.disconnect();
@@ -157,35 +172,35 @@ export function ProjectLibraryClient() {
         aria-describedby="library-instructions"
         aria-busy={status === "loading"}
       >
-        <div ref={hostRef} className={styles.canvasHost} aria-hidden="true" />
-
-        {(status === "idle" || status === "loading") && (
-          <div className={styles.overlay} role="status" aria-live="polite">
-            <div className={styles.overlayContent}>
-              <p className={styles.overlayEyebrow}>Opening the library</p>
-              <p className={styles.overlayTitle}>{loadingLabel}</p>
-              <progress
-                className={styles.progress}
-                max={100}
-                value={progress}
-                aria-label="Library loading progress"
-              />
-            </div>
-          </div>
+        <div
+          ref={hostRef}
+          className={styles.canvasHost}
+          data-ready={status === "ready"}
+          aria-hidden="true"
+        />
+        {status !== "ready" && (
+          <a
+            className={styles.poster}
+            href="#work"
+            aria-label="Read Furniture Odyssey in the gallery"
+          >
+            <Image
+              src={furnitureOdyssey.coverUrl}
+              alt="Furniture Odyssey book"
+              width={1120}
+              height={1440}
+              unoptimized
+            />
+          </a>
         )}
 
-        {status === "fallback" && (
-          <div className={styles.overlay} role="status">
-            <div className={styles.overlayContent}>
-              <p className={styles.overlayEyebrow}>
-                Library preview unavailable
-              </p>
-              <p className={styles.fallbackText}>
-                The interactive shelf could not load in this browser.
-              </p>
-            </div>
-          </div>
-        )}
+        <p className={styles.srOnly} role="status" aria-live="polite">
+          {status === "ready"
+            ? "The library is ready."
+            : status === "fallback"
+              ? "3D library unavailable. Follow the book link to read Furniture Odyssey."
+              : `${loadingLabel} ${progress}%`}
+        </p>
 
         <button
           className={styles.bookControl}

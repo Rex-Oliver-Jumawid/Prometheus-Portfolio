@@ -16,6 +16,7 @@ vi.mock("three", async (importOriginal) => {
       setClearColor() {}
       setSize() {}
       render = mocks.render;
+      compileAsync = vi.fn().mockResolvedValue(undefined);
       dispose() {}
       forceContextLoss() {}
     },
@@ -93,6 +94,9 @@ it("grows on scroll, follows the reference idle float, and honors pause and redu
     onContextLost: vi.fn(),
   });
   try {
+    // Ready means a real frame exists, even before visibility starts the loop.
+    expect(mocks.render).toHaveBeenCalledOnce();
+    expect(frame).toBeUndefined();
     controller.setPaused(true);
     controller.setVisible(false);
     controller.setScrollProgress(1);
