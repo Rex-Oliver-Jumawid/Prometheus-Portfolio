@@ -38,8 +38,14 @@ const fragmentSource = `
     vec3 q = vec3(point.xy, mod(point.z, 8.0) - 4.0);
     // Build a wide lower cloud shelf first so the transition enters across the
     // complete viewport instead of forming one obvious mound in the center.
+    // A screen-wide cylindrical shelf ignores X for the base bank, so there
+    // is always cloud density at both viewport edges. The smaller volumes
+    // above it keep the silhouette irregular and volumetric.
     float shelf = length(
-      (q - vec3(0.0, -3.25, -0.4)) / vec3(9.4, 1.15, 5.2)
+      vec2(
+        (q.y + 3.25) / 1.18,
+        (q.z + 0.4) / 5.4
+      )
     );
     float farLeft = length(
       (q - vec3(-6.1, -2.35, 0.5)) / vec3(5.0, 1.55, 4.5)
@@ -59,7 +65,7 @@ const fragmentSource = `
     float lowerBank = min(shelf, min(farLeft, min(farRight, min(left, min(right, middle)))));
     float body = 1.0 - min(lowerBank, crowns);
     float billows = turbulence(point * 0.85) - 0.5;
-    float cloud = smoothstep(-0.02, 0.10, body + billows * 0.85) * 1.4;
+    float cloud = smoothstep(-0.03, 0.10, body + billows * 0.88) * 1.48;
     // Original crossing density from 0609a4a.
     float mist = smoothstep(0.16, 0.22, uProgress)
       * (1.0 - smoothstep(0.3, 0.55, uProgress)) * 0.22;
