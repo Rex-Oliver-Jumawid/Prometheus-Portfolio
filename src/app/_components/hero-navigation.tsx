@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { appConfig } from "@/config/app";
 
@@ -14,10 +14,67 @@ const links = [
   { href: "#contact", label: "Contact" },
 ] as const;
 
+const NAVIGATION_CLOSE_MS = 1050;
+
 export function HeroNavigation() {
   const [open, setOpen] = useState(false);
+  const [renderNavigation, setRenderNavigation] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navLinksRef = useRef<HTMLElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const navigateTimerRef = useRef<number | null>(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const openNavigation = () => {
+    clearCloseTimer();
+    setRenderNavigation(true);
+    window.requestAnimationFrame(() => setOpen(true));
+  };
+
+  const closeNavigation = () => {
+    setOpen(false);
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      setRenderNavigation(false);
+      closeTimerRef.current = null;
+    }, NAVIGATION_CLOSE_MS);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) openNavigation();
+    else closeNavigation();
+  };
+
+  const navigateAfterClose = (href: string) => {
+    closeNavigation();
+    if (navigateTimerRef.current !== null) {
+      window.clearTimeout(navigateTimerRef.current);
+    }
+    navigateTimerRef.current = window.setTimeout(() => {
+      navigateTimerRef.current = null;
+      if (window.location.hash === href) {
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      } else {
+        window.location.hash = href;
+      }
+    }, NAVIGATION_CLOSE_MS + 80);
+  };
+
+  useEffect(
+    () => () => {
+      clearCloseTimer();
+      if (navigateTimerRef.current !== null) {
+        window.clearTimeout(navigateTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const moveNavIndicator = (target: HTMLAnchorElement) => {
     const navigation = navLinksRef.current;
@@ -39,7 +96,7 @@ export function HeroNavigation() {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen} modal="trap-focus">
+    <Dialog.Root open={open} onOpenChange={handleOpenChange} modal="trap-focus">
       <header className={styles.header} data-navigation-open={open}>
         <a
           className={styles.brand}
@@ -58,7 +115,10 @@ export function HeroNavigation() {
           aria-label={open ? "Close navigation" : "Open navigation"}
           aria-expanded={open}
           aria-controls="primary-navigation-dialog"
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            if (open) closeNavigation();
+            else openNavigation();
+          }}
         >
           <span className={styles.hamburger} aria-hidden="true">
             <span />
@@ -68,10 +128,10 @@ export function HeroNavigation() {
         </button>
       </header>
 
-      {open ? (
+      {renderNavigation ? (
         <div
           className={styles.navGlass}
-          data-open="true"
+          data-open={open}
           data-navigation-glass
           aria-hidden="true"
         >
@@ -86,7 +146,7 @@ export function HeroNavigation() {
         </div>
       ) : null}
 
-      {open ? (
+      {renderNavigation ? (
         <Dialog.Portal>
           <Dialog.Backdrop className={styles.scrim} />
           <Dialog.Popup
@@ -120,7 +180,10 @@ export function HeroNavigation() {
                         moveNavIndicator(event.currentTarget)
                       }
                       onFocus={(event) => moveNavIndicator(event.currentTarget)}
-                      onClick={() => setOpen(false)}
+                      onClick={(event) => {
+                      event.preventDefault();
+                      navigateAfterClose(link.href);
+                    }}
                     >
                       {link.label}
                     </a>
@@ -129,7 +192,13 @@ export function HeroNavigation() {
 
                 <div className={styles.navFooter}>
                   <p>Good things begin with an idea.</p>
-                  <a href="#contact" onClick={() => setOpen(false)}>
+                  <a
+                    href="#contact"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigateAfterClose("#contact");
+                    }}
+                  >
                     Start a conversation
                   </a>
                 </div>
