@@ -137,6 +137,26 @@ export function ProjectGalleryClient({
     controllerRef.current?.setPaused(true);
     controllerRef.current?.setVisible(false);
   }, [positionReader]);
+  const openBookAnywhere = useCallback(() => {
+    if (readerPhaseRef.current !== "closed") return;
+    setSpread(0);
+    dialogRef.current?.style.removeProperty("--book-rest-transform");
+    dialogRef.current?.showModal();
+    dialogRef.current
+      ?.querySelector<HTMLElement>("article")
+      ?.focus({ preventScroll: true });
+    readerPhaseRef.current = "open";
+    setReaderPhase("open");
+    controllerRef.current?.setPaused(true);
+    controllerRef.current?.setVisible(false);
+  }, []);
+
+  useEffect(() => {
+    const handleOpen = () => openBookAnywhere();
+    window.addEventListener("prometheus:open-furniture-odyssey", handleOpen);
+    return () =>
+      window.removeEventListener("prometheus:open-furniture-odyssey", handleOpen);
+  }, [openBookAnywhere]);
   const finishClose = useCallback(() => {
     if (readerPhaseRef.current === "closed") return;
     finishTurn();
