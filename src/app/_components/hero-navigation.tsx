@@ -15,6 +15,7 @@ const links = [
 ] as const;
 
 const NAVIGATION_CLOSE_MS = 1050;
+const SECTION_NAVIGATION_DELAY_MS = 650;
 
 export function HeroNavigation() {
   const [open, setOpen] = useState(false);
@@ -63,7 +64,7 @@ export function HeroNavigation() {
       } else {
         window.location.hash = href;
       }
-    }, NAVIGATION_CLOSE_MS + 80);
+    }, SECTION_NAVIGATION_DELAY_MS);
   };
 
   useEffect(
