@@ -38,8 +38,8 @@ export function subscribeBookEndpoints(notify: () => void) {
 }
 
 export const HANDOFF = {
-  // Keep the already-visible book fully owned by the 2nd viewport for an
-  // initial interaction beat before the shelf handoff begins.
+  // Keep the book fully owned by the 2nd viewport for an initial interaction
+  // beat before the shelf handoff begins.
   startDelay: 0.65,
   finish: 0.08,
   arc: 0.12,
