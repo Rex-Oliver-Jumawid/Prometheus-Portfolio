@@ -29,27 +29,6 @@ function BookPageContent({ page }: { page?: BookPage }) {
       {page.paragraphs.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
-      {page.image ? (
-        <div className={styles.pageMedia}>
-          <Image
-            src={page.image.src}
-            alt={page.image.alt}
-            fill
-            sizes="(max-width: 600px) 42vw, 520px"
-          />
-        </div>
-      ) : null}
-      {page.action ? (
-        <a
-          className={styles.pageAction}
-          href={page.action.href}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span>{page.action.label}</span>
-          <span aria-hidden="true">↗</span>
-        </a>
-      ) : null}
     </>
   ) : null;
 }
@@ -213,10 +192,55 @@ export function ProjectGalleryClient({
     let alive = true;
 
     function syncScroll() {
-      const section = host!.closest("section") ?? host!;
-      const top = section.getBoundingClientRect().top;
-      const progress = Math.min(1, Math.max(0, 1 - top / window.innerHeight));
-      controllerRef.current?.setScrollProgress(progress);
+      const section = (host!.closest("section") ?? host!) as HTMLElement;
+
+      if (section.dataset.standalone === "true") {
+        controllerRef.current?.setScrollProgress(1);
+        host!.style.pointerEvents = "";
+        return;
+      }
+
+      const rect = section.getBoundingClientRect();
+      const travel = Math.max(1, rect.height - window.innerHeight);
+      const overallProgress = Math.min(
+        1,
+        Math.max(0, -rect.top / travel),
+      );
+
+      // First full scroll beat: move the portrait room from the skylight at
+      // the top down to the floor/table. The book stays completely hidden.
+      const roofEnd = 0.5;
+      // Second beat: the book enters only after the room pan is complete,
+      // then settles low enough to read as sitting over the table area.
+      const bookEnd = 0.72;
+      const roofProgress = Math.min(1, overallProgress / roofEnd);
+      const bookProgress = Math.min(
+        1,
+        Math.max(0, (overallProgress - roofEnd) / (bookEnd - roofEnd)),
+      );
+      const easedBook =
+        bookProgress * bookProgress * (3 - 2 * bookProgress);
+      const bookOpacity = Math.min(1, bookProgress * 1.8);
+
+      section.style.setProperty(
+        "--room-position",
+        `${roofProgress * 100}%`,
+      );
+      section.style.setProperty(
+        "--book-offset-y",
+        `${(-0.32 + easedBook * 0.42) * window.innerHeight}px`,
+      );
+      section.style.setProperty("--book-opacity", String(bookOpacity));
+      section.style.setProperty(
+        "--fallback-book-scale",
+        String(0.28 + easedBook * 0.72),
+      );
+
+      // Do not leave an invisible click target over the roof/room phase.
+      // Once the book has settled, it becomes fully interactive until the
+      // handoff coordinator takes ownership for the shelf transition.
+      host!.style.pointerEvents = bookProgress >= 0.98 ? "auto" : "none";
+      controllerRef.current?.setScrollProgress(bookProgress);
     }
     function syncVisibility() {
       const visible =
