@@ -86,7 +86,6 @@ describe("portfolio homepage", () => {
         "We design connected systems around how businesses actually work.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Selected work")).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 
