@@ -54,7 +54,7 @@ describe("portfolio homepage", () => {
 
     const heroHeading = screen.getByRole("heading", {
       level: 1,
-      name: /Where Ideas Ignite/,
+      name: /Where ideas ignite/i,
     });
     const hero = heroHeading.closest("section")!;
 
@@ -82,8 +82,11 @@ describe("portfolio homepage", () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("link", { name: "Explore our work" }),
-    ).toHaveAttribute("href", "#work");
+      screen.getByText(
+        "We design connected systems around how businesses actually work.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Selected work")).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
 

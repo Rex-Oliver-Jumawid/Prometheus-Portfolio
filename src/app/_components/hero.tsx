@@ -40,6 +40,26 @@ export function Hero() {
               draggable={false}
             />
           </div>
+
+          <div className={styles.editorialShade} aria-hidden="true" />
+
+          <div className={styles.editorial}>
+            <p className={styles.editorialKicker}>Prometheus</p>
+            <h1 className={styles.editorialTitle}>Where ideas ignite.</h1>
+            <p className={styles.editorialBody}>
+              We design connected systems around how businesses actually work.
+            </p>
+            <p className={styles.editorialMeta}>
+              <span>Selected work</span>
+              <span className={styles.editorialDot} aria-hidden="true" />
+              <span>2026</span>
+            </p>
+          </div>
+
+          <div className={styles.scrollCue} aria-hidden="true">
+            <span>Descend into the work</span>
+            <span className={styles.scrollRule} />
+          </div>
         </div>
       </section>
     </>
