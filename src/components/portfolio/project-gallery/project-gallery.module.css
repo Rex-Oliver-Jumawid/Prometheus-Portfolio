@@ -103,7 +103,7 @@
   background-image: url("/assets/project-gallery/reading-room-roof-window1.png");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
 }
 .canvas {
   z-index: 1;
@@ -476,6 +476,63 @@
   line-height: 1.55;
   margin: 18px 0;
 }
+
+.pageMedia {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  margin-top: 24px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--brand-night) 16%, transparent);
+}
+
+.pageMedia img {
+  object-fit: cover;
+  object-position: left top;
+}
+
+.pageAction {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 36px;
+  padding: 0 20px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  color: var(--ink);
+  font-family: var(--edition-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
+}
+
+.pageAction span:last-child {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 220ms ease;
+}
+
+.pageAction:is(:hover, :focus-visible) {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-2px);
+}
+
+.pageAction:is(:hover, :focus-visible) span:last-child {
+  transform: translate(2px, -2px);
+}
 .pageArrow {
   position: absolute;
   z-index: 5;
@@ -681,6 +738,16 @@
     font-size: 14px;
     line-height: 1.5;
   }
+  .pageMedia {
+    margin-top: 14px;
+    aspect-ratio: 4 / 3;
+  }
+  .pageAction {
+    min-height: 46px;
+    margin-top: 18px;
+    padding-inline: 12px;
+    font-size: 10px;
+  }
   .pageArrow {
     width: 40px;
     height: 44px;
@@ -713,15 +780,10 @@
 }
 
 
-/* Homepage sequence:
-   show the complete room and settled book immediately, then hold the
-   composition for one viewport before the existing shelf handoff begins. */
+/* Homepage: hold the Furniture Odyssey showcase for one extra viewport of
+   scroll before the library is allowed to enter. */
 .gallery:not([data-standalone="true"]) {
   --gallery-hold-distance: 100svh;
-  --room-position: 50%;
-  --book-offset-y: 0px;
-  --book-opacity: 1;
-  --fallback-book-scale: 1;
   z-index: var(--viewport-order, 2);
   height: calc(100svh + var(--gallery-hold-distance));
   min-height: calc(100svh + var(--gallery-hold-distance));
@@ -742,16 +804,10 @@
 .gallery:not([data-standalone="true"]) .fallback {
   inset: 0;
   height: 100%;
-  opacity: var(--book-opacity, 0);
-  transform: translateY(var(--book-offset-y, -32vh));
-  will-change: opacity, transform;
 }
 
 .gallery:not([data-standalone="true"]) .bookPoster {
   height: 88%;
-  transform: translate(-50%, -50%) rotate(-4deg)
-    scale(var(--fallback-book-scale, 0.28));
-  transform-origin: center;
   filter:
     drop-shadow(0 0 24px rgb(246 201 94 / 28%))
     drop-shadow(0 18px 36px rgb(0 0 0 / 42%));
