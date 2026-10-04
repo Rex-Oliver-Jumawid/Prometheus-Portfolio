@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { HANDOFF } from "../../src/lib/three/book-handoff";
 
 async function scroll(page: Page, y: number) {
   await page.evaluate(
@@ -26,7 +27,7 @@ async function positions(page: Page) {
         ),
     )
     .toBe(true);
-  return page.evaluate(() => {
+  return page.evaluate((startDelay) => {
     const work = document.getElementById("work")!;
     const library = document.getElementById("library")!;
     const from = Number(work.dataset.viewportStart),
@@ -34,10 +35,23 @@ async function positions(page: Page) {
     return {
       // Native scrolling rounds subpixels; stay on the source side of this boundary.
       work: Math.floor(from),
+      departure: from + innerHeight * startDelay,
       library: to,
       middle: (from + to) / 2 + 0.12 * innerHeight,
       end: to + innerHeight * 0.08,
     };
+  }, HANDOFF.startDelay);
+}
+async function prepareShelf(page: Page, work: number, library: number) {
+  // The gallery holds for an extra viewport. The shelf is deliberately outside
+  // its lazy-load margin at work's start, so visit it before testing ready-state travel.
+  await scroll(page, work);
+  await expect(page.locator("#work [data-visible=true]")).toBeVisible({
+    timeout: 60_000,
+  });
+  await scroll(page, library);
+  await expect(page.locator("#library [data-book-visible]")).toHaveCount(1, {
+    timeout: 60_000,
   });
 }
 async function ownership(page: Page, owner: "source" | "handoff" | "shelf") {
@@ -70,6 +84,7 @@ test("one live 3D book travels and reverses only inside the work/library corrido
     "true",
   );
   const p = await positions(page);
+  await prepareShelf(page, p.work, p.library);
   await scroll(page, p.work);
   await expect(page.locator("#work [data-visible=true]")).toBeVisible({
     timeout: 30_000,
@@ -229,6 +244,7 @@ test("a delayed shelf holds the live book and recovers without another scroll", 
 test("reduced motion transfers ownership without a traveling canvas", async ({
   page,
 }) => {
+  test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator("main")).toHaveAttribute(
@@ -236,6 +252,7 @@ test("reduced motion transfers ownership without a traveling canvas", async ({
     "true",
   );
   const p = await positions(page);
+  await prepareShelf(page, p.work, p.library);
   await scroll(page, p.work);
   await expect(page.locator("#library [data-book-visible]")).toHaveCount(1, {
     timeout: 30_000,
@@ -285,6 +302,7 @@ async function changedPixels(page: Page, before: Buffer, after: Buffer) {
 test("rendered departure and docking remain continuous in both directions", async ({
   page,
 }, info) => {
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await expect(page.locator("main")).toHaveAttribute(
@@ -292,19 +310,21 @@ test("rendered departure and docking remain continuous in both directions", asyn
     "true",
   );
   const p = await positions(page);
+  await prepareShelf(page, p.work, p.library);
   await scroll(page, p.work);
   await expect(page.locator("#library [data-book-visible]")).toHaveCount(1, {
     timeout: 30_000,
   });
   await ownership(page, "source");
+  await scroll(page, p.departure);
   const sourceClip = (await page.locator("#work canvas").boundingBox())!;
   const source = await page.screenshot({ clip: sourceClip });
-  await scroll(page, p.work + 1);
+  await scroll(page, p.departure + 1);
   await ownership(page, "handoff");
   const departure = await page.screenshot({ clip: sourceClip });
   expect(await changedPixels(page, source, departure)).toBeLessThan(0.01);
   // Previously the book stayed behind the incoming shelf until much later.
-  await scroll(page, p.work + 60);
+  await scroll(page, p.departure + 60);
   await ownership(page, "handoff");
   await info.attach("early-lift", {
     body: await page.screenshot(),

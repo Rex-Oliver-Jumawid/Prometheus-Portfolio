@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("the static gallery background blends into the hero and becomes solid when pinned", async ({
+test("the library stays concealed until clouds can cover the scene exchange", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -11,30 +11,36 @@ test("the static gallery background blends into the hero and becomes solid when 
     "data-sticky-ready",
     "true",
   );
-  await expect(gallery).toHaveCSS(
+  await expect(gallery.locator(":scope > div > div").first()).toHaveCSS(
     "background-image",
-    /rgba\(247, 211, 126, 0.42\)/,
+    /library\.png/,
   );
   await expect(gallery.locator("video")).toHaveCount(0);
   const workStart = Number(await gallery.getAttribute("data-viewport-start"));
+  const clouds = page.locator("[data-cloud-transition]");
+  await expect(clouds).toHaveAttribute("data-scroll-start", /\d/);
+  const start = Number(await clouds.getAttribute("data-scroll-start"));
+  const distance =
+    (Number(await clouds.getAttribute("data-scroll-end")) - start) / 0.75;
   await page.evaluate(
-    (start) => window.scrollTo({ top: start - 90, behavior: "instant" }),
-    workStart,
+    (top) => window.scrollTo({ top, behavior: "instant" }),
+    start + distance * 0.4,
   );
-  await expect
-    .poll(() =>
-      gallery.evaluate((element) =>
-        Number.parseFloat(
-          getComputedStyle(element).getPropertyValue("--gallery-seam"),
-        ),
-      ),
-    )
-    .toBeCloseTo(56, 0);
+  await expect(gallery).toHaveCSS("visibility", "hidden");
+  await expect(page.locator("[data-hero-stage]")).toHaveCSS("opacity", "1");
+  await page.evaluate(
+    (top) => window.scrollTo({ top, behavior: "instant" }),
+    start + distance * 0.6,
+  );
+  await expect(gallery).toHaveAttribute("data-cloud-reveal", "true");
+  await expect(gallery).toHaveCSS("visibility", "visible");
+  await expect(clouds).toHaveAttribute("data-active", "true");
   await page.evaluate(
     (start) => window.scrollTo({ top: start, behavior: "instant" }),
     workStart,
   );
-  await expect(gallery).toHaveCSS("--gallery-seam", "0px");
+  await expect(clouds).not.toHaveAttribute("data-active");
+  await expect(gallery).toHaveCSS("visibility", "visible");
 });
 
 for (const reducedMotion of ["reduce", "no-preference"] as const) {
@@ -59,18 +65,16 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
     const hero = page.locator("#top [data-hero-stage]");
     const gallery = page.locator("#work");
     await expect.poll(async () => (await hero.boundingBox())!.y).toBe(0);
+    if (reducedMotion === "no-preference") {
+      await expect(page.locator("#top")).toHaveAttribute(
+        "data-cloud-handoff",
+        "true",
+      );
+      await expect.poll(async () => (await gallery.boundingBox())!.y).toBe(0);
+    }
     const galleryTop = (await gallery.boundingBox())!.y;
-    await expect
-      .poll(() =>
-        gallery.evaluate((element) =>
-          Number.parseFloat(
-            getComputedStyle(element).getPropertyValue("--gallery-seam"),
-          ),
-        ),
-      )
-      .toBeCloseTo(252, 1);
-    await expect(gallery).not.toHaveCSS("mask-image", "none");
-    // Activate the partially visible book without scrolling it into view first.
+    await expect(gallery).toHaveCSS("mask-image", "none");
+    // Open without moving the scene, including while cloud cover owns the handoff.
     await page
       .getByRole("button", { name: "Read Furniture Odyssey" })
       .evaluate((element) => (element as HTMLElement).click());
@@ -133,8 +137,13 @@ for (const [width, height] of [
       );
       // The short footer reaches the document end before its top can pin.
       const expectedTop = Math.max(panel.top, panel.start - maximumScroll);
+      // Work's flow section supplies the hold distance; its inner viewport pins.
+      const viewport =
+        panel.id === "work"
+          ? page.locator("#work > div").first()
+          : page.locator(`#${panel.id}`);
       await expect
-        .poll(async () => (await page.locator(`#${panel.id}`).boundingBox())!.y)
+        .poll(async () => (await viewport.boundingBox())!.y)
         .toBeCloseTo(expectedTop, 0);
       expect(
         await page.evaluate(
@@ -147,7 +156,11 @@ for (const [width, height] of [
     }
     await page.getByRole("link", { name: "Story", exact: true }).click();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await page.getByRole("link", { name: "Explore our work" }).click();
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await page
+      .getByRole("dialog", { name: "Prometheus" })
+      .getByRole("link", { name: "Work", exact: true })
+      .click();
     await expect(page).toHaveURL(/#work$/);
     await expect(page.locator("#work")).toBeInViewport();
   });

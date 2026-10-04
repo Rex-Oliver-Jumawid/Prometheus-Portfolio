@@ -42,22 +42,10 @@ for (const viewport of [
   });
 }
 
-test("the editorial action supports hover, focus, and reduced motion", async ({
+test("the fixed brand supports hover, focus, and reduced motion", async ({
   page,
 }) => {
   await page.goto("/");
-  const action = page.getByRole("link", { name: "Explore our work" });
-  const arrow = action.locator("span");
-  await action.hover();
-  await expect
-    .poll(() =>
-      arrow.evaluate(
-        (element) => new DOMMatrix(getComputedStyle(element).transform).e,
-      ),
-    )
-    .toBe(5);
-  await action.focus();
-  await expect(action).toHaveCSS("outline-style", "solid");
   const brand = page.locator('a[aria-label="Prometheus home"]');
   const ribbon = brand.locator("span").first();
   const fillScale = () =>
@@ -71,9 +59,11 @@ test("the editorial action supports hover, focus, and reduced motion", async ({
   await expect.poll(fillScale).toBe(1);
   expect(await ribbon.boundingBox()).toEqual(original);
   await expect(brand).toHaveText("");
+  await brand.focus();
+  await expect(brand).toHaveCSS("outline-style", "solid");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(action).toHaveCSS("transition-duration", "0s");
-  await expect(arrow).toHaveCSS("transition-duration", "0s");
+  await expect(brand).toHaveCSS("transition-duration", "0s");
+  await expect(ribbon).toHaveCSS("transition-duration", "0s");
 });
 
 test("preserves menu Escape handling and section navigation", async ({
@@ -123,29 +113,31 @@ for (const [width, height] of [
       "object-fit",
       "cover",
     );
-    await expect(hero.locator('img[height="1595"]')).toHaveAttribute(
+    await expect(hero.locator('img[height="1254"]')).toHaveAttribute(
       "src",
-      /figure-full\.webp/,
+      /Prometheus.*Flight.*Flame/,
     );
     const heading = hero.getByRole("heading", { level: 1 });
-    const action = hero.getByRole("link", { name: "Explore our work" });
-    for (const element of [heading, hero.locator("p").first(), action]) {
+    for (const element of [
+      heading,
+      hero.locator("p").first(),
+      hero.locator("p").last(),
+    ]) {
       await expect(element).toBeInViewport({ ratio: 1 });
     }
-    const lines = await heading.evaluate((element) =>
-      Array.from(element.children).map((child) => {
-        const range = document.createRange();
-        range.selectNodeContents(child);
-        const rect = range.getBoundingClientRect();
+    const lines = await heading.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return Array.from(range.getClientRects()).map((rect) => {
         return {
           left: rect.left,
           right: rect.right,
           top: rect.top,
           bottom: rect.bottom,
         };
-      }),
-    );
-    expect(lines).toHaveLength(2);
+      });
+    });
+    expect(lines.length).toBeGreaterThanOrEqual(2);
     for (const line of lines) {
       expect(line.left).toBeGreaterThanOrEqual(0);
       expect(line.right).toBeLessThanOrEqual(width);
@@ -282,7 +274,10 @@ for (const [width, height] of [
     await expect(
       page.getByRole("button", { name: "Open navigation" }),
     ).toBeFocused();
-    await action.click();
+    await trigger.click();
+    const workLink = dialog.getByRole("link", { name: "Work", exact: true });
+    await workLink.focus();
+    await workLink.press("Enter");
     await expect(page).toHaveURL(/#work$/);
     await expect(page.locator("#work")).toBeInViewport();
   });

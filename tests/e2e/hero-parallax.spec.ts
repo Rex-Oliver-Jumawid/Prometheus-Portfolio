@@ -57,11 +57,14 @@ for (const [width, height] of [
         .poll(async () => (await figure.boundingBox())!.y)
         .toBeCloseTo(expectedY, 0);
 
-      if (await gallery.getAttribute("data-cloud-reveal")) {
+      if (await hero.getAttribute("data-cloud-handoff")) {
         // The destination is already aligned beneath the opaque hero; its
         // flow edge must never sweep upward across the painting.
         expect((await gallery.boundingBox())!.y).toBeCloseTo(0, 0);
         await expect(stage).toHaveCSS("opacity", "1");
+        // Alignment is separate from exposure: the library stays hidden until
+        // the cloud bank covers the viewport, even though it is already at y=0.
+        await expect(gallery).toHaveCSS("visibility", "hidden");
       } else {
         expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
           height - 1,
@@ -134,7 +137,9 @@ test("wheel scrolling keeps the crop and scene overlap through the cloud slowdow
       }),
     )
     .toBeLessThan(0.01);
-  await expect(gallery).toHaveAttribute("data-cloud-reveal", "true");
+  await expect(hero).toHaveAttribute("data-cloud-handoff", "true");
+  await expect(gallery).not.toHaveAttribute("data-cloud-reveal");
+  await expect(gallery).toHaveCSS("visibility", "hidden");
   await expect
     .poll(async () => (await gallery.boundingBox())!.y)
     .toBeCloseTo(0, 0);

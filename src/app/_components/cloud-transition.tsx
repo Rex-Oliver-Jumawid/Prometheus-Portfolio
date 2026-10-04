@@ -76,12 +76,17 @@ export function CloudTransition() {
       }
 
       layer!.dataset.active = "true";
-      field.draw(progress);
+      const coverage = field.draw(progress);
 
       // Both scenes occupy the same viewport for the entire handoff. Waiting
       // to lift the gallery until the dissolve exposed its moving flow edge.
       hero!.dataset.cloudHandoff = "true";
-      if (gallery) gallery.dataset.cloudReveal = "true";
+      if (gallery) {
+        // Align underneath early, but expose it only when every cloud column
+        // can hide the exchange. This also restores the hero on reverse scroll.
+        if (coverage === 1) gallery.dataset.cloudReveal = "true";
+        else delete gallery.dataset.cloudReveal;
+      }
       gallery?.style.setProperty(
         "--gallery-cloud-offset",
         `${Math.max(0, destination - window.scrollY)}px`,
@@ -89,7 +94,8 @@ export function CloudTransition() {
       // Keep the hero intact until the warm cloud field has fully built up.
       // Dissolve the scene slowly while the clouds remain dense, so the
       // library swap happens behind the atmosphere instead of becoming visible.
-      const dissolve = Math.min(1, Math.max(0, (progress - 0.50) / 0.20));
+      const dissolve =
+        coverage === 1 ? Math.min(1, Math.max(0, (progress - 0.52) / 0.18)) : 0;
       const eased = dissolve * dissolve * (3 - 2 * dissolve);
       hero!.style.setProperty("--hero-cloud-opacity", String(1 - eased));
     }

@@ -26,6 +26,9 @@ const disconnect = vi.fn();
 
 beforeEach(() => {
   createField.mockResolvedValue(field);
+  field.draw.mockImplementation((progress: number) =>
+    progress >= 0.48 ? 1 : 0.7,
+  );
   frames = new Map();
   observers = [];
   preference = {
@@ -194,27 +197,27 @@ it("holds the gallery still beneath the clouds without automatically scrolling",
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
     "600px",
   );
-  expect(gallery.dataset.cloudReveal).toBe("true");
+  expect(gallery.dataset.cloudReveal).toBeUndefined();
   expect(hero.dataset.cloudHandoff).toBe("true");
   expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
   expect(window.scrollY).toBe(440);
   await scroll(118.4 + 921.6 * 0.5);
   expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
-  await scroll(118.4 + 921.6 * 0.6);
+  await scroll(118.4 + 921.6 * 0.61);
   expect(
     Number(hero.style.getPropertyValue("--hero-cloud-opacity")),
   ).toBeCloseTo(0.5);
   await scroll(440);
   expect(layer.dataset.active).toBe("true");
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((440 - 118.4) / 921.6);
-  await scroll(760);
+  await scroll(780);
   expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("0");
   expect(gallery.dataset.cloudReveal).toBe("true");
   expect(document.getElementById("top")?.dataset.cloudHandoff).toBe("true");
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
-    "280px",
+    "260px",
   );
-  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((760 - 118.4) / 921.6);
+  expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((780 - 118.4) / 921.6);
   await scroll(880);
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
     "160px",
@@ -235,6 +238,24 @@ it("holds the gallery still beneath the clouds without automatically scrolling",
   await scroll(0);
   await scroll(400);
   expect(window.scrollTo).not.toHaveBeenCalled();
+});
+
+it("keeps both gallery exposure and hero dissolve gated by cloud coverage", async () => {
+  const { hero, gallery } = mount();
+  field.draw.mockReturnValue(0.95);
+  await scroll(118.4 + 921.6 * 0.6);
+  expect(gallery.dataset.cloudReveal).toBeUndefined();
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
+  field.draw.mockReturnValue(1);
+  await scroll(118.4 + 921.6 * 0.61);
+  expect(gallery.dataset.cloudReveal).toBe("true");
+  expect(
+    Number(hero.style.getPropertyValue("--hero-cloud-opacity")),
+  ).toBeCloseTo(0.5);
+  field.draw.mockReturnValue(0.95);
+  await scroll(118.4 + 921.6 * 0.4);
+  expect(gallery.dataset.cloudReveal).toBeUndefined();
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
 });
 
 it("reverses the cloud journey with upward scrolling", async () => {

@@ -29,6 +29,10 @@
 }
 
 .hero[data-cloud-handoff="true"] .stage {
+  /* Keep the physical bottom edge outside the handoff, including native touch
+     scrolling and reverse scroll before the section's sticky box catches up. */
+  position: fixed;
+  inset: 0;
   opacity: var(--hero-cloud-opacity, 1);
 }
 

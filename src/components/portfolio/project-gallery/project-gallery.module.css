@@ -22,6 +22,11 @@
   translate: 0 calc(-1 * var(--gallery-cloud-offset, 0px));
 }
 
+:global(.viewport-stack[data-sticky-ready="true"]:has(> [data-cloud-handoff="true"]))
+  > .gallery:not([data-cloud-reveal="true"]) {
+  visibility: hidden;
+}
+
 :global(.viewport-stack[data-sticky-ready="true"])
   > .gallery
   > .galleryViewport {

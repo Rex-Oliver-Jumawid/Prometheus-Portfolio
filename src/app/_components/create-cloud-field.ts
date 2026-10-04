@@ -1,5 +1,6 @@
 export type CloudField = {
-  draw: (progress: number) => void;
+  // Conservative opaque viewport coverage of the rising bank, before its exit fade.
+  draw: (progress: number) => number;
   resize: (width: number, height: number) => void;
   dispose: () => void;
 };
@@ -14,6 +15,7 @@ const fragmentSource = `
   uniform sampler2D uNoise;
   uniform vec2 uResolution;
   uniform float uProgress;
+  uniform float uLift;
   uniform vec3 uGold;
   uniform vec3 uDeepGold;
 
@@ -70,12 +72,15 @@ const fragmentSource = `
     // One atmosphere, one dissolve. Never clear the clouds before the scenes
     // have exchanged places underneath them.
     float visibility = smoothstep(0.0, 0.025, uProgress)
-      * (1.0 - smoothstep(0.70, 0.94, uProgress));
+      * (1.0 - smoothstep(0.80, 1.0, uProgress));
     if (visibility <= 0.0) {
       gl_FragColor = vec4(0.0);
       return;
     }
     vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
+    // Carry the existing billows upward together instead of stretching a
+    // screen-space fog mask over the hero. Lighting and warm colors stay intact.
+    uv.y -= uLift;
 
     // Screen-space density guarantees a continuous bank even where perspective
     // rays miss the 3D volumes. Coherent noise (not raw texture texels) creates
@@ -269,6 +274,11 @@ export function createCloudField(
   );
   const resolution = gl.getUniformLocation(program, "uResolution");
   const progress = gl.getUniformLocation(program, "uProgress");
+  const lift = gl.getUniformLocation(program, "uLift");
+  const smooth = (from: number, to: number, value: number) => {
+    const t = Math.max(0, Math.min(1, (value - from) / (to - from)));
+    return t * t * (3 - 2 * t);
+  };
 
   return {
     resize(width, height) {
@@ -284,9 +294,17 @@ export function createCloudField(
       gl.uniform2f(resolution, canvas.width, canvas.height);
     },
     draw(value) {
-      if (gl.isContextLost()) return;
-      gl.uniform1f(progress, Math.max(0, Math.min(1, value)));
+      if (gl.isContextLost()) return 0;
+      const position = Math.max(0, Math.min(1, value));
+      const bankLift = smooth(0.28, 0.52, position) * 1.1;
+      gl.uniform1f(progress, position);
+      gl.uniform1f(lift, bankLift);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      // Shader noise is in [0, 1]. Account for the deepest silhouette trough
+      // (0.275), erosion (0.11), and alpha ramp (0.24), including both edges.
+      // The controller may exchange scenes only once this lower bound is 1.
+      const bankTop = -0.58 + smooth(0.03, 0.42, position) * 1.2 + bankLift;
+      return Math.max(0, Math.min(1, (bankTop - 0.625 + 1) / 2));
     },
     dispose,
   };
