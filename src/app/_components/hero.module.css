@@ -103,23 +103,23 @@
 .editorialKicker {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 0 0 18px;
-  color: rgb(255 244 230 / 68%);
-  font-size: clamp(0.56rem, 0.72vw, 0.69rem);
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  gap: 18px;
+  margin: 0 0 22px;
+  color: rgb(255 244 230 / 88%);
+  font-family: var(--edition-serif);
+  font-size: clamp(1.5rem, 2.4vw, 2.75rem);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
 }
 
 .editorialKicker::before {
-  width: 36px;
+  width: 54px;
   height: 1px;
   flex: 0 0 auto;
   background: currentColor;
   content: "";
-  opacity: 0.78;
+  opacity: 0.68;
 }
 
 .editorialTitle {
@@ -143,61 +143,7 @@
   text-wrap: pretty;
 }
 
-.editorialMeta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 30px 0 0;
-  color: rgb(255 244 230 / 66%);
-  font-size: clamp(0.5rem, 0.65vw, 0.625rem);
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
 
-.editorialDot {
-  width: 3px;
-  height: 3px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.scrollCue {
-  position: absolute;
-  z-index: 3;
-  left: 8.5%;
-  bottom: 5%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: rgb(255 244 230 / 66%);
-  font-size: 0.5625rem;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 0.19em;
-  text-shadow: 0 1px 8px rgb(18 11 7 / 64%);
-  text-transform: uppercase;
-}
-
-.scrollRule {
-  position: relative;
-  width: 48px;
-  height: 1px;
-  overflow: hidden;
-  background: rgb(255 244 230 / 42%);
-}
-
-.scrollRule::after {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 22px;
-  height: 1px;
-  background: rgb(255 244 230 / 92%);
-  content: "";
-  animation: heroScrollSweep 2.2s ease-in-out infinite;
-}
 
 .header,
 .navPanel {
@@ -1115,20 +1061,6 @@
   }
 }
 
-@keyframes heroScrollSweep {
-  0% {
-    opacity: 0;
-    transform: translateX(-24px);
-  }
-  25%,
-  75% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(54px);
-  }
-}
 
 @media (max-width: 1000px) {
   .editorial {
@@ -1140,9 +1072,6 @@
     font-size: clamp(2.75rem, 7vw, 4.75rem);
   }
 
-  .scrollCue {
-    left: 7%;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1153,13 +1082,13 @@
   }
 
   .editorialKicker {
-    gap: 9px;
-    margin-bottom: 14px;
-    font-size: 0.5rem;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: clamp(1.25rem, 6.5vw, 2rem);
   }
 
   .editorialKicker::before {
-    width: 24px;
+    width: 34px;
   }
 
   .editorialTitle {
@@ -1171,22 +1100,6 @@
     font-size: 0.875rem;
   }
 
-  .editorialMeta {
-    margin-top: 22px;
-    gap: 7px;
-    font-size: 0.45rem;
-  }
-
-  .scrollCue {
-    left: 7%;
-    bottom: 28px;
-    gap: 9px;
-    font-size: 0.48rem;
-  }
-
-  .scrollRule {
-    width: 34px;
-  }
 }
 
 @media (max-height: 500px) and (min-width: 560px) {
@@ -1208,11 +1121,4 @@
     font-size: 0.75rem;
   }
 
-  .editorialMeta {
-    margin-top: 14px;
-  }
-
-  .scrollCue {
-    bottom: 18px;
-  }
 }
