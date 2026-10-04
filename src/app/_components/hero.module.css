@@ -57,7 +57,7 @@
 
 .figure {
   position: absolute;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
   right: -4%;
   top: var(--figure-start-y);
@@ -89,7 +89,7 @@
 
 .editorial {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   top: 47%;
   left: 8.5%;
   width: min(340px, 31%);
@@ -166,7 +166,7 @@
 
 .scrollCue {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   left: 8.5%;
   bottom: 5%;
   display: flex;
