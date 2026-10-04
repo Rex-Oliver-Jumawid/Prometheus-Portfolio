@@ -67,9 +67,8 @@ const fragmentSource = `
   }
 
   void main() {
-    // Ease the first scroll into the cloud bank instead of snapping to full
-    // density almost immediately.
-    float visibility = smoothstep(0.015, 0.16, uProgress)
+    // Make the bank clearly visible as soon as the transition begins.
+    float visibility = smoothstep(0.0, 0.035, uProgress)
       * (1.0 - smoothstep(0.5, 0.75, uProgress));
     if (visibility <= 0.0) {
       gl_FragColor = vec4(0.0);
@@ -80,13 +79,13 @@ const fragmentSource = `
     // At first, keep the clouds low and subtle like a shallow horizon-wide
     // bank. As scrolling continues, release the mask so the viewer dives into
     // the full volume.
-    float lowBand = 1.0 - smoothstep(-0.72, 0.18, uv.y);
-    float expansion = smoothstep(0.10, 0.30, uProgress);
+    float lowBand = 1.0 - smoothstep(-0.82, 0.38, uv.y);
+    float expansion = smoothstep(0.07, 0.26, uProgress);
     float coverage = mix(lowBand, 1.0, expansion);
     float entryStrength = mix(
-      0.34,
+      0.82,
       1.0,
-      smoothstep(0.07, 0.28, uProgress)
+      smoothstep(0.02, 0.16, uProgress)
     );
 
     // Original fly-through from 0609a4a; scrolling controls its pace.
