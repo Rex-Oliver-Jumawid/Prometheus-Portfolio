@@ -133,15 +133,6 @@ export function ProjectLibraryClient() {
 
   const isSelected = selected === book.id;
 
-  function toggleBook() {
-    const bounds = controllerRef.current?.getBookBounds(book.id) ?? null;
-    window.dispatchEvent(
-      new CustomEvent("prometheus:open-furniture-odyssey", {
-        detail: { source: "library-control", bounds },
-      }),
-    );
-  }
-
   return (
     <div className={styles.experience}>
       <div
@@ -165,24 +156,12 @@ export function ProjectLibraryClient() {
           </div>
         )}
 
-        <button
-          className={styles.bookControl}
-          data-active={isSelected}
-          data-hovered={hovered === book.id}
-          type="button"
-          disabled={status !== "ready" || !docked}
-          aria-pressed={isSelected}
-          onClick={toggleBook}
-          onPointerEnter={() => controllerRef.current?.setHovered(book.id)}
-          onPointerLeave={() => controllerRef.current?.setHovered(null)}
-          onFocus={() => controllerRef.current?.setHovered(book.id)}
-          onBlur={() => controllerRef.current?.setHovered(null)}
-        >
-          <span>{book.category}</span>
-          <strong>
-            {isSelected ? "Return Furniture Odyssey to shelf" : book.title}
-          </strong>
-        </button>
+        {status === "ready" && docked && hovered === book.id ? (
+          <div className={styles.bookControl} aria-hidden="true">
+            <span>{book.category}</span>
+            <strong>{book.title}</strong>
+          </div>
+        ) : null}
 
         <p id="library-instructions" className={styles.srOnly}>
           Select Furniture Odyssey to open the interactive book reader.
