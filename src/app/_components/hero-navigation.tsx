@@ -8,7 +8,7 @@ import { appConfig } from "@/config/app";
 import styles from "./hero.module.css";
 
 const links = [
-  { href: "#top", label: "Story" },
+  { href: "#top", label: "Figure" },
   { href: "#work", label: "Work" },
   { href: "#library", label: "Library" },
   { href: "#contact", label: "Contact" },
