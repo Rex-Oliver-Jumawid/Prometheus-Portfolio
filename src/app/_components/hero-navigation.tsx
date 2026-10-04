@@ -68,21 +68,23 @@ export function HeroNavigation() {
         </button>
       </header>
 
-      <div
-        className={styles.navGlass}
-        data-open={open}
-        data-navigation-glass
-        aria-hidden="true"
-      >
+      {open ? (
         <div
-          className={styles.navGlassBackdrop}
-          data-navigation-glass-backdrop
+          className={styles.navGlass}
+          data-open="true"
+          data-navigation-glass
+          aria-hidden="true"
         >
-          <span className={styles.navGlassSky} />
-          <span className={styles.navGlassFigure} />
+          <div
+            className={styles.navGlassBackdrop}
+            data-navigation-glass-backdrop
+          >
+            <span className={styles.navGlassSky} />
+            <span className={styles.navGlassFigure} />
+          </div>
+          <span className={styles.navGlassTint} />
         </div>
-        <span className={styles.navGlassTint} />
-      </div>
+      ) : null}
 
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.scrim} />
