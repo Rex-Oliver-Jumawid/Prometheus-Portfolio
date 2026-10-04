@@ -34,7 +34,7 @@ afterEach(() => {
   mocks.render.mockReset();
 });
 
-it("holds the source book through the room pan and table arrival", () => {
+it("holds the source book before beginning a reversible handoff", () => {
   const work = 900;
   const library = 2700;
   const viewport = 900;
@@ -49,12 +49,12 @@ it("holds the source book through the room pan and table arrival", () => {
   ).toBeGreaterThan(0);
   expect(handoffProgress(finish, work, library, viewport)).toBe(1);
 
-  const down = [2600, 2900, 3200, 3500].map((y) =>
+  const down = [1600, 1900, 2200, 2500].map((y) =>
     handoffProgress(y, work, library, viewport),
   );
   expect([...down].sort()).toEqual(down);
   expect(
-    [3500, 3200, 2900, 2600].map((y) =>
+    [2500, 2200, 1900, 1600].map((y) =>
       handoffProgress(y, work, library, viewport),
     ),
   ).toEqual(down.reverse());
