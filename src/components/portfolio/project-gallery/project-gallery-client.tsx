@@ -29,6 +29,27 @@ function BookPageContent({ page }: { page?: BookPage }) {
       {page.paragraphs.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
+      {page.image ? (
+        <div className={styles.pageMedia}>
+          <Image
+            src={page.image.src}
+            alt={page.image.alt}
+            fill
+            sizes="(max-width: 600px) 42vw, 520px"
+          />
+        </div>
+      ) : null}
+      {page.action ? (
+        <a
+          className={styles.pageAction}
+          href={page.action.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>{page.action.label}</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      ) : null}
     </>
   ) : null;
 }
@@ -192,23 +213,10 @@ export function ProjectGalleryClient({
     let alive = true;
 
     function syncScroll() {
-      const section = (host!.closest("section") ?? host!) as HTMLElement;
-
-      if (section.dataset.standalone === "true") {
-        controllerRef.current?.setScrollProgress(1);
-        host!.style.pointerEvents = "";
-        return;
-      }
-
-      // The second viewport is already the final room composition.
-      // Keep the full room fitted to the viewport and present the book
-      // immediately instead of requiring a separate room-pan/arrival scroll.
-      section.style.setProperty("--room-position", "50%");
-      section.style.setProperty("--book-offset-y", "0px");
-      section.style.setProperty("--book-opacity", "1");
-      section.style.setProperty("--fallback-book-scale", "1");
-      host!.style.pointerEvents = "auto";
-      controllerRef.current?.setScrollProgress(1);
+      const section = host!.closest("section") ?? host!;
+      const top = section.getBoundingClientRect().top;
+      const progress = Math.min(1, Math.max(0, 1 - top / window.innerHeight));
+      controllerRef.current?.setScrollProgress(progress);
     }
     function syncVisibility() {
       const visible =
