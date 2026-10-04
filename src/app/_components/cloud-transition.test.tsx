@@ -126,10 +126,10 @@ it("uses the existing scroll distance, reverses the dive, and keeps character tr
   );
   flush();
   await scroll(12);
-  expect(hero.style.getPropertyValue("--hero-travel")).toBe("12px");
+  expect(Number(hero.style.getPropertyValue("--hero-progress"))).toBeCloseTo(0.05);
   expect(layer.dataset.active).toBeUndefined();
   await scroll(118.4 + 921.6 * 0.3);
-  expect(hero.style.getPropertyValue("--hero-travel")).toBe("240px");
+  expect(Number(hero.style.getPropertyValue("--hero-progress"))).toBeCloseTo(1);
   expect(layer.dataset.active).toBe("true");
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo(0.3);
   await scroll(1040);
