@@ -19,7 +19,7 @@
   align-items: flex-start;
   justify-content: flex-end;
   gap: 24px;
-  padding: 28px 4.5%;
+  padding: 28px 2.25%;
   pointer-events: none;
 }
 
@@ -212,7 +212,7 @@
   }
 
   .header {
-    padding: 20px 24px;
+    padding: 20px 16px;
   }
 
   .heading h2,
