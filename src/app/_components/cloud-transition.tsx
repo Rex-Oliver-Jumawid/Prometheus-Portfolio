@@ -86,9 +86,10 @@ export function CloudTransition() {
         "--gallery-cloud-offset",
         `${Math.max(0, destination - window.scrollY)}px`,
       );
-      // The volumetric crowns cover the top edge by 0.43. Exchange scenes
-      // only inside that opaque interval, before cloud erosion starts at 0.50.
-      const dissolve = Math.min(1, Math.max(0, (progress - 0.43) / 0.07));
+      // Keep the hero intact until the warm cloud field has fully built up.
+      // Dissolve the scene slowly while the clouds remain dense, so the
+      // library swap happens behind the atmosphere instead of becoming visible.
+      const dissolve = Math.min(1, Math.max(0, (progress - 0.50) / 0.20));
       const eased = dissolve * dissolve * (3 - 2 * dissolve);
       hero!.style.setProperty("--hero-cloud-opacity", String(1 - eased));
     }
