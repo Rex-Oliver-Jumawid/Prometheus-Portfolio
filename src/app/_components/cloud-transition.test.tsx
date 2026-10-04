@@ -191,11 +191,13 @@ it("holds the gallery still beneath the clouds without automatically scrolling",
   await scroll(440);
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(gallery.dataset.cloudReveal).toBeUndefined();
+  expect(document.getElementById("top")?.dataset.cloudHandoff).toBeUndefined();
   expect(window.scrollY).toBe(440);
   expect(layer.dataset.active).toBe("true");
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((440 - 118.4) / 921.6);
   await scroll(760);
   expect(gallery.dataset.cloudReveal).toBe("true");
+  expect(document.getElementById("top")?.dataset.cloudHandoff).toBe("true");
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
     "280px",
   );
@@ -209,6 +211,7 @@ it("holds the gallery still beneath the clouds without automatically scrolling",
   await scroll(1040);
   expect(layer.dataset.active).toBeUndefined();
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
+  expect(document.getElementById("top")?.dataset.cloudHandoff).toBeUndefined();
   expect(window.scrollY).toBe(1040);
   await scroll(700);
   await scroll(400);
