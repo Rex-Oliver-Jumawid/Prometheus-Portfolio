@@ -20,6 +20,34 @@
   color: var(--cream);
 }
 
+.hero[data-cloud-handoff="true"] {
+  z-index: 3;
+  background: transparent;
+}
+
+.hero[data-cloud-handoff="true"] .stage {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72%,
+    rgb(0 0 0 / 96%) 76%,
+    rgb(0 0 0 / 78%) 82%,
+    rgb(0 0 0 / 46%) 89%,
+    rgb(0 0 0 / 16%) 96%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72%,
+    rgb(0 0 0 / 96%) 76%,
+    rgb(0 0 0 / 78%) 82%,
+    rgb(0 0 0 / 46%) 89%,
+    rgb(0 0 0 / 16%) 96%,
+    transparent 100%
+  );
+}
+
 .hero[data-parallax-ready="true"] {
   height: calc(100svh + var(--hero-scroll-distance));
 }
