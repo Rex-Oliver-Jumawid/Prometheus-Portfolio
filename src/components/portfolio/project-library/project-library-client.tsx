@@ -83,7 +83,6 @@ export function ProjectLibraryClient() {
         controllerRef.current = controller;
         controller.setVisible(active && !document.hidden);
 
-        setProgress(100);
         setStatus("ready");
       } catch (error) {
         if (
@@ -184,8 +183,7 @@ export function ProjectLibraryClient() {
         </button>
 
         <p id="library-instructions" className={styles.srOnly}>
-          Select Furniture Odyssey to pull it forward from the shelf. Select it
-          again to return it.
+          Select Furniture Odyssey to open the interactive book reader.
         </p>
         <p className={styles.srOnly} role="status" aria-live="polite">
           {isSelected ? "Furniture Odyssey selected." : ""}
