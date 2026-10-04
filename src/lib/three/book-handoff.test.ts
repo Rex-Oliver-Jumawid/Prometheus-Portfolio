@@ -36,9 +36,9 @@ afterEach(() => {
 
 it("holds the source book through the room pan and table arrival", () => {
   const work = 900;
-  const library = 3600;
+  const library = 2700;
   const viewport = 900;
-  const delayedStart = work + viewport * 1.8;
+  const delayedStart = work + viewport * 0.65;
   const finish = library + viewport * 0.08;
 
   expect(handoffProgress(0, work, library, viewport)).toBe(0);
