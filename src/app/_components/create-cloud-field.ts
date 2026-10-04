@@ -36,11 +36,8 @@ const fragmentSource = `
     // Overlapping rounded volumes form a sea of cumulus. Small-scale noise
     // erodes the silhouettes; it never acts as a flat surface normal map.
     vec3 q = vec3(point.xy, mod(point.z, 8.0) - 4.0);
-    // Build a wide lower cloud shelf first so the transition enters across the
-    // complete viewport instead of forming one obvious mound in the center.
-    // A screen-wide cylindrical shelf ignores X for the base bank, so there
-    // is always cloud density at both viewport edges. The smaller volumes
-    // above it keep the silhouette irregular and volumetric.
+    // A wide lower shelf supports the larger crowns. Perspective rays can
+    // still miss it; the screen-space bank below owns edge coverage.
     float shelf = length(
       vec2(
         (q.y + 3.25) / 1.18,
@@ -66,64 +63,62 @@ const fragmentSource = `
     float body = 1.0 - min(lowerBank, crowns);
     float billows = turbulence(point * 0.85) - 0.5;
     float cloud = smoothstep(-0.03, 0.10, body + billows * 0.88) * 1.48;
-    // Original crossing density from 0609a4a.
-    float mist = smoothstep(0.16, 0.22, uProgress)
-      * (1.0 - smoothstep(0.3, 0.55, uProgress)) * 0.22;
-    return cloud + mist;
+    return cloud;
   }
 
   void main() {
-    // Make the bank clearly visible at entry, then dissolve the entire cloud
-    // layer before the library settles. The exit is intentionally global so
-    // no horizontal cloud edge remains across the book.
-    float visibility = smoothstep(0.0, 0.035, uProgress)
-      * (1.0 - smoothstep(0.30, 0.48, uProgress));
+    // One atmosphere, one dissolve. Never clear the clouds before the scenes
+    // have exchanged places underneath them.
+    float visibility = smoothstep(0.0, 0.025, uProgress)
+      * (1.0 - smoothstep(0.58, 0.86, uProgress));
     if (visibility <= 0.0) {
       gl_FragColor = vec4(0.0);
       return;
     }
     vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
 
-    // First-scroll bank: guaranteed edge-to-edge in screen space.
-    // It deliberately ignores X for coverage, then uses noise only to break up
-    // the silhouette so the layer still reads as clouds instead of a flat fog.
-    float screenNoise = texture2D(
-      uNoise,
-      fract(vec2(
-        uv.x * 0.085 + uProgress * 0.035,
-        uv.y * 0.22 + 0.37
-      ))
-    ).r;
-    float bankTop = -0.20 + (screenNoise - 0.5) * 0.18;
-    float fullWidthBank = 1.0 - smoothstep(-0.90, bankTop, uv.y);
-    float bankEntry = smoothstep(0.0, 0.035, uProgress)
-      * (1.0 - smoothstep(0.28, 0.46, uProgress));
+    // Screen-space density guarantees a continuous bank even where perspective
+    // rays miss the 3D volumes. Coherent noise (not raw texture texels) creates
+    // varied billows across X, including beyond both screen edges.
+    float rise = smoothstep(0.03, 0.42, uProgress);
+    float drift = min(uProgress, 0.42) * 0.3;
+    float silhouette = turbulence(vec3(uv.x * 2.4 + drift, 3.7, 1.2));
+    float bankTop = mix(-0.58, 0.62, rise) + (silhouette - 0.5) * 0.55;
+    float billow = turbulence(vec3(uv * vec2(3.8, 5.2), 2.1 + drift));
+    float depth = bankTop - uv.y + (billow - 0.5) * 0.22;
+    // A density floor below the irregular crowns keeps even a noise trough
+    // opaque at the bottom of every column, with no X clipping or side fade.
+    depth = max(depth, -0.64 - uv.y);
+    float bankAlpha = smoothstep(-0.055, 0.24, depth);
+    // Light a shallow noisy volume for the base as well. Multiple depth slices
+    // give its sides and interior billows, rather than coloring an opaque
+    // gradient. The coverage floor is independent of these lighting samples.
+    vec3 bankLight = vec3(0.0);
+    float bankTransmission = 1.0;
+    for (int slice = 0; slice < 16; slice++) {
+      vec3 samplePoint = vec3(uv * 3.8, float(slice) * 0.16 + drift);
+      float mass = smoothstep(0.30, 0.68, turbulence(samplePoint));
+      float shadeMass = smoothstep(0.30, 0.68,
+        turbulence(samplePoint + vec3(-0.32, 0.42, -0.22)));
+      float light = exp(-shadeMass * 2.2);
+      vec3 lit = mix(uDeepGold * 0.64, uGold * 1.08, light);
+      float alpha = 1.0 - exp(-mass * 0.75);
+      bankLight += bankTransmission * alpha * lit;
+      bankTransmission *= 1.0 - alpha;
+    }
+    vec3 bankColor = bankLight / max(0.001, 1.0 - bankTransmission);
 
-    // The volumetric field starts inside the same low band, then expands to
-    // fill the viewport as the dive progresses.
-    float lowBand = 1.0 - smoothstep(-0.90, -0.12, uv.y);
-    float expansion = smoothstep(0.08, 0.28, uProgress);
-    float coverage = mix(lowBand, 1.0, expansion);
-    float entryStrength = mix(
-      0.88,
-      1.0,
-      smoothstep(0.02, 0.16, uProgress)
-    );
-
-    // Original fly-through from 0609a4a; scrolling controls its pace.
-    // Stop forward and sideways travel when the gallery reveal begins.
-    float travel = min(uProgress, 0.45);
-    float entry = smoothstep(0.0, 0.25, travel);
-    // Keep vertical travel downward; rising here made the exit reverse direction.
-    vec3 origin = vec3(sin(travel * 2.0) * 0.28, 4.2 - entry * 5.8, travel * 9.0);
-    // Clear beneath the bank in the same direction as the entry.
-    origin.y = mix(origin.y, -5.3, smoothstep(0.45, 0.62, uProgress));
+    // Keep the camera outside the dense core: flying into it produced a flat,
+    // dark fullscreen veil. The screen bank rises beneath these larger billows.
+    float travel = min(uProgress, 0.42);
+    vec3 origin = vec3(sin(travel * 2.0) * 0.28,
+      4.2 - rise * 1.3, travel * 3.0);
     vec3 ray = normalize(vec3(uv * 0.68, 1.55));
     vec3 sun = normalize(vec3(-0.65, 0.75, -0.25));
     float rayDistance = 0.08;
     vec3 accumulated = vec3(0.0);
     float transmittance = 1.0;
-    float mood = smoothstep(0.2, 1.0, uProgress);
+    float mood = smoothstep(0.2, 0.6, uProgress) * 0.35;
 
     // Integrate scattering through the volume, front to back. Dense clouds
     // terminate early, keeping the full-screen portion inexpensive.
@@ -139,7 +134,7 @@ const fragmentSource = `
         float sunlight = exp(-sunDensity * 1.6);
         float rim = clamp(0.5 + (cloud - nearSunDensity) * 0.8, 0.0, 1.0);
         vec3 gold = mix(uGold, uDeepGold, mood);
-        vec3 color = mix(gold * 0.32, gold * (1.0 + rim * 0.1), sunlight);
+        vec3 color = mix(gold * 0.58, gold * (1.0 + rim * 0.1), sunlight);
         color *= mix(0.72, 1.0, exp(-cloud * 0.55));
         float opacity = 1.0 - exp(-cloud * stepLength * 1.65);
         accumulated += transmittance * opacity * color;
@@ -147,33 +142,14 @@ const fragmentSource = `
         if (transmittance < 0.008) break;
       }
     }
-    float finalVisibility = visibility * coverage * entryStrength;
-    float volumeAlpha = (1.0 - transmittance) * finalVisibility;
-
-    // Composite a noisy but continuous base bank behind the raymarched
-    // billows. bankAlpha never depends on X, so both viewport edges remain
-    // covered from the first visible transition frame.
-    float bankTexture = mix(0.72, 1.0, screenNoise);
-    float bankAlpha = fullWidthBank * bankEntry * 0.68 * bankTexture;
-    vec3 bankColor = mix(
-      uGold * 0.52,
-      uDeepGold * 0.42,
-      smoothstep(0.0, 0.32, uProgress)
-    );
-
+    // Restrict the upper volume to the rising atmosphere without a straight
+    // mask edge. Composite premultiplied color, then dissolve both together.
+    float coverage = 1.0 - smoothstep(bankTop + 0.05, bankTop + 0.5, uv.y);
+    float volumeAlpha = (1.0 - transmittance) * coverage;
     float outputAlpha = volumeAlpha + bankAlpha * (1.0 - volumeAlpha);
-    vec3 outputColor =
-      accumulated * finalVisibility +
-      bankColor * bankAlpha * (1.0 - volumeAlpha);
-
-    // Finish with a uniform dissolve near the gallery handoff. This preserves
-    // the cloud shape while it is present but prevents its silhouette from
-    // lingering as a dark band over the library.
-    float handoffFade = 1.0 - smoothstep(0.34, 0.48, uProgress);
-    gl_FragColor = vec4(
-      outputColor * handoffFade,
-      outputAlpha * handoffFade
-    );
+    vec3 outputColor = accumulated * coverage
+      + bankColor * bankAlpha * (1.0 - volumeAlpha);
+    gl_FragColor = vec4(outputColor, outputAlpha) * visibility;
   }
 `;
 

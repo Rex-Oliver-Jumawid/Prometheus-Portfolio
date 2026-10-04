@@ -57,9 +57,16 @@ for (const [width, height] of [
         .poll(async () => (await figure.boundingBox())!.y)
         .toBeCloseTo(expectedY, 0);
 
-      expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
-        height - 1,
-      );
+      if (await gallery.getAttribute("data-cloud-reveal")) {
+        // The destination is already aligned beneath the opaque hero; its
+        // flow edge must never sweep upward across the painting.
+        expect((await gallery.boundingBox())!.y).toBeCloseTo(0, 0);
+        await expect(stage).toHaveCSS("opacity", "1");
+      } else {
+        expect((await gallery.boundingBox())!.y).toBeGreaterThanOrEqual(
+          height - 1,
+        );
+      }
 
       const skyBottom = await hero
         .locator('img[src*="sky-scroll.webp"]')
@@ -90,9 +97,7 @@ for (const [width, height] of [
       travel + 120,
     );
     await expect
-      .poll(async () =>
-        Math.abs((await gallery.boundingBox())!.y - (height - 120)),
-      )
+      .poll(async () => Math.abs((await gallery.boundingBox())!.y))
       .toBeLessThan(1);
 
     await expect

@@ -126,7 +126,9 @@ it("uses the existing hero scroll distance and reverses the cloud dive", async (
   );
   flush();
   await scroll(12);
-  expect(Number(hero.style.getPropertyValue("--hero-progress"))).toBeCloseTo(0.05);
+  expect(Number(hero.style.getPropertyValue("--hero-progress"))).toBeCloseTo(
+    0.05,
+  );
   expect(layer.dataset.active).toBeUndefined();
   await scroll(118.4 + 921.6 * 0.3);
   expect(Number(hero.style.getPropertyValue("--hero-progress"))).toBe(1);
@@ -183,19 +185,28 @@ it("preserves native scrolling when canvas is unavailable", async () => {
 });
 
 it("holds the gallery still beneath the clouds without automatically scrolling", async () => {
-  const { layer, gallery } = mount();
+  const { hero, layer, gallery } = mount();
   await scroll(80);
   expect(layer.dataset.active).toBeUndefined();
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(window.scrollTo).not.toHaveBeenCalled();
   await scroll(440);
-  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
-  expect(gallery.dataset.cloudReveal).toBeUndefined();
-  expect(document.getElementById("top")?.dataset.cloudHandoff).toBeUndefined();
+  expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
+    "600px",
+  );
+  expect(gallery.dataset.cloudReveal).toBe("true");
+  expect(hero.dataset.cloudHandoff).toBe("true");
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
   expect(window.scrollY).toBe(440);
+  await scroll(118.4 + 921.6 * 0.49);
+  expect(
+    Number(hero.style.getPropertyValue("--hero-cloud-opacity")),
+  ).toBeCloseTo(0.5);
+  await scroll(440);
   expect(layer.dataset.active).toBe("true");
   expect(field.draw.mock.lastCall?.[0]).toBeCloseTo((440 - 118.4) / 921.6);
   await scroll(760);
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("0");
   expect(gallery.dataset.cloudReveal).toBe("true");
   expect(document.getElementById("top")?.dataset.cloudHandoff).toBe("true");
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe(
@@ -213,7 +224,10 @@ it("holds the gallery still beneath the clouds without automatically scrolling",
   expect(gallery.style.getPropertyValue("--gallery-cloud-offset")).toBe("");
   expect(document.getElementById("top")?.dataset.cloudHandoff).toBeUndefined();
   expect(window.scrollY).toBe(1040);
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("");
   await scroll(700);
+  await scroll(440);
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
   await scroll(400);
   expect(window.scrollTo).not.toHaveBeenCalled();
   await scroll(0);

@@ -40,6 +40,7 @@ export function CloudTransition() {
       gallery?.style.removeProperty("--gallery-cloud-offset");
       if (gallery) delete gallery.dataset.cloudReveal;
       delete hero!.dataset.cloudHandoff;
+      hero!.style.removeProperty("--hero-cloud-opacity");
       delete layer!.dataset.active;
     }
 
@@ -77,21 +78,19 @@ export function CloudTransition() {
       layer!.dataset.active = "true";
       field.draw(progress);
 
-      // Place the gallery beneath the hero while the clouds clear. The hero
-      // stays above it with only its bottom edge feathered, avoiding a visible
-      // rectangular background seam during the handoff.
-      if (progress >= 0.45) {
-        hero!.dataset.cloudHandoff = "true";
-        if (gallery) gallery.dataset.cloudReveal = "true";
-        gallery?.style.setProperty(
-          "--gallery-cloud-offset",
-          `${Math.max(0, destination - window.scrollY)}px`,
-        );
-      } else {
-        delete hero!.dataset.cloudHandoff;
-        gallery?.style.removeProperty("--gallery-cloud-offset");
-        if (gallery) delete gallery.dataset.cloudReveal;
-      }
+      // Both scenes occupy the same viewport for the entire handoff. Waiting
+      // to lift the gallery until the dissolve exposed its moving flow edge.
+      hero!.dataset.cloudHandoff = "true";
+      if (gallery) gallery.dataset.cloudReveal = "true";
+      gallery?.style.setProperty(
+        "--gallery-cloud-offset",
+        `${Math.max(0, destination - window.scrollY)}px`,
+      );
+      // Leave Prometheus crisp until the cloud bank has built up. Dissolve the
+      // complete scene, not a rectangular crop or a masked section boundary.
+      const dissolve = Math.min(1, Math.max(0, (progress - 0.4) / 0.18));
+      const eased = dissolve * dissolve * (3 - 2 * dissolve);
+      hero!.style.setProperty("--hero-cloud-opacity", String(1 - eased));
     }
 
     function schedule() {
