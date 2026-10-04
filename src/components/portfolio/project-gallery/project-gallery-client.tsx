@@ -200,47 +200,15 @@ export function ProjectGalleryClient({
         return;
       }
 
-      const rect = section.getBoundingClientRect();
-      const travel = Math.max(1, rect.height - window.innerHeight);
-      const overallProgress = Math.min(
-        1,
-        Math.max(0, -rect.top / travel),
-      );
-
-      // First full scroll beat: move the portrait room from the skylight at
-      // the top down to the floor/table. The book stays completely hidden.
-      const roofEnd = 0.5;
-      // Second beat: the book enters only after the room pan is complete,
-      // then settles low enough to read as sitting over the table area.
-      const bookEnd = 0.72;
-      const roofProgress = Math.min(1, overallProgress / roofEnd);
-      const bookProgress = Math.min(
-        1,
-        Math.max(0, (overallProgress - roofEnd) / (bookEnd - roofEnd)),
-      );
-      const easedBook =
-        bookProgress * bookProgress * (3 - 2 * bookProgress);
-      const bookOpacity = Math.min(1, bookProgress * 1.8);
-
-      section.style.setProperty(
-        "--room-position",
-        `${roofProgress * 100}%`,
-      );
-      section.style.setProperty(
-        "--book-offset-y",
-        `${(-0.32 + easedBook * 0.42) * window.innerHeight}px`,
-      );
-      section.style.setProperty("--book-opacity", String(bookOpacity));
-      section.style.setProperty(
-        "--fallback-book-scale",
-        String(0.28 + easedBook * 0.72),
-      );
-
-      // Do not leave an invisible click target over the roof/room phase.
-      // Once the book has settled, it becomes fully interactive until the
-      // handoff coordinator takes ownership for the shelf transition.
-      host!.style.pointerEvents = bookProgress >= 0.98 ? "auto" : "none";
-      controllerRef.current?.setScrollProgress(bookProgress);
+      // The second viewport is already the final room composition.
+      // Keep the full room fitted to the viewport and present the book
+      // immediately instead of requiring a separate room-pan/arrival scroll.
+      section.style.setProperty("--room-position", "50%");
+      section.style.setProperty("--book-offset-y", "0px");
+      section.style.setProperty("--book-opacity", "1");
+      section.style.setProperty("--fallback-book-scale", "1");
+      host!.style.pointerEvents = "auto";
+      controllerRef.current?.setScrollProgress(1);
     }
     function syncVisibility() {
       const visible =
