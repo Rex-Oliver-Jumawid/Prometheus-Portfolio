@@ -30,8 +30,12 @@ for (const [width, height] of [
       (Number(await layer.getAttribute("data-scroll-end")) - start) / 0.75;
     await expect(layer).not.toHaveAttribute("data-active");
 
+    const navigation = page.getByRole("button", { name: "Open navigation" });
+    const navigationY = (await navigation.boundingBox())!.y;
+    const forwardFrames = new Map<number, string>();
+
     for (const progress of [
-      0.03, 0.15, 0.3, 0.4, 0.49, 0.6, 0.75, 0.9, 1, 0.49, 0.03,
+      0.03, 0.1, 0.25, 0.35, 0.4, 0.43, 0.46, 0.5, 0.6, 0.7, 0.9, 1, 0.46, 0.03,
     ]) {
       await page.evaluate(
         (top) => window.scrollTo({ top, behavior: "instant" }),
@@ -51,7 +55,7 @@ for (const [width, height] of [
               stage.evaluate((el) => Number(getComputedStyle(el).opacity)),
             )
             .toBeCloseTo(1, 4);
-        if (progress >= 0.6) await expect(stage).toHaveCSS("opacity", "0");
+        if (progress >= 0.5) await expect(stage).toHaveCSS("opacity", "0");
       }
       // Read the actual rendered alpha in the drawing frame, before WebGL's
       // non-preserved buffer is cleared. This catches rays missing either edge
@@ -62,6 +66,11 @@ for (const [width, height] of [
             minBottom: number;
             silhouetteRange: number;
             maxAlpha: number;
+            minAlpha: number;
+            meanLight: number;
+            lightRange: number;
+            meanAlpha: number;
+            signature: string;
             error: number;
           }>((resolve) => {
             window.dispatchEvent(new Event("scroll"));
@@ -89,7 +98,33 @@ for (const [width, height] of [
                 }
                 tops.push(top / h);
               }
+              let minAlpha = 255,
+                alphaSum = 0,
+                lightSum = 0;
+              const lights: number[] = [];
+              const signature: number[] = [];
+              for (let index = 0; index < data.length; index += 4) {
+                minAlpha = Math.min(minAlpha, data[index + 3]);
+                alphaSum += data[index + 3];
+                // Premultiplied luminance is meaningful in the opaque handoff.
+                const light =
+                  data[index] * 0.2126 +
+                  data[index + 1] * 0.7152 +
+                  data[index + 2] * 0.0722;
+                lightSum += light;
+                if (index % 64 === 0) lights.push(light);
+                if (index % 4096 === 0)
+                  signature.push(data[index], data[index + 3]);
+              }
+              lights.sort((a, b) => a - b);
               resolve({
+                minAlpha,
+                meanAlpha: alphaSum / (w * h),
+                meanLight: lightSum / (w * h),
+                lightRange:
+                  lights[Math.floor(lights.length * 0.95)] -
+                  lights[Math.floor(lights.length * 0.05)],
+                signature: signature.join(","),
                 minBottom,
                 silhouetteRange: Math.max(...tops) - Math.min(...tops),
                 maxAlpha,
@@ -103,7 +138,27 @@ for (const [width, height] of [
         expect(pixels.minBottom).toBeGreaterThan(240);
         expect(pixels.silhouetteRange).toBeGreaterThan(0.025);
       }
+      if (progress >= 0.43 && progress <= 0.5) {
+        // A scene fade is safe only when actual cloud pixels hide every part
+        // of the hero. Coverage alone must not pass a flat brown/white screen.
+        expect(pixels.minAlpha).toBeGreaterThanOrEqual(254);
+        expect(pixels.meanLight).toBeGreaterThan(145);
+        expect(pixels.meanLight).toBeLessThan(235);
+        expect(pixels.lightRange).toBeGreaterThan(35);
+      }
+      if (progress === 0.6) {
+        expect(pixels.meanAlpha).toBeGreaterThan(30);
+        expect(pixels.meanAlpha).toBeLessThan(210);
+      }
       if (progress === 0.9) expect(pixels.maxAlpha).toBe(0);
+      if (progress < 1) {
+        if (forwardFrames.has(progress)) {
+          expect(pixels.signature).toBe(forwardFrames.get(progress));
+        } else {
+          forwardFrames.set(progress, pixels.signature);
+        }
+      }
+      expect((await navigation.boundingBox())!.y).toBe(navigationY);
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
@@ -140,5 +195,58 @@ for (const [width, height] of [
     await expect(layer).not.toHaveAttribute("data-active");
     await expect(gallery).toBeInViewport();
     expect(errors).toEqual([]);
+  });
+}
+
+for (const failure of ["unavailable", "lost"] as const) {
+  test(`cloud ${failure} context restores native section scrolling`, async ({
+    page,
+  }) => {
+    if (failure === "unavailable") {
+      await page.addInitScript(() => {
+        const getContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (
+          this: HTMLCanvasElement,
+          type,
+          ...args
+        ) {
+          if (type === "webgl") return null;
+          return getContext.call(this, type, ...args);
+        } as typeof getContext;
+      });
+    }
+    await page.goto("/");
+    const layer = page.locator("[data-cloud-transition]");
+    await expect(page.locator("#top")).toHaveAttribute(
+      "data-parallax-ready",
+      "true",
+    );
+    await page.evaluate(() =>
+      window.scrollTo({ top: innerHeight * 1.3, behavior: "instant" }),
+    );
+    if (failure === "lost") {
+      await expect(layer).toHaveAttribute("data-active", "true");
+      await layer.locator("canvas").evaluate((canvas: HTMLCanvasElement) => {
+        canvas
+          .getContext("webgl")!
+          .getExtension("WEBGL_lose_context")!
+          .loseContext();
+      });
+    }
+    await expect(layer).not.toHaveAttribute("data-active");
+    await expect(layer).not.toHaveAttribute("data-scroll-start");
+    await expect(page.locator("#top")).not.toHaveAttribute(
+      "data-cloud-handoff",
+    );
+    await expect(page.locator("#work")).not.toHaveAttribute(
+      "data-cloud-reveal",
+    );
+    await page.evaluate(() =>
+      window.scrollTo({
+        top: Number(document.getElementById("work")!.dataset.viewportStart),
+        behavior: "instant",
+      }),
+    );
+    await expect(page.locator("#work")).toBeInViewport();
   });
 }

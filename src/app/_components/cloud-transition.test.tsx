@@ -198,7 +198,9 @@ it("holds the gallery still beneath the clouds without automatically scrolling",
   expect(hero.dataset.cloudHandoff).toBe("true");
   expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
   expect(window.scrollY).toBe(440);
-  await scroll(118.4 + 921.6 * 0.49);
+  await scroll(118.4 + 921.6 * 0.43);
+  expect(hero.style.getPropertyValue("--hero-cloud-opacity")).toBe("1");
+  await scroll(118.4 + 921.6 * 0.465);
   expect(
     Number(hero.style.getPropertyValue("--hero-cloud-opacity")),
   ).toBeCloseTo(0.5);

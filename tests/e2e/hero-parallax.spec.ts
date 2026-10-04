@@ -106,31 +106,50 @@ for (const [width, height] of [
   });
 }
 
-test("one screen of scrolling reaches the cinematic crop before section two enters", async ({
+test("wheel scrolling keeps the crop and scene overlap through the cloud slowdown", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-
   const hero = page.locator("#top");
+  const gallery = page.locator("#work");
   await expect(hero).toHaveAttribute("data-parallax-ready", "true");
-
-  for (const progress of [0.5, 1]) {
-    await page.mouse.wheel(0, 450);
-    await expect
-      .poll(() => page.evaluate(() => window.scrollY))
-      .toBeCloseTo(progress * 900, 0);
-    await expect
-      .poll(() =>
-        hero.evaluate((element) =>
-          Number(element.style.getPropertyValue("--hero-progress")),
-        ),
-      )
-      .toBeCloseTo(progress, 2);
-    expect(
-      (await page.locator("#work").boundingBox())!.y,
-    ).toBeGreaterThanOrEqual(899);
-  }
+  await page.mouse.wheel(0, 450);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeCloseTo(450, 0);
+  await page.mouse.wheel(0, 450);
+  // The existing cloud slowdown consumes part of this wheel delta. It must
+  // still advance smoothly, with the same progress driving the figure crop.
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(800);
+  await expect
+    .poll(() =>
+      hero.evaluate((element) => {
+        const progress = Number(
+          element.style.getPropertyValue("--hero-progress"),
+        );
+        return Math.abs(progress - Math.min(1, window.scrollY / 900));
+      }),
+    )
+    .toBeLessThan(0.01);
+  await expect(gallery).toHaveAttribute("data-cloud-reveal", "true");
+  await expect
+    .poll(async () => (await gallery.boundingBox())!.y)
+    .toBeCloseTo(0, 0);
+  await expect(page.locator("[data-hero-stage]")).toHaveCSS("opacity", "1");
+  await page.mouse.wheel(0, 400);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(900);
+  await expect
+    .poll(
+      async () =>
+        (await hero.locator('img[width="1254"][height="1254"]').boundingBox())!
+          .y,
+    )
+    .toBeCloseTo(0, 0);
 });
 
 test("changing motion preference removes the hold and scrolling transforms", async ({

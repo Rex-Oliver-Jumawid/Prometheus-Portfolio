@@ -86,9 +86,9 @@ export function CloudTransition() {
         "--gallery-cloud-offset",
         `${Math.max(0, destination - window.scrollY)}px`,
       );
-      // Leave Prometheus crisp until the cloud bank has built up. Dissolve the
-      // complete scene, not a rectangular crop or a masked section boundary.
-      const dissolve = Math.min(1, Math.max(0, (progress - 0.4) / 0.18));
+      // The volumetric crowns cover the top edge by 0.43. Exchange scenes
+      // only inside that opaque interval, before cloud erosion starts at 0.50.
+      const dissolve = Math.min(1, Math.max(0, (progress - 0.43) / 0.07));
       const eased = dissolve * dissolve * (3 - 2 * dissolve);
       hero!.style.setProperty("--hero-cloud-opacity", String(1 - eased));
     }
