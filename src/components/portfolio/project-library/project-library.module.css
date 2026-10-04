@@ -148,11 +148,7 @@
   color: #e9dfd0;
   text-align: right;
   backdrop-filter: blur(10px);
-  cursor: pointer;
-  transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 180ms ease;
+  pointer-events: none;
 }
 
 .bookControl > span {
