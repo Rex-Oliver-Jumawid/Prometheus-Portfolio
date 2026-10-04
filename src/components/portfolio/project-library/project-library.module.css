@@ -133,7 +133,9 @@
   bottom: 4.5%;
   left: auto;
   display: flex;
-  min-width: min(320px, calc(100% - 48px));
+  width: fit-content;
+  min-width: 0;
+  max-width: calc(100% - 48px);
   min-height: 58px;
   flex-direction: column;
   align-items: flex-end;
@@ -227,10 +229,11 @@
 
   .bookControl {
     right: 24px;
-    left: 24px;
+    left: auto;
     bottom: 24px;
-    width: auto;
+    width: fit-content;
     min-width: 0;
+    max-width: calc(100% - 48px);
   }
 }
 
