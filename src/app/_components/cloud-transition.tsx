@@ -39,6 +39,7 @@ export function CloudTransition() {
     function hide() {
       gallery?.style.removeProperty("--gallery-cloud-offset");
       if (gallery) delete gallery.dataset.cloudReveal;
+      delete hero!.dataset.cloudHandoff;
       delete layer!.dataset.active;
     }
 
@@ -76,14 +77,18 @@ export function CloudTransition() {
       layer!.dataset.active = "true";
       field.draw(progress);
 
-      // Place the gallery beneath opaque clouds and hold it still as they clear.
+      // Place the gallery beneath the hero while the clouds clear. The hero
+      // stays above it with only its bottom edge feathered, avoiding a visible
+      // rectangular background seam during the handoff.
       if (progress >= 0.45) {
+        hero!.dataset.cloudHandoff = "true";
         if (gallery) gallery.dataset.cloudReveal = "true";
         gallery?.style.setProperty(
           "--gallery-cloud-offset",
           `${Math.max(0, destination - window.scrollY)}px`,
         );
       } else {
+        delete hero!.dataset.cloudHandoff;
         gallery?.style.removeProperty("--gallery-cloud-offset");
         if (gallery) delete gallery.dataset.cloudReveal;
       }
