@@ -693,8 +693,15 @@
 }
 
 .navPanel[data-starting-style],
-.navPanel[data-ending-style] {
+.navPanel[data-ending-style],
+.navPanel[data-navigation-open="false"] {
+  pointer-events: none;
   transform: translateX(-100%);
+}
+
+.navPanel[data-navigation-open="true"] {
+  pointer-events: auto;
+  transform: translateX(0);
 }
 
 .navLayout {
