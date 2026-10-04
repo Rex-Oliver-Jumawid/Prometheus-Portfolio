@@ -154,7 +154,6 @@ export function HeroNavigation() {
 
       {renderNavigation ? (
         <Dialog.Portal>
-          <Dialog.Backdrop className={styles.scrim} />
           <Dialog.Popup
             id="primary-navigation-dialog"
             className={styles.navPanel}
