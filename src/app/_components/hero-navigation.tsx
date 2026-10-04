@@ -68,7 +68,9 @@ export function HeroNavigation() {
 
   useEffect(
     () => () => {
-      clearCloseTimer();
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
       if (navigateTimerRef.current !== null) {
         window.clearTimeout(navigateTimerRef.current);
       }
@@ -102,7 +104,11 @@ export function HeroNavigation() {
           className={styles.brand}
           href="#top"
           aria-label={`${appConfig.name} home`}
-          onClick={() => setOpen(false)}
+          onClick={(event) => {
+            if (!open) return;
+            event.preventDefault();
+            navigateAfterClose("#top");
+          }}
         >
           <span className={styles.ribbon} aria-hidden="true">
             <span className={styles.mark} />
@@ -181,9 +187,9 @@ export function HeroNavigation() {
                       }
                       onFocus={(event) => moveNavIndicator(event.currentTarget)}
                       onClick={(event) => {
-                      event.preventDefault();
-                      navigateAfterClose(link.href);
-                    }}
+                        event.preventDefault();
+                        navigateAfterClose(link.href);
+                      }}
                     >
                       {link.label}
                     </a>
