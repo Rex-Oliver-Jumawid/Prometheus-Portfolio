@@ -158,6 +158,7 @@ export function HeroNavigation() {
           <Dialog.Popup
             id="primary-navigation-dialog"
             className={styles.navPanel}
+            data-navigation-open={open}
             finalFocus={menuButtonRef}
           >
             <Dialog.Title className={styles.srOnly}>
