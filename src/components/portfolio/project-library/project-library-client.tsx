@@ -156,8 +156,12 @@ export function ProjectLibraryClient() {
           </div>
         )}
 
-        {status === "ready" && docked && hovered === book.id ? (
-          <div className={styles.bookControl} aria-hidden="true">
+        {status === "ready" && docked ? (
+          <div
+            className={styles.bookControl}
+            data-visible={hovered === book.id}
+            aria-hidden="true"
+          >
             <span>{book.category}</span>
             <strong>{book.title}</strong>
           </div>
