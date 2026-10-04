@@ -18,6 +18,10 @@
   background: inherit;
 }
 
+:global(.viewport-stack[data-sticky-ready="true"]) > .gallery {
+  translate: 0 calc(-1 * var(--gallery-cloud-offset, 0px));
+}
+
 :global(.viewport-stack[data-sticky-ready="true"])
   > .gallery
   > .galleryViewport {
@@ -29,6 +33,12 @@
     rgb(0 0 0 / 88%) calc(var(--gallery-seam, 0px) * 0.85),
     #000 var(--gallery-seam, 0px)
   );
+}
+
+:global(.viewport-stack[data-sticky-ready="true"])
+  > .gallery[data-cloud-reveal="true"]
+  > .galleryViewport {
+  mask-image: none;
 }
 
 .header {
