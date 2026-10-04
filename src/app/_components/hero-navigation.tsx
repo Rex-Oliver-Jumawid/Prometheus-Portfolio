@@ -75,9 +75,19 @@ export function HeroNavigation() {
 
   useEffect(() => {
     if (!renderNavigation) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeNavigation();
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = window.setTimeout(() => {
+        setRenderNavigation(false);
+        closeTimerRef.current = null;
+      }, NAVIGATION_CLOSE_MS);
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [renderNavigation]);
