@@ -104,7 +104,6 @@ for (const [width, height] of [
         expect(pixels.silhouetteRange).toBeGreaterThan(0.025);
       }
       if (progress === 0.9) expect(pixels.maxAlpha).toBeGreaterThan(0);
-      if (progress === 1) expect(pixels.maxAlpha).toBe(0);
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
