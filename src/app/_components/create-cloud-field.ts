@@ -16,7 +16,6 @@ const fragmentSource = `
   uniform float uProgress;
   uniform vec3 uGold;
   uniform vec3 uDeepGold;
-  uniform vec3 uSkyBounce;
 
   float noise(vec3 point) {
     vec3 cell = floor(point);
@@ -33,86 +32,125 @@ const fragmentSource = `
       + noise(point * 4.11 + 13.7) * 0.15;
   }
 
-  float hash(vec2 cell) {
-    return fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
-  }
-
   float density(vec3 point) {
-    // Overlapping ellipsoids continue beyond both screen edges. Rows below
-    // the crowns give the bank depth even once it fills the viewport.
-    vec2 cell = floor(point.xy / vec2(1.65, 1.35));
-    float body = -10.0;
-    for (int row = -1; row <= 1; row++) {
-      for (int column = -1; column <= 1; column++) {
-        vec2 id = cell + vec2(float(column), float(row));
-        id.y = min(id.y, 0.0);
-        float seed = hash(id);
-        vec3 center = vec3(
-          (id.x + 0.5) * 1.65 + sin(seed * 31.0) * 0.26,
-          id.y * 1.35 + seed * 0.55,
-          sin(seed * 17.0) * 0.7
-        );
-        vec3 radius = vec3(1.12 + seed * 0.3, 0.95 + seed * 0.38, 1.2);
-        body = max(body, (1.0 - length((point - center) / radius)) * 0.95);
-      }
-    }
-    float billows = turbulence(point * 2.1) - 0.5;
-    float detail = noise(point * 8.5) - 0.5;
-    return smoothstep(-0.06, 0.14, body + billows * 0.48 + detail * 0.12);
+    // Overlapping rounded volumes form a sea of cumulus. Small-scale noise
+    // erodes the silhouettes; it never acts as a flat surface normal map.
+    vec3 q = vec3(point.xy, mod(point.z, 8.0) - 4.0);
+    // A wide lower shelf supports the larger crowns. Perspective rays can
+    // still miss it; the screen-space bank below owns edge coverage.
+    float shelf = length(
+      vec2(
+        (q.y + 3.25) / 1.18,
+        (q.z + 0.4) / 5.4
+      )
+    );
+    float farLeft = length(
+      (q - vec3(-6.1, -2.35, 0.5)) / vec3(5.0, 1.55, 4.5)
+    );
+    float farRight = length(
+      (q - vec3(6.2, -2.25, -0.2)) / vec3(5.1, 1.5, 4.7)
+    );
+    float left = length((q - vec3(-3.2, -2.3, 0.0)) / vec3(4.4, 1.55, 4.5));
+    float right = length((q - vec3(3.6, -2.2, 0.8)) / vec3(4.7, 1.55, 4.4));
+    float middle = length((q - vec3(0.0, -3.4, -0.8)) / vec3(5.0, 1.2, 4.8));
+    float crownLeft = length((q - vec3(-3.2, -1.1, -0.5)) / vec3(2.4, 2.5, 3.0));
+    float crownInner = length((q - vec3(-1.7, -0.6, 1.1)) / vec3(1.9, 1.7, 2.2));
+    float crownRight = length((q - vec3(2.1, -0.4, -0.5)) / vec3(2.2, 2.0, 2.7));
+    float crownOuter = length((q - vec3(4.0, -1.1, 1.1)) / vec3(2.6, 2.6, 2.9));
+    float crownMiddle = length((q - vec3(0.25, -0.9, -1.1)) / vec3(2.1, 2.0, 2.6));
+    float crowns = min(min(crownLeft, crownInner), min(crownRight, min(crownMiddle, crownOuter)));
+    float lowerBank = min(shelf, min(farLeft, min(farRight, min(left, min(right, middle)))));
+    float body = 1.0 - min(lowerBank, crowns);
+    float billows = turbulence(point * 0.85) - 0.5;
+    float cloud = smoothstep(-0.03, 0.10, body + billows * 0.88) * 1.48;
+    return cloud;
   }
 
   void main() {
-    float entrance = smoothstep(0.0, 0.025, uProgress);
-    float dissolve = clamp((uProgress - 0.5) / 0.38, 0.0, 1.0);
-    if (entrance <= 0.0 || dissolve >= 1.0) {
+    // One atmosphere, one dissolve. Never clear the clouds before the scenes
+    // have exchanged places underneath them.
+    float visibility = smoothstep(0.0, 0.025, uProgress)
+      * (1.0 - smoothstep(0.70, 0.94, uProgress));
+    if (visibility <= 0.0) {
       gl_FragColor = vec4(0.0);
       return;
     }
     vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
-    // Translate the entire cloud field, including its lighting, rather than
-    // raising an unrelated opaque screen bank in front of stationary volumes.
-    float rise = smoothstep(0.03, 0.46, uProgress);
-    float drift = uProgress * 0.65;
-    vec2 cloudUV = uv * 3.2 + vec2(drift, mix(3.0, -3.65, rise * rise));
-    cloudUV.y -= smoothstep(0.5, 0.9, uProgress) * 0.8;
-    vec3 origin = vec3(cloudUV, -3.4);
-    vec3 sun = normalize(vec3(-0.6, 0.8, -0.7));
+
+    // Screen-space density guarantees a continuous bank even where perspective
+    // rays miss the 3D volumes. Coherent noise (not raw texture texels) creates
+    // varied billows across X, including beyond both screen edges.
+    float rise = smoothstep(0.03, 0.42, uProgress);
+    float drift = min(uProgress, 0.42) * 0.3;
+    float silhouette = turbulence(vec3(uv.x * 2.4 + drift, 3.7, 1.2));
+    float bankTop = mix(-0.58, 0.62, rise) + (silhouette - 0.5) * 0.55;
+    float billow = turbulence(vec3(uv * vec2(3.8, 5.2), 2.1 + drift));
+    float depth = bankTop - uv.y + (billow - 0.5) * 0.22;
+    // A density floor below the irregular crowns keeps even a noise trough
+    // opaque at the bottom of every column, with no X clipping or side fade.
+    depth = max(depth, -0.64 - uv.y);
+    float bankAlpha = smoothstep(-0.055, 0.24, depth);
+    // Light a shallow noisy volume for the base as well. Multiple depth slices
+    // give its sides and interior billows, rather than coloring an opaque
+    // gradient. The coverage floor is independent of these lighting samples.
+    vec3 bankLight = vec3(0.0);
+    float bankTransmission = 1.0;
+    for (int slice = 0; slice < 16; slice++) {
+      vec3 samplePoint = vec3(uv * 3.8, float(slice) * 0.16 + drift);
+      float mass = smoothstep(0.30, 0.68, turbulence(samplePoint));
+      float shadeMass = smoothstep(0.30, 0.68,
+        turbulence(samplePoint + vec3(-0.32, 0.42, -0.22)));
+      float light = exp(-shadeMass * 2.2);
+      vec3 lit = mix(uDeepGold * 0.64, uGold * 1.08, light);
+      float alpha = 1.0 - exp(-mass * 0.75);
+      bankLight += bankTransmission * alpha * lit;
+      bankTransmission *= 1.0 - alpha;
+    }
+    vec3 bankColor = bankLight / max(0.001, 1.0 - bankTransmission);
+
+    // Keep the camera outside the dense core: flying into it produced a flat,
+    // dark fullscreen veil. The screen bank rises beneath these larger billows.
+    float travel = min(uProgress, 0.42);
+    vec3 origin = vec3(sin(travel * 2.0) * 0.28,
+      4.2 - rise * 1.3, travel * 3.0);
+    vec3 ray = normalize(vec3(uv * 0.68, 1.55));
+    vec3 sun = normalize(vec3(-0.65, 0.75, -0.25));
+    float rayDistance = 0.08;
     vec3 accumulated = vec3(0.0);
     float transmittance = 1.0;
-    // Warm highlights retain the palette; neutral sky bounce prevents dense
-    // interiors from multiplying down into the old deep-gold/brown veil.
-    vec3 highlight = mix(uGold, vec3(1.0), 0.4);
-    vec3 shadow = mix(uDeepGold, uSkyBounce, 0.72);
-    float erosion = turbulence(vec3(cloudUV * 1.4, 4.0));
-    float localFade = 1.0 - smoothstep(max(0.02, erosion * 0.45 - 0.1), erosion * 0.45 + 0.25, dissolve);
+    float mood = smoothstep(0.2, 0.6, uProgress) * 0.35;
 
-    for (int i = 0; i < 40; i++) {
-      vec3 point = origin + vec3(0.0, 0.0, float(i) * 0.16);
+    // Integrate scattering through the volume, front to back. Dense clouds
+    // terminate early, keeping the full-screen portion inexpensive.
+    for (int i = 0; i < 48; i++) {
+      float stepLength = 0.18 + float(i) * 0.004;
+      vec3 point = origin + ray * rayDistance;
+      rayDistance += stepLength;
       float cloud = density(point);
       if (cloud > 0.01) {
-        float nearSunDensity = density(point + sun * 0.24);
-        float sunDensity = nearSunDensity * 0.6
-          + density(point + sun * 0.65) * 0.45
-          + density(point + sun * 1.3) * 0.3;
-        float sunlight = exp(-sunDensity * 1.8);
-        float rim = clamp((cloud - nearSunDensity) * 1.8, 0.0, 1.0);
-        vec3 lit = mix(shadow, highlight, sunlight) + highlight * rim * 0.18;
-        float alpha = 1.0 - exp(-cloud * 0.16 * 5.5);
-        accumulated += transmittance * alpha * lit;
-        transmittance *= 1.0 - alpha;
-        if (transmittance < 0.004) break;
+        float nearSunDensity = density(point + sun * 0.4);
+        float sunDensity = nearSunDensity
+          + density(point + sun * 1.3) * 0.65;
+        float sunlight = exp(-sunDensity * 1.6);
+        float rim = clamp(0.5 + (cloud - nearSunDensity) * 0.8, 0.0, 1.0);
+        vec3 gold = mix(uGold, uDeepGold, mood);
+        vec3 color = mix(gold * 0.58, gold * (1.0 + rim * 0.1), sunlight);
+        color *= mix(0.72, 1.0, exp(-cloud * 0.55));
+        float opacity = 1.0 - exp(-cloud * stepLength * 1.65);
+        accumulated += transmittance * opacity * color;
+        transmittance *= 1.0 - opacity;
+        if (transmittance < 0.008) break;
       }
     }
-    // A screen-space floor closes tiny gaps behind the SAME lit volume. It
-    // never rises above the ellipsoid crowns and has no separate fog color.
-    float bankDepth = 0.05 - cloudUV.y;
-    float bankAlpha = smoothstep(0.0, 0.3, bankDepth);
-    float volumeAlpha = 1.0 - transmittance;
-    vec3 bankColor = accumulated / max(volumeAlpha, 0.001);
+    // Restrict the upper volume to the rising atmosphere without a straight
+    // mask edge. Composite premultiplied color, then dissolve both together.
+    float coverage = 1.0 - smoothstep(bankTop + 0.05, bankTop + 0.5, uv.y);
+    float volumeAlpha = (1.0 - transmittance) * coverage;
     float outputAlpha = volumeAlpha + bankAlpha * (1.0 - volumeAlpha);
-    gl_FragColor = vec4(bankColor * outputAlpha, outputAlpha) * entrance * localFade;
+    vec3 outputColor = accumulated * coverage
+      + bankColor * bankAlpha * (1.0 - volumeAlpha);
+    gl_FragColor = vec4(outputColor, outputAlpha) * visibility;
   }
-
 `;
 
 function noiseTexture() {
@@ -228,10 +266,6 @@ export function createCloudField(
   gl.uniform3fv(
     gl.getUniformLocation(program, "uDeepGold"),
     color(style, "--cloud-deep-gold"),
-  );
-  gl.uniform3fv(
-    gl.getUniformLocation(program, "uSkyBounce"),
-    color(style, "--cloud-sky-bounce"),
   );
   const resolution = gl.getUniformLocation(program, "uResolution");
   const progress = gl.getUniformLocation(program, "uProgress");
