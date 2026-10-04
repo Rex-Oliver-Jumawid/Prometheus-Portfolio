@@ -36,16 +36,28 @@ const fragmentSource = `
     // Overlapping rounded volumes form a sea of cumulus. Small-scale noise
     // erodes the silhouettes; it never acts as a flat surface normal map.
     vec3 q = vec3(point.xy, mod(point.z, 8.0) - 4.0);
-    float left = length((q - vec3(-3.2, -2.3, 0.0)) / vec3(3.9, 1.5, 4.2));
-    float right = length((q - vec3(3.6, -2.2, 0.8)) / vec3(4.3, 1.5, 4.0));
-    float middle = length((q - vec3(0.0, -3.4, -0.8)) / vec3(4.3, 1.2, 4.4));
-    float crownLeft = length((q - vec3(-3.2, -1.1, -0.5)) / vec3(2.0, 2.5, 2.8));
-    float crownInner = length((q - vec3(-1.7, -0.6, 1.1)) / vec3(1.65, 1.7, 2.0));
-    float crownRight = length((q - vec3(2.1, -0.4, -0.5)) / vec3(1.9, 2.0, 2.4));
-    float crownOuter = length((q - vec3(4.0, -1.1, 1.1)) / vec3(2.1, 2.6, 2.6));
-    float crownMiddle = length((q - vec3(0.25, -0.9, -1.1)) / vec3(1.8, 2.0, 2.3));
+    // Build a wide lower cloud shelf first so the transition enters across the
+    // complete viewport instead of forming one obvious mound in the center.
+    float shelf = length(
+      (q - vec3(0.0, -3.25, -0.4)) / vec3(9.4, 1.15, 5.2)
+    );
+    float farLeft = length(
+      (q - vec3(-6.1, -2.35, 0.5)) / vec3(5.0, 1.55, 4.5)
+    );
+    float farRight = length(
+      (q - vec3(6.2, -2.25, -0.2)) / vec3(5.1, 1.5, 4.7)
+    );
+    float left = length((q - vec3(-3.2, -2.3, 0.0)) / vec3(4.4, 1.55, 4.5));
+    float right = length((q - vec3(3.6, -2.2, 0.8)) / vec3(4.7, 1.55, 4.4));
+    float middle = length((q - vec3(0.0, -3.4, -0.8)) / vec3(5.0, 1.2, 4.8));
+    float crownLeft = length((q - vec3(-3.2, -1.1, -0.5)) / vec3(2.4, 2.5, 3.0));
+    float crownInner = length((q - vec3(-1.7, -0.6, 1.1)) / vec3(1.9, 1.7, 2.2));
+    float crownRight = length((q - vec3(2.1, -0.4, -0.5)) / vec3(2.2, 2.0, 2.7));
+    float crownOuter = length((q - vec3(4.0, -1.1, 1.1)) / vec3(2.6, 2.6, 2.9));
+    float crownMiddle = length((q - vec3(0.25, -0.9, -1.1)) / vec3(2.1, 2.0, 2.6));
     float crowns = min(min(crownLeft, crownInner), min(crownRight, min(crownMiddle, crownOuter)));
-    float body = 1.0 - min(min(left, min(right, middle)), crowns);
+    float lowerBank = min(shelf, min(farLeft, min(farRight, min(left, min(right, middle)))));
+    float body = 1.0 - min(lowerBank, crowns);
     float billows = turbulence(point * 0.85) - 0.5;
     float cloud = smoothstep(-0.02, 0.10, body + billows * 0.85) * 1.4;
     // Original crossing density from 0609a4a.
@@ -55,13 +67,28 @@ const fragmentSource = `
   }
 
   void main() {
-    float visibility = smoothstep(0.0, 0.035, uProgress)
+    // Ease the first scroll into the cloud bank instead of snapping to full
+    // density almost immediately.
+    float visibility = smoothstep(0.015, 0.16, uProgress)
       * (1.0 - smoothstep(0.5, 0.75, uProgress));
     if (visibility <= 0.0) {
       gl_FragColor = vec4(0.0);
       return;
     }
     vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
+
+    // At first, keep the clouds low and subtle like a shallow horizon-wide
+    // bank. As scrolling continues, release the mask so the viewer dives into
+    // the full volume.
+    float lowBand = 1.0 - smoothstep(-0.72, 0.18, uv.y);
+    float expansion = smoothstep(0.10, 0.30, uProgress);
+    float coverage = mix(lowBand, 1.0, expansion);
+    float entryStrength = mix(
+      0.34,
+      1.0,
+      smoothstep(0.07, 0.28, uProgress)
+    );
+
     // Original fly-through from 0609a4a; scrolling controls its pace.
     // Stop forward and sideways travel when the gallery reveal begins.
     float travel = min(uProgress, 0.45);
@@ -99,7 +126,11 @@ const fragmentSource = `
         if (transmittance < 0.008) break;
       }
     }
-    gl_FragColor = vec4(accumulated * visibility, (1.0 - transmittance) * visibility);
+    float finalVisibility = visibility * coverage * entryStrength;
+    gl_FragColor = vec4(
+      accumulated * finalVisibility,
+      (1.0 - transmittance) * finalVisibility
+    );
   }
 `;
 
