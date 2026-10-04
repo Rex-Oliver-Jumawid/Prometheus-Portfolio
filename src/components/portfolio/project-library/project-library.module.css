@@ -16,7 +16,7 @@
   right: 0;
   left: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: flex-end;
   gap: 24px;
   padding: 28px 2.25%;
@@ -129,8 +129,9 @@
 .bookControl {
   position: absolute;
   z-index: 4;
-  left: 4.5%;
+  right: 4.5%;
   bottom: 4.5%;
+  left: auto;
   display: flex;
   min-width: min(320px, calc(100% - 48px));
   min-height: 58px;
@@ -143,7 +144,7 @@
   padding: 10px 16px;
   background: rgb(16 14 11 / 58%);
   color: #e9dfd0;
-  text-align: left;
+  text-align: right;
   backdrop-filter: blur(10px);
   cursor: pointer;
   transition:
