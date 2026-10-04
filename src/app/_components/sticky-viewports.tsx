@@ -177,9 +177,12 @@ export function StickyViewports({ children }: { children: ReactNode }) {
       );
     }
 
-    const navigationEntry = performance.getEntriesByType(
-      "navigation",
-    )[0] as PerformanceNavigationTiming | undefined;
+    const navigationEntry =
+      typeof performance.getEntriesByType === "function"
+        ? (performance.getEntriesByType(
+            "navigation",
+          )[0] as PerformanceNavigationTiming | undefined)
+        : undefined;
     const isReload = navigationEntry?.type === "reload";
 
     if (isReload) {
