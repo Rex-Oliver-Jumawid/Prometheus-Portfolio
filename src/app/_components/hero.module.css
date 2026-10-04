@@ -75,28 +75,15 @@
 .editorialShade {
   position: absolute;
   z-index: 1;
-  inset: 0 auto 0 0;
-  width: 54%;
+  inset: 0;
   pointer-events: none;
   background:
+    linear-gradient(rgb(35 22 14 / 34%), rgb(35 22 14 / 34%)),
     radial-gradient(
-      ellipse at 13% 50%,
-      rgb(37 23 15 / 76%) 0%,
-      rgb(37 23 15 / 61%) 27%,
-      rgb(37 23 15 / 43%) 48%,
-      rgb(37 23 15 / 20%) 67%,
-      rgb(37 23 15 / 6%) 82%,
-      transparent 100%
-    ),
-    radial-gradient(
-      ellipse at 18% 28%,
-      rgb(22 13 9 / 22%) 0%,
-      transparent 56%
-    ),
-    radial-gradient(
-      ellipse at 16% 76%,
-      rgb(22 13 9 / 26%) 0%,
-      transparent 58%
+      ellipse at 18% 52%,
+      rgb(28 17 11 / 16%) 0%,
+      rgb(28 17 11 / 8%) 42%,
+      transparent 72%
     );
 }
 
@@ -1144,10 +1131,6 @@
 }
 
 @media (max-width: 1000px) {
-  .editorialShade {
-    width: 60%;
-  }
-
   .editorial {
     left: 7%;
     width: min(360px, 42%);
@@ -1163,10 +1146,6 @@
 }
 
 @media (max-width: 640px) {
-  .editorialShade {
-    width: 76%;
-  }
-
   .editorial {
     top: 54%;
     left: 7%;
