@@ -101,10 +101,9 @@
   pointer-events: none;
   background-color: #4a2f1c;
   background-image: url("/assets/project-gallery/reading-room-roof-window1.png");
-  background-position: center var(--room-position, 0%);
+  background-position: center;
   background-repeat: no-repeat;
-  background-size: cover;
-  will-change: background-position;
+  background-size: contain;
 }
 .canvas {
   z-index: 1;
@@ -715,24 +714,17 @@
 
 
 /* Homepage sequence:
-   1. pan from the skylight down through the room
-   2. bring the book down to the table
-   3. hold it there briefly for interaction
-   4. begin the existing transfer to the library shelf */
+   show the complete room and settled book immediately, then hold the
+   composition for one viewport before the existing shelf handoff begins. */
 .gallery:not([data-standalone="true"]) {
-  --roof-pan-distance: 100svh;
-  --book-arrival-distance: 100svh;
-  --room-position: 0%;
-  --book-offset-y: -32vh;
-  --book-opacity: 0;
-  --fallback-book-scale: 0.28;
+  --gallery-hold-distance: 100svh;
+  --room-position: 50%;
+  --book-offset-y: 0px;
+  --book-opacity: 1;
+  --fallback-book-scale: 1;
   z-index: var(--viewport-order, 2);
-  height: calc(
-    100svh + var(--roof-pan-distance) + var(--book-arrival-distance)
-  );
-  min-height: calc(
-    100svh + var(--roof-pan-distance) + var(--book-arrival-distance)
-  );
+  height: calc(100svh + var(--gallery-hold-distance));
+  min-height: calc(100svh + var(--gallery-hold-distance));
   overflow: visible;
   background: #4a2f1c;
 }
