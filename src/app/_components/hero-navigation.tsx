@@ -1,6 +1,5 @@
 "use client";
 
-import { Dialog } from "@base-ui/react/dialog";
 import { useEffect, useRef, useState } from "react";
 
 import { appConfig } from "@/config/app";
@@ -47,11 +46,6 @@ export function HeroNavigation() {
     }, NAVIGATION_CLOSE_MS);
   };
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) openNavigation();
-    else closeNavigation();
-  };
-
   const navigateAfterClose = (href: string) => {
     closeNavigation();
     if (navigateTimerRef.current !== null) {
@@ -79,6 +73,15 @@ export function HeroNavigation() {
     [],
   );
 
+  useEffect(() => {
+    if (!renderNavigation) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeNavigation();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [renderNavigation]);
+
   const moveNavIndicator = (target: HTMLAnchorElement) => {
     const navigation = navLinksRef.current;
     if (!navigation) return;
@@ -99,7 +102,7 @@ export function HeroNavigation() {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange} modal="trap-focus">
+    <>
       <header className={styles.header} data-navigation-open={open}>
         <a
           className={styles.brand}
@@ -154,73 +157,62 @@ export function HeroNavigation() {
       ) : null}
 
       {renderNavigation ? (
-        <Dialog.Portal>
-          <Dialog.Popup
-            id="primary-navigation-dialog"
-            className={styles.navPanel}
-            data-navigation-open={open}
-            finalFocus={menuButtonRef}
-          >
-            <Dialog.Title className={styles.srOnly}>
-              {appConfig.name}
-            </Dialog.Title>
-
-            <div className={styles.navLayout}>
-              <div className={styles.navBlank} aria-hidden="true" />
-              <div className={styles.navContent}>
-                <nav
-                  ref={navLinksRef}
-                  className={styles.navLinks}
-                  aria-label="Primary navigation"
-                  onPointerLeave={hideNavIndicator}
-                  onBlur={(event) => {
-                    if (!event.currentTarget.contains(event.relatedTarget)) {
-                      hideNavIndicator();
-                    }
-                  }}
-                >
-                  {links.map((link) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      onPointerEnter={(event) =>
-                        moveNavIndicator(event.currentTarget)
-                      }
-                      onFocus={(event) => moveNavIndicator(event.currentTarget)}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        navigateAfterClose(link.href);
-                      }}
-                    >
-                      {link.label}
-                    </a>
-                  ))}
-                </nav>
-
-                <div className={styles.navFooter}>
-                  <p>Good things begin with an idea.</p>
+        <div
+          id="primary-navigation-dialog"
+          className={styles.navPanel}
+          data-navigation-open={open}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Primary navigation"
+        >
+          <div className={styles.navLayout}>
+            <div className={styles.navBlank} aria-hidden="true" />
+            <div className={styles.navContent}>
+              <nav
+                ref={navLinksRef}
+                className={styles.navLinks}
+                aria-label="Primary navigation"
+                onPointerLeave={hideNavIndicator}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) {
+                    hideNavIndicator();
+                  }
+                }}
+              >
+                {links.map((link) => (
                   <a
-                    href="#contact"
+                    key={link.href}
+                    href={link.href}
+                    onPointerEnter={(event) =>
+                      moveNavIndicator(event.currentTarget)
+                    }
+                    onFocus={(event) => moveNavIndicator(event.currentTarget)}
                     onClick={(event) => {
                       event.preventDefault();
-                      navigateAfterClose("#contact");
+                      navigateAfterClose(link.href);
                     }}
                   >
-                    Start a conversation
+                    {link.label}
                   </a>
-                </div>
+                ))}
+              </nav>
+
+              <div className={styles.navFooter}>
+                <p>Good things begin with an idea.</p>
+                <a
+                  href="#contact"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigateAfterClose("#contact");
+                  }}
+                >
+                  Start a conversation
+                </a>
               </div>
             </div>
-
-            <Dialog.Close
-              className={styles.srOnly}
-              aria-label="Dismiss navigation panel"
-            >
-              Close navigation
-            </Dialog.Close>
-          </Dialog.Popup>
-        </Dialog.Portal>
+          </div>
+        </div>
       ) : null}
-    </Dialog.Root>
+    </>
   );
 }
