@@ -38,9 +38,10 @@ export function subscribeBookEndpoints(notify: () => void) {
 }
 
 export const HANDOFF = {
-  // Keep the book fully owned by the 2nd viewport for an initial interaction
-  // beat before the shelf handoff begins.
-  startDelay: 0.65,
+  // The 2nd viewport now spends one scroll beat on the roof/room pan and a
+  // second beat bringing the book onto the table. Start the shelf transfer
+  // only near the end of that second beat so the book remains interactive.
+  startDelay: 1.8,
   finish: 0.08,
   arc: 0.12,
   recoverySeconds: 0.65,
@@ -53,9 +54,9 @@ export function handoffProgress(
   library: number,
   viewportHeight: number,
 ) {
-  // Hold the source book in the 2nd viewport first so it remains interactive.
-  // Only after that deliberate scroll beat do we begin moving it to the shelf.
-  // Both ends are document-flow positions, never sticky rects.
+  // Keep the source book in the 2nd viewport through the roof pan and book
+  // arrival. Only near the end of the section do we begin moving it to the
+  // shelf. Both ends are document-flow positions, never sticky rects.
   const start = work + viewportHeight * HANDOFF.startDelay;
   const end = library + viewportHeight * HANDOFF.finish;
   const linear = Math.min(
