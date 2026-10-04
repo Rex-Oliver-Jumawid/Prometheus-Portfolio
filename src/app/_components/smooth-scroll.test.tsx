@@ -27,7 +27,10 @@ function setupMotion(matches = false) {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   };
-  vi.stubGlobal("matchMedia", vi.fn(() => media));
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => media),
+  );
   return media;
 }
 
@@ -54,6 +57,62 @@ it("respects live reduced-motion changes and cleans up on unmount", () => {
   unmount();
   expect(mocks.destroy).toHaveBeenCalledTimes(2);
   expect(media.removeEventListener).toHaveBeenCalledWith("change", change);
+});
+
+it("slows wheel input only during clouds and preserves reverse and touch input", () => {
+  setupMotion();
+  const view = (
+    <>
+      <div
+        data-cloud-transition
+        data-scroll-start="100"
+        data-scroll-end="500"
+      />
+      <SmoothScroll />
+    </>
+  );
+  const { unmount } = render(view);
+  const virtualScroll = mocks.create.mock.calls[0][0].virtualScroll;
+  const wheel = (deltaY = 100) => ({
+    deltaX: 0,
+    deltaY,
+    event: new WheelEvent("wheel"),
+  });
+  const beforeClouds = wheel();
+  vi.stubGlobal("scrollY", 0);
+  expect(virtualScroll(beforeClouds)).toBe(true);
+  expect(beforeClouds.deltaY).toBe(100);
+
+  // The renderer can still be loading: braking must not depend on data-active.
+  vi.stubGlobal("scrollY", 300);
+  const forward = wheel();
+  virtualScroll(forward);
+  expect(forward.deltaY).toBe(35);
+  const reverse = wheel(-100);
+  virtualScroll(reverse);
+  expect(reverse.deltaY).toBe(-35);
+  const touch = { deltaX: 0, deltaY: 100, event: new Event("touchmove") };
+  virtualScroll(touch);
+  expect(touch.deltaY).toBe(100);
+
+  vi.stubGlobal("scrollY", 50);
+  const approaching = wheel();
+  virtualScroll(approaching);
+  expect(approaching.deltaY).toBeCloseTo(91.27, 2);
+  vi.stubGlobal("scrollY", 99);
+  const entering = wheel(2);
+  virtualScroll(entering);
+  expect(entering.deltaY).toBeGreaterThan(1.99);
+  vi.stubGlobal("scrollY", 550);
+  const returning = wheel(-100);
+  virtualScroll(returning);
+  expect(returning.deltaY).toBeCloseTo(-91.27, 2);
+
+  vi.stubGlobal("scrollY", 600);
+  const afterClouds = wheel();
+  virtualScroll(afterClouds);
+  expect(afterClouds.deltaY).toBe(100);
+  unmount();
 });
 
 it("honors background scroll locks while keeping modal scrolling native", async () => {
