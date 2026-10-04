@@ -215,7 +215,8 @@
     padding: 20px 24px;
   }
 
-  .heading h2 {
+  .heading h2,
+  .libraryTitle {
     font-size: 1.15rem;
   }
 
