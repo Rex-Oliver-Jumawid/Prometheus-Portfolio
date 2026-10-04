@@ -86,63 +86,65 @@ export function HeroNavigation() {
         </div>
       ) : null}
 
-      <Dialog.Portal>
-        <Dialog.Backdrop className={styles.scrim} />
-        <Dialog.Popup
-          id="primary-navigation-dialog"
-          className={styles.navPanel}
-          finalFocus={menuButtonRef}
-        >
-          <Dialog.Title className={styles.srOnly}>
-            {appConfig.name}
-          </Dialog.Title>
+      {open ? (
+        <Dialog.Portal>
+          <Dialog.Backdrop className={styles.scrim} />
+          <Dialog.Popup
+            id="primary-navigation-dialog"
+            className={styles.navPanel}
+            finalFocus={menuButtonRef}
+          >
+            <Dialog.Title className={styles.srOnly}>
+              {appConfig.name}
+            </Dialog.Title>
 
-          <div className={styles.navLayout}>
-            <div className={styles.navBlank} aria-hidden="true" />
-            <div className={styles.navContent}>
-              <nav
-                ref={navLinksRef}
-                className={styles.navLinks}
-                aria-label="Primary navigation"
-                onPointerLeave={hideNavIndicator}
-                onBlur={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget)) {
-                    hideNavIndicator();
-                  }
-                }}
-              >
-                {links.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onPointerEnter={(event) =>
-                      moveNavIndicator(event.currentTarget)
+            <div className={styles.navLayout}>
+              <div className={styles.navBlank} aria-hidden="true" />
+              <div className={styles.navContent}>
+                <nav
+                  ref={navLinksRef}
+                  className={styles.navLinks}
+                  aria-label="Primary navigation"
+                  onPointerLeave={hideNavIndicator}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) {
+                      hideNavIndicator();
                     }
-                    onFocus={(event) => moveNavIndicator(event.currentTarget)}
-                    onClick={() => setOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </nav>
+                  }}
+                >
+                  {links.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onPointerEnter={(event) =>
+                        moveNavIndicator(event.currentTarget)
+                      }
+                      onFocus={(event) => moveNavIndicator(event.currentTarget)}
+                      onClick={() => setOpen(false)}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </nav>
 
-              <div className={styles.navFooter}>
-                <p>Good things begin with an idea.</p>
-                <a href="#contact" onClick={() => setOpen(false)}>
-                  Start a conversation
-                </a>
+                <div className={styles.navFooter}>
+                  <p>Good things begin with an idea.</p>
+                  <a href="#contact" onClick={() => setOpen(false)}>
+                    Start a conversation
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
 
-          <Dialog.Close
-            className={styles.srOnly}
-            aria-label="Dismiss navigation panel"
-          >
-            Close navigation
-          </Dialog.Close>
-        </Dialog.Popup>
-      </Dialog.Portal>
+            <Dialog.Close
+              className={styles.srOnly}
+              aria-label="Dismiss navigation panel"
+            >
+              Close navigation
+            </Dialog.Close>
+          </Dialog.Popup>
+        </Dialog.Portal>
+      ) : null}
     </Dialog.Root>
   );
 }
