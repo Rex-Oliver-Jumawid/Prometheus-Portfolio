@@ -82,14 +82,28 @@ const fragmentSource = `
     }
     vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
 
-    // At first, keep the clouds low and subtle like a shallow horizon-wide
-    // bank. As scrolling continues, release the mask so the viewer dives into
-    // the full volume.
-    float lowBand = 1.0 - smoothstep(-0.82, 0.38, uv.y);
-    float expansion = smoothstep(0.07, 0.26, uProgress);
+    // First-scroll bank: guaranteed edge-to-edge in screen space.
+    // It deliberately ignores X for coverage, then uses noise only to break up
+    // the silhouette so the layer still reads as clouds instead of a flat fog.
+    float screenNoise = texture2D(
+      uNoise,
+      fract(vec2(
+        uv.x * 0.085 + uProgress * 0.035,
+        uv.y * 0.22 + 0.37
+      ))
+    ).r;
+    float bankTop = -0.20 + (screenNoise - 0.5) * 0.18;
+    float fullWidthBank = 1.0 - smoothstep(-0.90, bankTop, uv.y);
+    float bankEntry = smoothstep(0.0, 0.035, uProgress)
+      * (1.0 - smoothstep(0.46, 0.66, uProgress));
+
+    // The volumetric field starts inside the same low band, then expands to
+    // fill the viewport as the dive progresses.
+    float lowBand = 1.0 - smoothstep(-0.90, -0.12, uv.y);
+    float expansion = smoothstep(0.08, 0.28, uProgress);
     float coverage = mix(lowBand, 1.0, expansion);
     float entryStrength = mix(
-      0.82,
+      0.88,
       1.0,
       smoothstep(0.02, 0.16, uProgress)
     );
@@ -132,10 +146,25 @@ const fragmentSource = `
       }
     }
     float finalVisibility = visibility * coverage * entryStrength;
-    gl_FragColor = vec4(
-      accumulated * finalVisibility,
-      (1.0 - transmittance) * finalVisibility
+    float volumeAlpha = (1.0 - transmittance) * finalVisibility;
+
+    // Composite a noisy but continuous base bank behind the raymarched
+    // billows. bankAlpha never depends on X, so both viewport edges remain
+    // covered from the first visible transition frame.
+    float bankTexture = mix(0.72, 1.0, screenNoise);
+    float bankAlpha = fullWidthBank * bankEntry * 0.68 * bankTexture;
+    vec3 bankColor = mix(
+      uGold * 0.52,
+      uDeepGold * 0.42,
+      smoothstep(0.0, 0.32, uProgress)
     );
+
+    float outputAlpha = volumeAlpha + bankAlpha * (1.0 - volumeAlpha);
+    vec3 outputColor =
+      accumulated * finalVisibility +
+      bankColor * bankAlpha * (1.0 - volumeAlpha);
+
+    gl_FragColor = vec4(outputColor, outputAlpha);
   }
 `;
 
