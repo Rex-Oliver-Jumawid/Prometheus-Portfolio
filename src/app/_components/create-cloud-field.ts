@@ -73,9 +73,11 @@ const fragmentSource = `
   }
 
   void main() {
-    // Make the bank clearly visible as soon as the transition begins.
+    // Make the bank clearly visible at entry, then dissolve the entire cloud
+    // layer before the library settles. The exit is intentionally global so
+    // no horizontal cloud edge remains across the book.
     float visibility = smoothstep(0.0, 0.035, uProgress)
-      * (1.0 - smoothstep(0.5, 0.75, uProgress));
+      * (1.0 - smoothstep(0.30, 0.48, uProgress));
     if (visibility <= 0.0) {
       gl_FragColor = vec4(0.0);
       return;
@@ -95,7 +97,7 @@ const fragmentSource = `
     float bankTop = -0.20 + (screenNoise - 0.5) * 0.18;
     float fullWidthBank = 1.0 - smoothstep(-0.90, bankTop, uv.y);
     float bankEntry = smoothstep(0.0, 0.035, uProgress)
-      * (1.0 - smoothstep(0.46, 0.66, uProgress));
+      * (1.0 - smoothstep(0.28, 0.46, uProgress));
 
     // The volumetric field starts inside the same low band, then expands to
     // fill the viewport as the dive progresses.
@@ -164,7 +166,14 @@ const fragmentSource = `
       accumulated * finalVisibility +
       bankColor * bankAlpha * (1.0 - volumeAlpha);
 
-    gl_FragColor = vec4(outputColor, outputAlpha);
+    // Finish with a uniform dissolve near the gallery handoff. This preserves
+    // the cloud shape while it is present but prevents its silhouette from
+    // lingering as a dark band over the library.
+    float handoffFade = 1.0 - smoothstep(0.34, 0.48, uProgress);
+    gl_FragColor = vec4(
+      outputColor * handoffFade,
+      outputAlpha * handoffFade
+    );
   }
 `;
 
