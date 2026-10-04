@@ -59,9 +59,10 @@ export function ProjectLibraryClient() {
             if (!alive) return;
             setSelected(bookId);
             if (bookId) {
+              const bounds = controllerRef.current?.getBookBounds(bookId) ?? null;
               window.dispatchEvent(
                 new CustomEvent("prometheus:open-furniture-odyssey", {
-                  detail: { source: "library" },
+                  detail: { source: "library", bounds },
                 }),
               );
               queueMicrotask(() => controllerRef.current?.resetSelection());
@@ -133,9 +134,10 @@ export function ProjectLibraryClient() {
   const isSelected = selected === book.id;
 
   function toggleBook() {
+    const bounds = controllerRef.current?.getBookBounds(book.id) ?? null;
     window.dispatchEvent(
       new CustomEvent("prometheus:open-furniture-odyssey", {
-        detail: { source: "library-control" },
+        detail: { source: "library-control", bounds },
       }),
     );
   }
