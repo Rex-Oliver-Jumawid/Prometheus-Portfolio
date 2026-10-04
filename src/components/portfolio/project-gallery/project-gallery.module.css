@@ -25,19 +25,6 @@
 :global(.viewport-stack[data-sticky-ready="true"])
   > .gallery
   > .galleryViewport {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    rgb(0 0 0 / 8%) calc(var(--gallery-seam, 0px) * 0.2),
-    rgb(0 0 0 / 45%) calc(var(--gallery-seam, 0px) * 0.55),
-    rgb(0 0 0 / 88%) calc(var(--gallery-seam, 0px) * 0.85),
-    #000 var(--gallery-seam, 0px)
-  );
-}
-
-:global(.viewport-stack[data-sticky-ready="true"])
-  > .gallery[data-cloud-reveal="true"]
-  > .galleryViewport {
   mask-image: none;
 }
 
@@ -100,7 +87,7 @@
   inset: 0;
   pointer-events: none;
   background-color: #4a2f1c;
-  background-image: url("/assets/project-gallery/library-reading-background1.png");
+  background-image: url("/assets/project-gallery/library.png");
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
