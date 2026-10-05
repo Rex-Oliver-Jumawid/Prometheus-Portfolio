@@ -17,13 +17,17 @@ const fragmentSource = `
   uniform vec3 uGold;
   uniform vec3 uDeepGold;
 
-  float noise(vec3 point) {
+  vec2 noisePair(vec3 point) {
     vec3 cell = floor(point);
     vec3 fraction = fract(point);
     fraction = fraction * fraction * (3.0 - 2.0 * fraction);
     vec2 uv = cell.xy + vec2(37.0, 17.0) * cell.z + fraction.xy;
-    vec2 slices = texture2D(uNoise, (uv + 0.5) / 256.0).rg;
-    return mix(slices.r, slices.g, fraction.z);
+    vec4 slices = texture2D(uNoise, (uv + 0.5) / 256.0);
+    return mix(slices.rb, slices.ga, fraction.z);
+  }
+
+  float noise(vec3 point) {
+    return noisePair(point).x;
   }
 
   float turbulence(vec3 point) {
@@ -32,20 +36,37 @@ const fragmentSource = `
       + noise(point * 4.11 + 13.7) * 0.15;
   }
 
+  float smoothMin(float a, float b) {
+    const float blend = 0.16;
+    float h = clamp(0.5 + 0.5 * (b - a) / blend, 0.0, 1.0);
+    return mix(b, a, h) - blend * h * (1.0 - h);
+  }
+
   float density(vec3 point) {
-    // Overlapping rounded volumes form a sea of cumulus. Small-scale noise
-    // erodes the silhouettes; it never acts as a flat surface normal map.
-    vec3 q = vec3(point.xy, mod(point.z, 8.0) - 4.0);
-    float left = length((q - vec3(-3.2, -2.3, 0.0)) / vec3(3.9, 1.5, 4.2));
-    float right = length((q - vec3(3.6, -2.2, 0.8)) / vec3(4.3, 1.5, 4.0));
-    float middle = length((q - vec3(0.0, -3.4, -0.8)) / vec3(4.3, 1.2, 4.4));
-    float crownLeft = length((q - vec3(-3.2, -1.1, -0.5)) / vec3(2.0, 2.5, 2.8));
-    float crownInner = length((q - vec3(-1.7, -0.6, 1.1)) / vec3(1.65, 1.7, 2.0));
-    float crownRight = length((q - vec3(2.1, -0.4, -0.5)) / vec3(1.9, 2.0, 2.4));
-    float crownOuter = length((q - vec3(4.0, -1.1, 1.1)) / vec3(2.1, 2.6, 2.6));
-    float crownMiddle = length((q - vec3(0.25, -0.9, -1.1)) / vec3(1.8, 2.0, 2.3));
-    float crowns = min(min(crownLeft, crownInner), min(crownRight, min(crownMiddle, crownOuter)));
-    float body = 1.0 - min(min(left, min(right, middle)), crowns);
+    // A single bank spans the ray's travel, with staggered lobes in world space.
+    // Never fold depth: identical banks made nested silhouettes and shadow arcs.
+    // Two decorrelated channels share one texture lookup; the original three
+    // erosion octaves stay intact without three extra warp lookups per sample.
+    vec2 warp = noisePair(point * vec3(0.23, 0.21, 0.18) + vec3(11.7, 19.3, 7.7)) - 0.5;
+    float depth = warp.x;
+    vec3 q = point + vec3(
+      warp.x * 1.6,
+      warp.y * 1.2,
+      (warp.x + warp.y) * 1.8
+    );
+    // Continuous depth variation also changes widths and crown placement. It
+    // has no cell boundaries or time dependence, so reversing scroll is stable.
+    q.x /= 1.0 + depth * 0.22;
+    float left = length((q - vec3(-3.2, -2.3, 5.0)) / vec3(3.9, 1.5, 10.2));
+    float right = length((q - vec3(3.6, -2.2, 9.2)) / vec3(4.3, 1.5, 11.0));
+    float middle = length((q - vec3(-0.4, -3.4, 7.4)) / vec3(4.3, 1.2, 12.4));
+    float crownLeft = length((q - vec3(-3.2, -1.1 + depth * 0.7, 3.1)) / vec3(2.0, 2.5, 6.8));
+    float crownInner = length((q - vec3(-1.7, -0.6 - depth * 0.5, 10.7)) / vec3(1.65, 1.7, 7.0));
+    float crownRight = length((q - vec3(2.1, -0.4 + depth * 0.6, 6.2)) / vec3(1.9, 2.0, 7.4));
+    float crownOuter = length((q - vec3(4.0, -1.1 - depth * 0.8, 12.6)) / vec3(2.1, 2.6, 8.6));
+    float crownMiddle = length((q - vec3(0.25, -0.9 + depth * 0.4, 1.7)) / vec3(1.8, 2.0, 6.3));
+    float crowns = smoothMin(smoothMin(crownLeft, crownInner), smoothMin(crownRight, smoothMin(crownMiddle, crownOuter)));
+    float body = 1.0 - smoothMin(smoothMin(left, smoothMin(right, middle)), crowns);
     float billows = turbulence(point * 0.85) - 0.5;
     float cloud = smoothstep(-0.02, 0.10, body + billows * 0.85) * 1.4;
     // Original crossing density from 0609a4a.
@@ -76,6 +97,7 @@ const fragmentSource = `
     vec3 accumulated = vec3(0.0);
     float transmittance = 1.0;
     float mood = smoothstep(0.2, 1.0, uProgress);
+    float reveal = smoothstep(0.45, 0.62, uProgress);
 
     // Integrate scattering through the volume, front to back. Dense clouds
     // terminate early, keeping the full-screen portion inexpensive.
@@ -88,10 +110,11 @@ const fragmentSource = `
         float nearSunDensity = density(point + sun * 0.4);
         float sunDensity = nearSunDensity
           + density(point + sun * 1.3) * 0.65;
-        float sunlight = exp(-sunDensity * 1.6);
+        // Retain self-shadowing, but lift its darkest values as the book clears.
+        float sunlight = exp(-sunDensity * mix(1.6, 1.15, reveal));
         float rim = clamp(0.5 + (cloud - nearSunDensity) * 0.8, 0.0, 1.0);
         vec3 gold = mix(uGold, uDeepGold, mood);
-        vec3 color = mix(gold * 0.32, gold * (1.0 + rim * 0.1), sunlight);
+        vec3 color = mix(gold * mix(0.32, 0.42, reveal), gold * (1.0 + rim * 0.1), sunlight);
         color *= mix(0.72, 1.0, exp(-cloud * 0.55));
         float opacity = 1.0 - exp(-cloud * stepLength * 1.65);
         accumulated += transmittance * opacity * color;
@@ -117,7 +140,9 @@ function noiseTexture() {
       const index = (y * size + x) * 4;
       pixels[index] = values[y * size + x];
       pixels[index + 1] = values[((y + 17) % size) * size + ((x + 37) % size)];
-      pixels[index + 3] = 255;
+      // BA stores an offset noise field and its next z slice, just like RG.
+      pixels[index + 2] = values[((y + 53) % size) * size + ((x + 101) % size)];
+      pixels[index + 3] = values[((y + 70) % size) * size + ((x + 138) % size)];
     }
   }
   return pixels;
