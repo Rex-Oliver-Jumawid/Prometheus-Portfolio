@@ -1,0 +1,24 @@
+.transition {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.transition[data-active="true"] {
+  visibility: visible;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transition[data-active="true"] {
+    visibility: hidden;
+  }
+}

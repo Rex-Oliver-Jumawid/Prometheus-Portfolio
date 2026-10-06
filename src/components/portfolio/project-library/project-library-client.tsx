@@ -13,10 +13,6 @@ export function ProjectLibraryClient() {
   const hostRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<LibraryScene | null>(null);
   const [status, setStatus] = useState<Status>("idle");
-  const [progress, setProgress] = useState(0);
-  const [loadingLabel, setLoadingLabel] = useState(
-    "Preparing the bookshelf...",
-  );
   const [selected, setSelected] = useState<LibraryBook["id"] | null>(null);
   const [hovered, setHovered] = useState<LibraryBook["id"] | null>(null);
   const [docked, setDocked] = useState(false);
@@ -59,13 +55,18 @@ export function ProjectLibraryClient() {
           onDockedChange: (owned) => {
             if (alive) setDocked(owned);
           },
-          onProgress(nextProgress, label) {
-            if (!alive) return;
-            setProgress(nextProgress);
-            setLoadingLabel(label);
-          },
           onSelectionChange(bookId) {
-            if (alive) setSelected(bookId);
+            if (!alive) return;
+            setSelected(bookId);
+            if (bookId) {
+              const bounds = controllerRef.current?.getBookBounds(bookId) ?? null;
+              window.dispatchEvent(
+                new CustomEvent("prometheus:open-furniture-odyssey", {
+                  detail: { source: "library", bounds },
+                }),
+              );
+              queueMicrotask(() => controllerRef.current?.resetSelection());
+            }
           },
           onHoverChange(bookId) {
             if (alive) setHovered(bookId);
@@ -83,7 +84,6 @@ export function ProjectLibraryClient() {
         controllerRef.current = controller;
         controller.setVisible(active && !document.hidden);
 
-        setProgress(100);
         setStatus("ready");
       } catch (error) {
         if (
@@ -105,16 +105,6 @@ export function ProjectLibraryClient() {
       controllerRef.current?.setCoarsePointer(coarsePreference.matches);
     }
 
-    const nearObserver = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void loadScene();
-          nearObserver.disconnect();
-        }
-      },
-      { rootMargin: "250px" },
-    );
-
     const visibilityObserver = new IntersectionObserver(
       ([entry]) => {
         active = entry.isIntersecting;
@@ -123,7 +113,7 @@ export function ProjectLibraryClient() {
       { threshold: 0.01 },
     );
 
-    nearObserver.observe(host);
+    void loadScene();
     visibilityObserver.observe(host);
     motionPreference.addEventListener("change", motionChanged);
     coarsePreference.addEventListener("change", pointerChanged);
@@ -132,7 +122,6 @@ export function ProjectLibraryClient() {
     return () => {
       alive = false;
       abort.abort();
-      nearObserver.disconnect();
       visibilityObserver.disconnect();
       motionPreference.removeEventListener("change", motionChanged);
       coarsePreference.removeEventListener("change", pointerChanged);
@@ -144,11 +133,6 @@ export function ProjectLibraryClient() {
 
   const isSelected = selected === book.id;
 
-  function toggleBook() {
-    if (isSelected) controllerRef.current?.resetSelection();
-    else controllerRef.current?.selectBook(book.id);
-  }
-
   return (
     <div className={styles.experience}>
       <div
@@ -158,21 +142,6 @@ export function ProjectLibraryClient() {
         aria-busy={status === "loading"}
       >
         <div ref={hostRef} className={styles.canvasHost} aria-hidden="true" />
-
-        {(status === "idle" || status === "loading") && (
-          <div className={styles.overlay} role="status" aria-live="polite">
-            <div className={styles.overlayContent}>
-              <p className={styles.overlayEyebrow}>Opening the library</p>
-              <p className={styles.overlayTitle}>{loadingLabel}</p>
-              <progress
-                className={styles.progress}
-                max={100}
-                value={progress}
-                aria-label="Library loading progress"
-              />
-            </div>
-          </div>
-        )}
 
         {status === "fallback" && (
           <div className={styles.overlay} role="status">
@@ -187,28 +156,19 @@ export function ProjectLibraryClient() {
           </div>
         )}
 
-        <button
-          className={styles.bookControl}
-          data-active={isSelected}
-          data-hovered={hovered === book.id}
-          type="button"
-          disabled={status !== "ready" || !docked}
-          aria-pressed={isSelected}
-          onClick={toggleBook}
-          onPointerEnter={() => controllerRef.current?.setHovered(book.id)}
-          onPointerLeave={() => controllerRef.current?.setHovered(null)}
-          onFocus={() => controllerRef.current?.setHovered(book.id)}
-          onBlur={() => controllerRef.current?.setHovered(null)}
-        >
-          <span>{book.category}</span>
-          <strong>
-            {isSelected ? "Return Furniture Odyssey to shelf" : book.title}
-          </strong>
-        </button>
+        {status === "ready" && docked ? (
+          <div
+            className={styles.bookControl}
+            data-visible={hovered === book.id}
+            aria-hidden="true"
+          >
+            <span>{book.category}</span>
+            <strong>{book.title}</strong>
+          </div>
+        ) : null}
 
         <p id="library-instructions" className={styles.srOnly}>
-          Select Furniture Odyssey to pull it forward from the shelf. Select it
-          again to return it.
+          Select Furniture Odyssey to open the interactive book reader.
         </p>
         <p className={styles.srOnly} role="status" aria-live="polite">
           {isSelected ? "Furniture Odyssey selected." : ""}

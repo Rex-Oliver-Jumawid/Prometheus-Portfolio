@@ -57,7 +57,17 @@ a {
   scroll-margin-top: 0;
 }
 
-.viewport-stack[data-sticky-ready="true"] > section {
+
+.library-hold {
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+  pointer-events: none;
+  background: transparent;
+}
+
+.viewport-stack[data-sticky-ready="true"]
+  > section:not([data-viewport-flow="true"]) {
   position: sticky;
   top: var(--viewport-top, 0px);
   z-index: var(--viewport-order, 1);

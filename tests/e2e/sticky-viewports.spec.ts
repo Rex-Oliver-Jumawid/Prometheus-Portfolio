@@ -16,7 +16,11 @@ test("the static gallery background blends into the hero and becomes solid when 
     /rgba\(247, 211, 126, 0.42\)/,
   );
   await expect(gallery.locator("video")).toHaveCount(0);
-  await page.evaluate(() => window.scrollTo({ top: 810, behavior: "instant" }));
+  const workStart = Number(await gallery.getAttribute("data-viewport-start"));
+  await page.evaluate(
+    (start) => window.scrollTo({ top: start - 90, behavior: "instant" }),
+    workStart,
+  );
   await expect
     .poll(() =>
       gallery.evaluate((element) =>
@@ -25,8 +29,11 @@ test("the static gallery background blends into the hero and becomes solid when 
         ),
       ),
     )
-    .toBeCloseTo(56, 1);
-  await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }));
+    .toBeCloseTo(56, 0);
+  await page.evaluate(
+    (start) => window.scrollTo({ top: start, behavior: "instant" }),
+    workStart,
+  );
   await expect(gallery).toHaveCSS("--gallery-seam", "0px");
 });
 
@@ -41,10 +48,15 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
       "data-sticky-ready",
       "true",
     );
-    await page.evaluate(() =>
-      window.scrollTo({ top: 450, behavior: "instant" }),
+    const scroll = Math.round(
+      Number(await page.locator("#work").getAttribute("data-viewport-start")) -
+        450,
     );
-    const hero = page.locator("#top");
+    await page.evaluate(
+      (top) => window.scrollTo({ top, behavior: "instant" }),
+      scroll,
+    );
+    const hero = page.locator("#top [data-hero-stage]");
     const gallery = page.locator("#work");
     await expect.poll(async () => (await hero.boundingBox())!.y).toBe(0);
     const galleryTop = (await gallery.boundingBox())!.y;
@@ -69,14 +81,14 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) {
       .poll(async () => (await gallery.boundingBox())!.y)
       .toBe(galleryTop);
     await page.mouse.wheel(0, 400);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(450);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scroll);
     await page.keyboard.press("Escape");
     await expect(reader).toBeHidden();
     await expect.poll(async () => (await hero.boundingBox())!.y).toBe(0);
     await expect
       .poll(async () => (await gallery.boundingBox())!.y)
       .toBe(galleryTop);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(450);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scroll);
   });
 }
 

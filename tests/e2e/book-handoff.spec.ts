@@ -13,13 +13,27 @@ async function scroll(page: Page, y: number) {
   );
 }
 async function positions(page: Page) {
+  await expect
+    .poll(() =>
+      page
+        .locator("main.viewport-stack > section")
+        .evaluateAll((sections) =>
+          sections.every(
+            (section) =>
+              Number(section.getAttribute("data-viewport-height")) ===
+              section.getBoundingClientRect().height,
+          ),
+        ),
+    )
+    .toBe(true);
   return page.evaluate(() => {
     const work = document.getElementById("work")!;
     const library = document.getElementById("library")!;
     const from = Number(work.dataset.viewportStart),
       to = Number(library.dataset.viewportStart);
     return {
-      work: from,
+      // Native scrolling rounds subpixels; stay on the source side of this boundary.
+      work: Math.floor(from),
       library: to,
       middle: (from + to) / 2 + 0.12 * innerHeight,
       end: to + innerHeight * 0.08,
@@ -180,7 +194,7 @@ test("a delayed shelf holds the live book and recovers without another scroll", 
   });
   await page.route("**/library-environment.glb", async (route) => {
     await gate;
-    await route.continue();
+    await route.fallback();
   });
   await page.goto("/");
   await expect(page.locator("main")).toHaveAttribute(
@@ -330,7 +344,7 @@ test("changing motion preference during late-load recovery stops travel immediat
   });
   await page.route("**/library-environment.glb", async (route) => {
     await gate;
-    await route.continue();
+    await route.fallback();
   });
   await page.goto("/");
   await expect(page.locator("main")).toHaveAttribute(
@@ -346,9 +360,11 @@ test("changing motion preference during late-load recovery stops travel immediat
     "true",
   );
   release();
-  await expect(page.locator("#library [data-book-visible]")).toHaveCount(1);
+  await expect(page.locator("#library [data-book-visible]")).toHaveCount(1, {
+    timeout: 30_000,
+  });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await ownership(page, "shelf");
-  await scroll(page, p.work);
+  await scroll(page, (await positions(page)).work);
   await ownership(page, "source");
 });

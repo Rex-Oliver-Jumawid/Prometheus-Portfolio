@@ -2,6 +2,14 @@ export type BookPage = {
   label: string;
   title: string;
   paragraphs: readonly string[];
+  image?: {
+    src: string;
+    alt: string;
+  };
+  action?: {
+    label: string;
+    href: string;
+  };
 };
 
 export type PortfolioProject = {
@@ -77,6 +85,28 @@ export const furnitureOdyssey: PortfolioProject = {
         "Furniture Odyssey presents a simple theme: connected operations, brought into one view.",
         "This is a prototype reading experience. The final case-study text can replace these sample pages.",
       ],
+    },
+    {
+      label: "Live system",
+      title: "See it in action.",
+      paragraphs: [
+        "The case study continues inside the working Furniture Odyssey operations system.",
+      ],
+      image: {
+        src: "/assets/furniture-gallery/dashboard.jpeg",
+        alt: "Furniture Odyssey dashboard showing the live operations system.",
+      },
+    },
+    {
+      label: "Step inside",
+      title: "Cast this book.",
+      paragraphs: [
+        "Open the live demo and explore the connected workflow behind the story.",
+      ],
+      action: {
+        label: "Cast this book",
+        href: "https://furniture-odyssey-pos.vercel.app/demo",
+      },
     },
   ],
 };

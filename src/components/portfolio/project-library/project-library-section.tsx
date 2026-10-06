@@ -15,11 +15,9 @@ export function ProjectLibrarySection() {
       aria-labelledby="library-title"
     >
       <header className={styles.header}>
-        <p className={styles.eyebrow}>{prometheusLibrary.eyebrow}</p>
-        <div className={styles.heading}>
-          <h2 id="library-title">{prometheusLibrary.title}</h2>
-          <span>01 / 01</span>
-        </div>
+        <h2 id="library-title" className={styles.libraryTitle}>
+          {prometheusLibrary.title}
+        </h2>
       </header>
 
       <ProjectLibraryClient />

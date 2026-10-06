@@ -85,8 +85,5 @@ it("uses the flow position for hash navigation and keeps a bottom-positioned tit
   fireEvent(window, new HashChangeEvent("hashchange"));
   expect(scheduled).toBeDefined();
   act(() => scheduled?.(0));
-  expect(window.scrollTo).toHaveBeenCalledWith({
-    top: 1104,
-    behavior: "instant",
-  });
+  expect(window.scrollTo).toHaveBeenCalledWith(0, 1104);
 });

@@ -21,6 +21,13 @@ type PageTurn = {
   scrollTop: number;
 };
 
+type BookScreenBounds = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
 function BookPageContent({ page }: { page?: BookPage }) {
   return page ? (
     <>
@@ -29,6 +36,27 @@ function BookPageContent({ page }: { page?: BookPage }) {
       {page.paragraphs.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
       ))}
+      {page.image ? (
+        <div className={styles.pageMedia}>
+          <Image
+            src={page.image.src}
+            alt={page.image.alt}
+            fill
+            sizes="(max-width: 600px) 42vw, 520px"
+          />
+        </div>
+      ) : null}
+      {page.action ? (
+        <a
+          className={styles.pageAction}
+          href={page.action.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>{page.action.label}</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      ) : null}
     </>
   ) : null;
 }
@@ -116,6 +144,73 @@ export function ProjectGalleryClient({
     controllerRef.current?.setPaused(true);
     controllerRef.current?.setVisible(false);
   }, [positionReader]);
+  const positionReaderFromBounds = useCallback((bounds: BookScreenBounds) => {
+    const stage = stageRef.current;
+    const viewport = stage?.parentElement?.getBoundingClientRect();
+    const dialog = dialogRef.current;
+    if (
+      !stage?.offsetWidth ||
+      !stage.offsetHeight ||
+      !viewport ||
+      !dialog ||
+      bounds.width <= 0 ||
+      bounds.height <= 0
+    )
+      return false;
+
+    const width = stage.offsetWidth;
+    const height = stage.offsetHeight;
+    const left = viewport.left + (viewport.width - width) / 2;
+    const top = viewport.top + (viewport.height - height) / 2;
+    const a = bounds.width / (width / 2);
+    const d = bounds.height / height;
+    const x = bounds.left - left - (a * width) / 2;
+    const y = bounds.top - top;
+
+    dialog.style.setProperty(
+      "--book-rest-transform",
+      `matrix(${a}, 0, 0, ${d}, ${x}, ${y})`,
+    );
+    return true;
+  }, []);
+
+  const openBookFromShelf = useCallback(
+    (bounds: BookScreenBounds | null) => {
+      if (readerPhaseRef.current !== "closed") return;
+      setSpread(0);
+      dialogRef.current?.showModal();
+      dialogRef.current
+        ?.querySelector<HTMLElement>("article")
+        ?.focus({ preventScroll: true });
+
+      const positioned = bounds ? positionReaderFromBounds(bounds) : false;
+      if (!positioned) positionReader();
+
+      const phase = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "open"
+        : "opening";
+      readerPhaseRef.current = phase;
+      setReaderPhase(phase);
+      controllerRef.current?.setPaused(true);
+      controllerRef.current?.setVisible(false);
+    },
+    [positionReader, positionReaderFromBounds],
+  );
+
+  useEffect(() => {
+    const handleOpen = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          source?: string;
+          bounds?: BookScreenBounds | null;
+        }>
+      ).detail;
+      openBookFromShelf(detail?.bounds ?? null);
+    };
+    window.addEventListener("prometheus:open-furniture-odyssey", handleOpen);
+    return () =>
+      window.removeEventListener("prometheus:open-furniture-odyssey", handleOpen);
+  }, [openBookFromShelf]);
   const finishClose = useCallback(() => {
     if (readerPhaseRef.current === "closed") return;
     finishTurn();
@@ -418,9 +513,6 @@ export function ProjectGalleryClient({
         <div className={styles.readerContent}>
           <div className={styles.readerHeader}>
             <div>
-              <p className={styles.eyebrow}>
-                Prometheus · sample reading pages
-              </p>
               <h2 id="reader-title">{project.title}</h2>
             </div>
           </div>

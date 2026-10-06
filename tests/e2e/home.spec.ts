@@ -1,4 +1,46 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 667 },
+]) {
+  test(`banner and menu stay available while scrolling at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    const brand = page.getByRole("link", { name: "Prometheus home" });
+    const trigger = page.getByRole("button", { name: "Open navigation" });
+    await expect(brand).toBeInViewport();
+    const initialBrand = await brand.boundingBox();
+    const initialTrigger = await trigger.boundingBox();
+
+    for (const sectionId of ["work", "library", "contact"]) {
+      await page.evaluate((id) => {
+        const section = document.getElementById(id)!;
+        window.scrollTo({
+          top: Number(section.dataset.viewportStart),
+          behavior: "instant",
+        });
+      }, sectionId);
+      await expect(brand).toBeInViewport();
+      await expect(trigger).toBeInViewport();
+      expect(await brand.boundingBox()).toEqual(initialBrand);
+      expect(await trigger.boundingBox()).toEqual(initialTrigger);
+      await trigger.click();
+      const dialog = page.getByRole("dialog", { name: "Prometheus" });
+      await expect(dialog).toBeVisible();
+      await page
+        .getByRole("button", {
+          name: "Close navigation",
+          includeHidden: true,
+          exact: true,
+        })
+        .click();
+      await expect(dialog).toBeHidden();
+    }
+  });
+}
 
 test("the editorial action supports hover, focus, and reduced motion", async ({
   page,
@@ -46,8 +88,10 @@ test("preserves menu Escape handling and section navigation", async ({
   ).toHaveAttribute("href", "#work");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(trigger).toBeFocused();
-  await trigger.click();
+  await expect(
+    page.getByRole("button", { name: "Open navigation" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Open navigation" }).click();
   await dialog.getByRole("link", { name: "Library", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/#library$/);
@@ -75,13 +119,13 @@ for (const [width, height] of [
     expect((await hero.boundingBox())!.height).toBe(height);
     await expect(hero.getByRole("article")).toHaveCount(0);
     await expect(hero.getByRole("complementary")).toHaveCount(0);
-    await expect(hero.locator('img[src*="sky.webp"]')).toHaveCSS(
+    await expect(hero.locator('img[src*="sky-scroll.webp"]')).toHaveCSS(
       "object-fit",
       "cover",
     );
-    await expect(hero.locator('img[height="718"]')).toHaveAttribute(
+    await expect(hero.locator('img[height="1595"]')).toHaveAttribute(
       "src",
-      /figure\.webp/,
+      /figure-full\.webp/,
     );
     const heading = hero.getByRole("heading", { level: 1 });
     const action = hero.getByRole("link", { name: "Explore our work" });
@@ -137,18 +181,73 @@ for (const [width, height] of [
     expect(triggerBounds.width).toBeGreaterThanOrEqual(44);
     expect(triggerBounds.height).toBeGreaterThanOrEqual(44);
     expect(brandBounds.x + brandBounds.width).toBeLessThan(width);
-    await expect(trigger).toHaveCSS("border-top-style", "solid");
+    expect(
+      await trigger.evaluate(
+        (element) => getComputedStyle(element, "::before").borderTopStyle,
+      ),
+    ).toBe("solid");
     await expect(trigger.locator("span > span")).toHaveCount(3);
     const originalBrand = await brand.elementHandle();
+    const originalTrigger = await trigger.elementHandle();
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "Prometheus" });
-    await expect(dialog).toHaveCSS("background-color", "rgb(194, 75, 68)");
+    const glass = page.locator("[data-navigation-glass]");
+    await expect(glass).toHaveCSS("overflow", "hidden");
+    await expect(dialog).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    if (width > 640) {
+      expect((await dialog.boundingBox())!.width).toBeCloseTo(width * 0.6, 0);
+      expect((await glass.boundingBox())!.width).toBeCloseTo(width * 0.6, 0);
+    } else {
+      expect((await dialog.boundingBox())!.width).toBeCloseTo(width, 0);
+      expect((await glass.boundingBox())!.width).toBeCloseTo(width, 0);
+    }
+    const glassBackdrop = page.locator("[data-navigation-glass-backdrop]");
+    await expect(glassBackdrop).toHaveCount(1);
+    expect(
+      await glassBackdrop
+        .locator("span")
+        .first()
+        .evaluate((element) =>
+          getComputedStyle(element).filter.includes("blur(46px)"),
+        ),
+    ).toBe(true);
+    const primaryNavigation = dialog.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    await expect(primaryNavigation.getByRole("link")).toHaveCount(4);
+
+    const storyLink = primaryNavigation.getByRole("link", {
+      name: "Story",
+      exact: true,
+    });
+    const libraryLink = primaryNavigation.getByRole("link", {
+      name: "Library",
+      exact: true,
+    });
+    await storyLink.hover();
+    const storyIndicatorOffset = await primaryNavigation.evaluate((element) =>
+      parseFloat(
+        getComputedStyle(element).getPropertyValue("--nav-indicator-offset"),
+      ),
+    );
+    await libraryLink.hover();
+    const libraryIndicatorOffset = await primaryNavigation.evaluate((element) =>
+      parseFloat(
+        getComputedStyle(element).getPropertyValue("--nav-indicator-offset"),
+      ),
+    );
+    expect(libraryIndicatorOffset).toBeGreaterThan(storyIndicatorOffset);
     await expect(brand).toHaveCount(1);
     expect(
       await originalBrand!.evaluate((element) => element.isConnected),
     ).toBe(true);
     await expect(brand).toHaveCSS("color", "rgb(220, 61, 60)");
     await expect(brand).toBeInViewport({ ratio: 1 });
+    const openBrandBounds = (await brand.boundingBox())!;
+    expect(openBrandBounds.x).toBeCloseTo(brandBounds.x, 0);
+    expect(openBrandBounds.y).toBeCloseTo(brandBounds.y, 0);
+    expect(openBrandBounds.width).toBeCloseTo(brandBounds.width, 0);
+    expect(openBrandBounds.height).toBeCloseTo(brandBounds.height, 0);
     expect(
       await brand.evaluate((element) => {
         const rect = element.getBoundingClientRect();
@@ -162,19 +261,27 @@ for (const [width, height] of [
         );
       }),
     ).toBe(true);
-    const close = dialog.getByRole("button", { name: "Close navigation" });
-    await expect(close).toBeFocused();
-    expect((await close.boundingBox())!.x).toBeCloseTo(triggerBounds.x, 0);
-    expect((await close.boundingBox())!.y).toBeCloseTo(triggerBounds.y, 0);
-    await page.keyboard.press("Shift+Tab");
+    const close = page.getByRole("button", {
+      name: "Close navigation",
+      includeHidden: true,
+    });
+    await expect(close).toHaveCount(1);
+    expect(
+      await originalTrigger!.evaluate((element) => element.isConnected),
+    ).toBe(true);
+    const closeBounds = (await close.boundingBox())!;
+    expect(closeBounds.x).toBeCloseTo(triggerBounds.x, 0);
+    expect(closeBounds.y).toBeCloseTo(triggerBounds.y, 0);
+    expect(closeBounds.width).toBeCloseTo(triggerBounds.width, 0);
+    expect(closeBounds.height).toBeCloseTo(triggerBounds.height, 0);
     await expect(
-      dialog.getByRole("link", { name: "Start a conversation" }),
-    ).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(close).toBeFocused();
+      dialog.getByRole("button", { name: "Close navigation" }),
+    ).toHaveCount(0);
     await close.click();
     await expect(dialog).toBeHidden();
-    await expect(trigger).toBeFocused();
+    await expect(
+      page.getByRole("button", { name: "Open navigation" }),
+    ).toBeFocused();
     await action.click();
     await expect(page).toHaveURL(/#work$/);
     await expect(page.locator("#work")).toBeInViewport();

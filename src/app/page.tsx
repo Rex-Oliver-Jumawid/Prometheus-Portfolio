@@ -17,6 +17,12 @@ export default function Home() {
       <ProjectBookHandoff />
 
       <section
+        className="library-hold"
+        data-viewport-flow="true"
+        aria-hidden="true"
+      />
+
+      <section
         id="contact"
         className="contact-footer"
         aria-labelledby="contact-title"
