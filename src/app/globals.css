@@ -471,7 +471,7 @@ a {
   position: relative;
   display: flex;
   width: 100%;
-  min-height: 0;
+  min-height: 100dvh;
   justify-content: center;
   overflow: hidden;
   padding: 0;
@@ -484,6 +484,7 @@ a {
   position: relative;
   container-type: inline-size;
   width: min(100%, 1536px);
+  min-height: 100dvh;
   aspect-ratio: 1536 / 695.2;
   flex: 0 0 auto;
   overflow: hidden;
@@ -585,42 +586,10 @@ a {
   white-space: nowrap;
 }
 
-.footer-links {
-  display: grid;
-  width: 14.601237cqw;
-  height: 9.635417cqw;
-  flex: 0 0 auto;
-  grid-template-columns: repeat(2, 5.998535cqw);
-  grid-template-rows: repeat(3, 2.864583cqw);
-  gap: 0.520833cqw 2.604167cqw;
-  align-self: flex-end;
-}
-
-.footer-links a {
-  display: inline-flex;
-  min-height: 2.864583cqw;
-  align-items: center;
-  border-radius: 0.260417cqw;
-  color: color-mix(in srgb, var(--cream) 76%, var(--brand-night));
-  font-size: 0.9375cqw;
-  font-weight: 400;
-  line-height: 1.40625cqw;
-  white-space: nowrap;
-  transition: color 180ms ease;
-}
-
-.footer-links a:is(:hover, :focus-visible) {
-  color: var(--cloud-gold);
-}
-
-.footer-links a:focus-visible {
-  outline-color: var(--cloud-gold);
-}
-
 .footer-wordmark {
   position: absolute;
   z-index: 0;
-  top: 36.71224cqw;
+  bottom: -3.170573cqw;
   left: 50%;
   width: max-content;
   height: 11.71875cqw;
@@ -639,7 +608,7 @@ a {
 
 @media (max-width: 680px) {
   .footer-artboard {
-    min-height: 720px;
+    min-height: max(720px, 100dvh);
     aspect-ratio: auto;
     container-type: normal;
   }
@@ -698,35 +667,12 @@ a {
     letter-spacing: -0.02em;
   }
 
-  .footer-links {
-    display: grid;
-    width: min(100%, 320px);
-    height: auto;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(3, 40px);
-    gap: 8px 24px;
-  }
-
-  .footer-links a {
-    min-height: 40px;
-    border-radius: 4px;
-    font-size: 14px;
-    line-height: 21px;
-  }
-
   .footer-wordmark {
     z-index: 0;
-    top: auto;
     bottom: -8px;
     height: auto;
     font-size: clamp(76px, 24vw, 118px);
     line-height: 0.8;
     letter-spacing: -0.045em;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .footer-links a {
-    transition: none;
   }
 }

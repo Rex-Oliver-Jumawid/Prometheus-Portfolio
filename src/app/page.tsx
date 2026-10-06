@@ -46,14 +46,6 @@ export default function Home() {
 
             <div className="footer-lower">
               <span className="footer-meeting">Book a 15-minute meeting</span>
-
-              <nav className="footer-links" aria-label="Footer navigation">
-                <a href="#top">Story</a>
-                <a href="#work">Systems</a>
-                <a href="#work">Approach</a>
-                <a href="#library">Projects</a>
-                <a href="#work">Selected Work</a>
-              </nav>
             </div>
           </div>
 
