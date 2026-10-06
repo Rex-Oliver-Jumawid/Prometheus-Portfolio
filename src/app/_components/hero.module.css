@@ -177,7 +177,12 @@
   align-items: center;
   color: var(--cream);
   text-decoration: none;
-  transition: color 300ms ease;
+  transform: translateY(0);
+  visibility: visible;
+  transition:
+    color 300ms ease,
+    transform 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear;
 }
 
 .mark {
@@ -266,9 +271,27 @@
   cursor: pointer;
   isolation: isolate;
   backdrop-filter: blur(10px);
+  opacity: 1;
+  visibility: visible;
   transition:
     color 300ms ease,
-    background-color 300ms ease;
+    background-color 300ms ease,
+    opacity 300ms ease,
+    visibility 0s linear;
+}
+
+.header[data-footer-visible="true"] .brand {
+  transform: translateY(-100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition-delay: 0s, 0s, 450ms;
+}
+
+.header[data-footer-visible="true"] .menuToggle {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition-delay: 0s, 0s, 0s, 300ms;
 }
 
 .menuToggle::before,

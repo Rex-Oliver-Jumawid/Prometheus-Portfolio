@@ -466,7 +466,7 @@ a {
   }
 }
 
-/* Editorial contact footer - Figma node 111:6, 1536 x 695.2 */
+/* Editorial contact footer, using the portfolio's warm brand palette. */
 .contact-footer {
   position: relative;
   display: flex;
@@ -475,8 +475,9 @@ a {
   justify-content: center;
   overflow: hidden;
   padding: 0;
-  background: #642b2d;
-  color: #fff4ea;
+  background: var(--brand-night);
+  color: var(--cream);
+  font-family: var(--edition-sans);
 }
 
 .footer-artboard {
@@ -486,7 +487,13 @@ a {
   aspect-ratio: 1536 / 695.2;
   flex: 0 0 auto;
   overflow: hidden;
-  background: #642b2d;
+  background:
+    radial-gradient(
+      ellipse at 18% 35%,
+      color-mix(in srgb, var(--cloud-gold) 7%, transparent),
+      transparent 65%
+    ),
+    var(--brand-night);
 }
 
 .footer-shell {
@@ -509,11 +516,11 @@ a {
   align-items: flex-start;
   justify-content: space-between;
   padding-bottom: 1.5625cqw;
-  border-bottom: 0.052083cqw solid rgb(255 244 234 / 30%);
-  color: #eddcc6;
-  font-family: "Trebuchet MS", Arial, sans-serif;
+  border-bottom: 0.052083cqw solid
+    color-mix(in srgb, var(--cloud-gold) 30%, transparent);
+  color: var(--cloud-gold);
   font-size: 0.75cqw;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.05cqw;
   letter-spacing: 0.105cqw;
   text-transform: uppercase;
@@ -533,12 +540,12 @@ a {
   width: 56.510417cqw;
   max-width: none;
   margin: 0;
-  color: #fff4ea;
-  font-family: Georgia, "Times New Roman", serif;
+  color: var(--cream);
+  font-family: var(--brand-serif);
   font-size: 4cqw;
-  font-weight: 500;
-  line-height: 3.920052cqw;
-  letter-spacing: -0.18cqw;
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: 0.025em;
   text-wrap: wrap;
 }
 
@@ -546,8 +553,7 @@ a {
   width: 38.541667cqw;
   max-width: none;
   margin: 1.302083cqw 0 0;
-  color: #eddcc6;
-  font-family: "Trebuchet MS", Arial, sans-serif;
+  color: color-mix(in srgb, var(--cream) 76%, var(--brand-night));
   font-size: 1.25cqw;
   font-weight: 400;
   line-height: 2.0625cqw;
@@ -568,13 +574,12 @@ a {
   min-height: 3.645833cqw;
   flex: 0 0 auto;
   align-items: center;
-  border: 0.052083cqw solid #fff4ea;
+  border: 0.052083cqw solid var(--cloud-gold);
   border-radius: 999px;
   padding: 0.833333cqw 1.5625cqw;
-  color: #fff4ea;
-  font-family: "Trebuchet MS", Arial, sans-serif;
+  color: var(--cream);
   font-size: 1.041667cqw;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.5625cqw;
   letter-spacing: -0.020833cqw;
   white-space: nowrap;
@@ -596,8 +601,7 @@ a {
   min-height: 2.864583cqw;
   align-items: center;
   border-radius: 0.260417cqw;
-  color: #eddcc6;
-  font-family: "Trebuchet MS", Arial, sans-serif;
+  color: color-mix(in srgb, var(--cream) 76%, var(--brand-night));
   font-size: 0.9375cqw;
   font-weight: 400;
   line-height: 1.40625cqw;
@@ -606,23 +610,28 @@ a {
 }
 
 .footer-links a:is(:hover, :focus-visible) {
-  color: #fff4ea;
+  color: var(--cloud-gold);
+}
+
+.footer-links a:focus-visible {
+  outline-color: var(--cloud-gold);
 }
 
 .footer-wordmark {
   position: absolute;
   z-index: 0;
   top: 36.71224cqw;
-  left: 1.953125cqw;
-  width: 95.052083cqw;
+  left: 50%;
+  width: max-content;
   height: 11.71875cqw;
   margin: 0;
-  color: #fff4ea;
-  font-family: Georgia, "Times New Roman", serif;
+  color: var(--cream);
+  font-family: var(--edition-serif);
   font-size: 14.583333cqw;
   font-weight: 400;
   line-height: 11.666667cqw;
   letter-spacing: -0.65625cqw;
+  transform: translateX(-50%);
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
@@ -661,8 +670,6 @@ a {
   .footer-message h2 {
     width: 100%;
     font-size: clamp(38px, 11vw, 52px);
-    line-height: 0.98;
-    letter-spacing: -0.04em;
   }
 
   .contact-footer .footer-message > p {
@@ -711,8 +718,6 @@ a {
     z-index: 0;
     top: auto;
     bottom: -8px;
-    left: 12px;
-    width: auto;
     height: auto;
     font-size: clamp(76px, 24vw, 118px);
     line-height: 0.8;

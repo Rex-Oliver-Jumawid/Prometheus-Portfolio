@@ -19,6 +19,7 @@ const SECTION_NAVIGATION_DELAY_MS = 650;
 export function HeroNavigation() {
   const [open, setOpen] = useState(false);
   const [renderNavigation, setRenderNavigation] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navLinksRef = useRef<HTMLElement>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -74,6 +75,26 @@ export function HeroNavigation() {
   );
 
   useEffect(() => {
+    const footer = document.getElementById("contact");
+    if (!footer || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setFooterVisible(entry.isIntersecting);
+      if (!entry.isIntersecting) return;
+
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setOpen(false);
+      setRenderNavigation(false);
+    });
+
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!renderNavigation) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -113,7 +134,13 @@ export function HeroNavigation() {
 
   return (
     <>
-      <header className={styles.header} data-navigation-open={open}>
+      <header
+        className={styles.header}
+        data-navigation-open={open}
+        data-footer-visible={footerVisible}
+        aria-hidden={footerVisible}
+        inert={footerVisible}
+      >
         <a
           className={styles.brand}
           href="#top"
